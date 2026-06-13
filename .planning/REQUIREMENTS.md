@@ -1,7 +1,8 @@
 # Requirements: GUImorph Modernization
 
 **Defined:** 2026-06-13
-**Core Value:** Researcher can digitize a 3D specimen in the GUI and run `geomorph` analysis end-to-end on Windows R.
+**Core Value:** Researcher can digitize a 3D specimen in the GUI, run `geomorph` analysis end-to-end, and maintain a modular C engine on Windows R.
+**Milestone scope:** Full modernization (restore + Option A C rehabilitation)
 
 ## v1 Requirements
 
@@ -30,6 +31,7 @@
 
 - [ ] **ANAL-01**: Exported digitized coordinates load into at least one `geomorph` analysis function without error
 - [ ] **ANAL-02**: Breaking `geomorph`/`Morpho` API calls identified and migrated to CRAN 4.6-compatible signatures
+- [ ] **ANAL-03**: Deprecated functions replaced per geomorph 4.x guidance (`procD.lm`/RRPP, `gm.prcomp`, etc.)
 
 ### Developer Environment
 
@@ -37,18 +39,22 @@
 - [ ] **DEV-02**: `BUILD.md` documents full build-deploy-test cycle (WSL build → copy DLL → Windows R test)
 - [ ] **DEV-03**: Workflow documented for swapping new `build/tkogl2.dll` into `inst/libs/x64/`
 
+### C Engine Rehabilitation (Option A)
+
+- [ ] **CENG-01**: `tcl_if_ZARF_9.c` split into separate modules (dispatch, window/WGL, state) with no behavior change
+- [ ] **CENG-02**: Dot and anchor implementations unified into shared marker code
+- [ ] **CENG-03**: Numbered globals (`GBL_PTR_*_1..N`) replaced with arrays; capacity limits documented
+- [ ] **CENG-04**: Debug cruft removed (`MAKE_INERT`, `if(0)` toggles, pervasive `printf` tracing)
+- [ ] **CENG-05**: Post-rehabilitation DLL passes full digitize smoke test (no regression vs Phase 4 baseline)
+
 ## v2 Requirements
 
 Deferred until v1 milestone ships.
 
-### Strategic Modernization
+### Platform & Toolchain
 
-- **STRAT-01**: Choose Phase 3 direction — rehabilitate C / swap to `rgl` / rebuild Shiny+WebGL UI
-- **STRAT-02**: Cross-platform rendering path (if renderer swapped)
-- **STRAT-03**: Tcl/Tk 9.0 migration evaluation
-
-### Quality & Automation
-
+- **PLAT-01**: Cross-platform rendering evaluation (Option B — rgl swap)
+- **PLAT-02**: Tcl/Tk 9.0 migration evaluation
 - **QA-01**: Automated smoke test script (R + native load)
 - **QA-02**: CI pipeline for MinGW DLL build
 
@@ -56,9 +62,10 @@ Deferred until v1 milestone ships.
 
 | Feature | Reason |
 |---------|--------|
-| Linux/macOS native binary | WGL/HWND engine is Windows-only; needs renderer rewrite |
-| `tcl_if_ZARF_9.c` refactor | Accept technical debt for v1; 5,581-line god file still works if build runs |
-| Shiny/WebGL UI rebuild | Phase 3 Option C — deferred strategic decision |
+| rgl renderer swap (Option B) | User chose Option A — rehabilitate C in place |
+| Shiny/WebGL UI rebuild (Option C) | Rejected for this milestone |
+| Linux/macOS native binary | Option A accepts Windows-only |
+| Modern OpenGL core profile | Rewrite, not rehabilitation |
 | Full `geomorph` feature parity audit | Migrate only functions actually called by GUImorph |
 | Visual Studio IDE workflow | Replaced by CMake/MinGW; `.vcxproj` kept as reference only |
 
@@ -80,15 +87,21 @@ Deferred until v1 milestone ships.
 | DGT-04 | Phase 4 | Pending |
 | ANAL-01 | Phase 5 | Pending |
 | ANAL-02 | Phase 5 | Pending |
+| ANAL-03 | Phase 5 | Pending |
 | DEV-01 | Phase 6 | Pending |
 | DEV-02 | Phase 6 | Pending |
 | DEV-03 | Phase 6 | Pending |
+| CENG-01 | Phase 7 | Pending |
+| CENG-02 | Phase 8 | Pending |
+| CENG-03 | Phase 9 | Pending |
+| CENG-04 | Phase 9 | Pending |
+| CENG-05 | Phase 9 | Pending |
 
 **Coverage:**
-- v1 requirements: 17 total
-- Mapped to phases: 17
+- v1 requirements: 22 total
+- Mapped to phases: 22
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-06-13*
-*Last updated: 2026-06-13 after roadmap creation*
+*Last updated: 2026-06-13 after user confirmed full modernization + Option A*

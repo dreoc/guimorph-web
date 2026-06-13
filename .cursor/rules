@@ -3,23 +3,62 @@
 
 **GUImorph Modernization**
 
-GUImorph is an R package for **3D geometric morphometrics** — researchers load PLY mesh specimens, digitize landmarks, curves, and anchors in a Tk GUI, then export coordinates for statistical shape analysis (`geomorph`, `Morpho`, `Rvcg`, `vegan`). This project modernizes an ~8-year-old research codebase (student-era C/OpenGL engine + R/Tk app) so it builds, runs, and can be maintained on current Windows R without Visual Studio.
+GUImorph is an R package for **3D geometric morphometrics** — researchers load PLY mesh specimens, digitize landmarks, curves, and anchors in a Tk GUI, then export coordinates for statistical shape analysis (`geomorph`, `Morpho`, `Rvcg`, `vegan`). This project **fully modernizes** an ~8-year-old research codebase: restore it on current Windows R, migrate stale dependencies, and **rehabilitate the C/OpenGL engine in place** (Option A) for long-term maintainability without replacing the renderer.
 
-**Core Value:** A researcher can open the GUI on Windows R, load a 3D specimen, digitize anatomical landmarks/curves, and run a `geomorph` analysis end-to-end — proving the tool still works and is worth further investment.
+**Core Value:** A researcher can open the GUI on Windows R, load a 3D specimen, digitize anatomical landmarks/curves, run a `geomorph` analysis end-to-end, and maintain the tool via a clean, modular C codebase — all on current toolchains without Visual Studio.
 
 ### Constraints
 
 - **Platform**: Windows-only for runtime — must use Windows R, not WSL/Linux R
 - **Build**: MinGW-w64 cross-compile from WSL (no Visual Studio IDE dependency)
-- **Graphics**: Fixed-function OpenGL + WGL — legacy but required for current C engine
-- **Dependencies**: `geomorph` had breaking API changes since 2020 — migrate incrementally
-- **Scope**: Restore working tool first; strategic modernization is a separate milestone
+- **Graphics**: Fixed-function OpenGL + WGL — legacy but retained under Option A
+- **Dependencies**: `geomorph` 4.x breaking changes — migrate incrementally with call-site inventory
+- **C refactor**: Must preserve `Tkogl2_Init` export and R↔Tcl shape string protocol
 <!-- gsd-project-end -->
 
-<!-- gsd-stack-start source:STACK.md -->
+<!-- gsd-stack-start source:research/STACK.md -->
 ## Technology Stack
 
-Technology stack not yet documented. Will populate after codebase mapping or first phase.
+## Recommended Stack (v1 — Option A)
+| Layer | Choice | Version / Notes | Confidence |
+|-------|--------|-----------------|------------|
+| R runtime | Windows R (ucrt) | 4.6.x | High |
+| R packages | geomorph, Morpho, Rvcg, vegan, tcltk2 | CRAN 4.6 current (geomorph 4.1.0) | High |
+| Package lock | renv | Pin after smoke tests pass | High |
+| Build (native) | CMake + MinGW-w64 | Cross-compile from WSL → Windows DLL | High — validated |
+| Tcl stubs | Tcl 8.6 | `tcl_stub_bootstrap.c` for MinGW (MSVC `.lib` unreadable by GNU ld) | Medium |
+| OpenGL | Fixed-function + WGL | Legacy; required for Option A | High |
+| GLUT | Vendored `glut64.dll` + header shim | Only 3 calls used | High |
+| GUI | tcltk / tcltk2 | Stay on 8.6; no Tk 9.0 for v1 | High |
+| Dev tools | devtools, roxygen2 | Package load from source | High |
+## What NOT to Use (v1)
+| Alternative | Why excluded |
+|-------------|--------------|
+| Visual Studio IDE | User workflow is Cursor/WSL; CMake replaces broken `.vcxproj` |
+| Tcl/Tk 9.0 | ABI break; stubs incompatible with current extension |
+| rgl renderer swap | Option B — user chose Option A (rehabilitate C) |
+| Shiny + WebGL | Option C — out of scope for this milestone |
+| Linux native `.so` | WGL/HWND engine is Windows-only under Option A |
+| Modern OpenGL core profile | Would require full renderer rewrite, not rehabilitation |
+## geomorph Ecosystem (2020 → 4.1.0)
+| Change | Impact on GUImorph |
+|--------|-------------------|
+| `gpagen` default `ProcD=FALSE` | May change sliding behavior if old code assumed TRUE |
+| `advanced.procD.lm`, `procD.allometry`, `nested.update` deprecated | Replace with `procD.lm` + RRPP `anova`/`pairwise` |
+| `trajectory.analysis` moved to RRPP | Update imports and call sites |
+| `plotTangentSpace` deprecated | Split into `gm.prcomp` + `plotRefToTarget` etc. |
+| Permutation computations in RRPP | Ensure RRPP is declared dependency if used |
+| geomorph 4.1 plotly for 3D graphics | GUImorph has own Tk/OpenGL viewer — no conflict, but watch deprecated RGL digitizing functions |
+| Internal C-code removed from `gpagen` | Pure R — no impact on tkogl2 DLL |
+## C Engine Rehabilitation Stack (Phases 7–9)
+| Task | Approach |
+|------|----------|
+| Split god file | Extract command dispatch, window/state, rendering into separate `.c` files |
+| Dot/anchor dedup | Unified struct + shared functions (source admits duplication at `def_ZARF_9.h:169`) |
+| Globals cleanup | Replace `GBL_PTR_*_1..N` with arrays; document max specimen/curve limits |
+| Debug removal | Strip `printf`/`if(0)` toggles; remove `MAKE_INERT` broken-code paths |
+| Build | Keep CMake/MinGW; verify no regression after each extraction |
+## Rationale
 <!-- gsd-stack-end -->
 
 <!-- gsd-conventions-start source:CONVENTIONS.md -->

@@ -1,67 +1,52 @@
 # Research Summary: GUImorph Modernization
 
-**Synthesized from:** `.planning/guimorph-modernization-plan.md`, session handoff, R setup findings, and codebase review (2026-06-12/13).
+**Synthesized:** 2026-06-13  
+**Sources:** Codebase review, planning docs, geomorph 4.1.0 CRAN NEWS, geomorph.assistance vignette  
+**Milestone scope:** Full modernization — restore + **Option A: rehabilitate C engine in place**
 
 ## Stack
 
-| Layer | Current | Modernization path |
-|-------|---------|-------------------|
-| R GUI | `tcltk`/`tcltk2` + custom S3 dispatch | Keep 8.6 for v1; pin with `renv` |
-| Native ext | Custom `tkogl2` DLL (C + WGL + fixed-function GL) | Rebuild via MinGW/CMake (done); runtime validate next |
-| Build | Broken MSVC `.vcxproj` | **CMake + MinGW-w64** from WSL → Windows DLL |
-| Analysis | `geomorph` 4.x, `Morpho`, `Rvcg`, `vegan` | Migrate API calls incrementally from ~2020 patterns |
-| Runtime | Windows R 4.6 (ucrt x64) | Required — HWND/WGL is Windows-only |
+- **Runtime:** Windows R 4.6 (ucrt) + tcltk2 8.6 + geomorph 4.1.0 / Morpho 2.13 / Rvcg 0.25
+- **Build:** CMake + MinGW-w64 from WSL → `tkogl2.dll` (proven; runtime pending)
+- **Lock:** renv after smoke tests pass
+- **C strategy:** Keep WGL + fixed-function OpenGL; modularize in place (no rgl/Shiny swap)
 
-**Do NOT use for v1:** Tcl/Tk 9.0 (ABI break), Linux native `.so` (no WGL path), immediate `rgl` swap (Phase 3 decision).
+## Table Stakes
 
-## Table Stakes (must work)
+1. `tkogl2.dll` loads via Tcl in Windows R
+2. GUImorph GUI opens and renders PLY meshes
+3. Full digitize workflow (landmarks, curves, `.dgt`)
+4. geomorph analysis round-trip on current CRAN
+5. Reproducible dev environment (renv + BUILD.md)
+6. C engine rehabilitated: split god file, dedup dot/anchor, clean globals
 
-- `tkogl2.dll` loads via `tcl("load", ..., "Tkogl2")` — exports `Tkogl2_Init`
-- GUImorph package `.onLoad` succeeds; console shows load confirmation
-- "3D GUImorph" Tk window opens
-- Load PLY specimen mesh in 3D viewer
-- Place landmarks and curves; save `.dgt` file
-- Run at least one `geomorph` analysis on exported coordinates
+## Differentiators (deferred)
 
-## Differentiators (defer to v2)
-
-- Cross-platform support (requires renderer replacement)
-- Modern OpenGL / WebGL UI
-- Automated test suite and CI
-- C engine modularization (collapse dot/anchor duplication, split god file)
+- Cross-platform rendering (requires Option B/C)
+- Tcl/Tk 9.0
+- Automated CI/test suite
 
 ## Architecture
 
-```
-R (GUImorphDevelopment) ──tcl("add", shape, ...)──► Tcl interpreter
-                                                          │
-                                                          ▼
-                                              tkogl2.dll (Tkogl2_Init)
-                                                          │
-                                    WGL context on Tk HWND + fixed-function GL
-                                                          │
-                                                          ▼
-                                              PLY mesh, landmarks, curves
-```
-
-**Build order implication:** Native DLL runtime → package load → GUI → digitize → analyze. No point migrating R APIs until DLL + GUI open.
+R (Tk GUI) → stringly-typed Tcl protocol → tkogl2.dll (WGL/OpenGL). C rehabilitation happens **behind the same DLL interface** after Phases 1–6 prove the engine works. geomorph migration is isolated to R analysis files.
 
 ## Watch Out For
 
-| Pitfall | Warning sign | Prevention | Phase |
-|---------|--------------|------------|-------|
-| WSL UNC path flakiness | Slow/failed `load_all` | Copy repo to `C:\dev\GUImorph` if needed | 1–2 |
-| Tcl stub ABI mismatch | `loading tkogl2 failed` on load | Smoke test `tcl("load", ...)` before full GUI | 1 |
-| GLUT DLL not found | OpenGL init crash | Ensure `glut64.dll` beside `tkogl2.dll` or on PATH | 1 |
-| Stale 2020 DLL vs new build | Old behavior despite C edits | Deploy `build/tkogl2.dll` → `inst/libs/x64/` | 1 |
-| `geomorph` API breaks | Errors in `.geomorph.r` on analyze | Inventory calls; migrate one function at a time | 5 |
-| Fixed-function GL on RDP/VM | Black/blank 3D view | Test on local Windows desktop first | 2 |
+1. **Don't refactor C before GUI works** — Phases 7–9 depend on 1–6
+2. **geomorph API inventory first** — deprecated `advanced.procD.lm`, `plotTangentSpace`, RRPP moves
+3. **Tcl stub ABI** — highest risk on first runtime load
+4. **Dot/anchor unification** — subtle behavioral differences possible
+5. **WSL UNC + RDP/GL** — environmental, not code bugs
 
-## Confidence
+## User Decisions (confirmed post-init)
 
-- **High:** Build path (MinGW DLL compiles, correct export)
-- **Medium:** Runtime load + GUI launch (not yet tested end-to-end)
-- **Low:** Full analyze round-trip on R 4.6 + geomorph 4.1 without API fixes
+| Question | Answer |
+|----------|--------|
+| Codebase map | Skip — use existing planning docs |
+| Milestone scope | **Full modernization** (includes C rehab) |
+| Phase 3 fork | **Option A** — rehabilitate C in place (Windows-only) |
+| Workflow | YOLO + standard + parallel + all quality agents |
+| Research | Yes |
 
 ---
-*Research synthesized: 2026-06-13 — from existing planning artifacts, not live web research*
+*Research complete: 2026-06-13*

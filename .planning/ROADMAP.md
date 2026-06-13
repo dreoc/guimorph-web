@@ -2,7 +2,7 @@
 
 ## Overview
 
-Restore a working GUImorph on modern Windows R by validating the MinGW-built native DLL, loading the R package, proving the digitize workflow, migrating stale `geomorph` APIs, and documenting a reproducible dev environment. Phases 0–1 (repo cleanup + build scaffold) are largely complete; execution starts at runtime validation.
+Full modernization of GUImorph on modern Windows R: validate the MinGW-built native DLL, restore the GUI and digitize workflow, migrate stale `geomorph` APIs, lock a reproducible dev environment, then **rehabilitate the C/OpenGL engine in place** (Option A). Phases 0–1 (repo cleanup + build scaffold) are largely complete; execution starts at runtime validation.
 
 ## Phases
 
@@ -12,6 +12,9 @@ Restore a working GUImorph on modern Windows R by validating the MinGW-built nat
 - [ ] **Phase 4: Digitize Workflow** — Landmarks, curves, `.dgt` save/reload
 - [ ] **Phase 5: Analysis Round-Trip** — `geomorph` analysis + API migration
 - [ ] **Phase 6: Reproducible Dev Environment** — `renv`, build docs, DLL deploy workflow
+- [ ] **Phase 7: C Engine Modularization** — Split `tcl_if` god file into focused modules
+- [ ] **Phase 8: C Engine Deduplication** — Unify dot/anchor implementations
+- [ ] **Phase 9: C Engine Cleanup & Validation** — Globals, debug removal, regression test
 
 ## Phase Details
 
@@ -84,11 +87,11 @@ Plans:
 ### Phase 5: Analysis Round-Trip
 **Goal**: Run `geomorph` analysis on exported digitized data; fix breaking API calls.
 **Depends on**: Phase 4
-**Requirements**: ANAL-01, ANAL-02
+**Requirements**: ANAL-01, ANAL-02, ANAL-03
 **Success Criteria** (what must be TRUE):
   1. Inventory of `geomorph`/`Morpho` functions called by GUImorph is documented
-  2. At least one analysis (e.g. GPA, PCA, or plotting) runs on exported coordinates
-  3. All identified breaking API calls migrated to CRAN 4.6-compatible code
+  2. At least one analysis (e.g. GPA via `gpagen`, PCA via `gm.prcomp`) runs on exported coordinates
+  3. All deprecated API calls migrated (`procD.lm`/RRPP, etc.)
 **Plans**: TBD
 
 Plans:
@@ -97,7 +100,7 @@ Plans:
 - [ ] 05-03: Migrate remaining breaking API calls
 
 ### Phase 6: Reproducible Dev Environment
-**Goal**: Document and lock the full build-test-develop cycle for future contributors.
+**Goal**: Document and lock the full build-test-develop cycle before C refactoring.
 **Depends on**: Phase 5
 **Requirements**: DEV-01, DEV-02, DEV-03
 **Success Criteria** (what must be TRUE):
@@ -111,10 +114,55 @@ Plans:
 - [ ] 06-02: Update BUILD.md with validated deploy workflow
 - [ ] 06-03: Add quick-start section to project README
 
+### Phase 7: C Engine Modularization
+**Goal**: Split the 5,581-line `tcl_if_ZARF_9.c` god file into maintainable modules without changing behavior.
+**Depends on**: Phase 6 (working baseline locked before refactor)
+**Requirements**: CENG-01
+**Success Criteria** (what must be TRUE):
+  1. God file split into dispatch, window/WGL, and state modules
+  2. CMake build succeeds; `Tkogl2_Init` export unchanged
+  3. GUI opens and loads PLY after refactor (no regression)
+**Plans**: TBD
+
+Plans:
+- [ ] 07-01: Extract Tcl command dispatch into `tcl_dispatch.c`
+- [ ] 07-02: Extract HWND/WGL window setup into `tcl_window.c`
+- [ ] 07-03: Extract specimen/model state into `tcl_state.c`; verify smoke test
+
+### Phase 8: C Engine Deduplication
+**Goal**: Collapse the duplicated dot/anchor implementations acknowledged in source comments.
+**Depends on**: Phase 7
+**Requirements**: CENG-02
+**Success Criteria** (what must be TRUE):
+  1. Shared marker struct/functions replace parallel dot/anchor code paths
+  2. Landmark and anchor placement both work in GUI
+  3. Existing `.dgt` files from Phase 4 baseline reload correctly
+**Plans**: TBD
+
+Plans:
+- [ ] 08-01: Characterize dot vs anchor behavioral differences
+- [ ] 08-02: Implement unified `marker.c` with type discriminator
+- [ ] 08-03: Remove duplicated functions; verify digitize round-trip
+
+### Phase 9: C Engine Cleanup & Validation
+**Goal**: Replace numbered globals, remove debug cruft, and prove no regression across full workflow.
+**Depends on**: Phase 8
+**Requirements**: CENG-03, CENG-04, CENG-05
+**Success Criteria** (what must be TRUE):
+  1. `GBL_PTR_*_1..N` replaced with arrays; limits documented in headers
+  2. `MAKE_INERT`, `if(0)` debug toggles, and pervasive `printf` tracing removed
+  3. Full workflow passes: load PLY → digitize → save `.dgt` → analyze — identical to Phase 4–5 baseline
+**Plans**: TBD
+
+Plans:
+- [ ] 09-01: Replace numbered globals with arrays; document capacity limits
+- [ ] 09-02: Remove debug cruft and unsafe macros where practical
+- [ ] 09-03: Full regression smoke test; update BUILD.md for new file layout
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 1 → 2 → … → 9
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -124,10 +172,16 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 4. Digitize Workflow | 0/3 | Not started | - |
 | 5. Analysis Round-Trip | 0/3 | Not started | - |
 | 6. Reproducible Dev Environment | 0/3 | Not started | - |
+| 7. C Engine Modularization | 0/3 | Not started | - |
+| 8. C Engine Deduplication | 0/3 | Not started | - |
+| 9. C Engine Cleanup & Validation | 0/3 | Not started | - |
 
 **Prior work (outside GSD phases):**
 - Phase 0 repo cleanup: Complete (2026-06-12)
 - Phase 1 build scaffold: Complete — DLL compiles; runtime not yet validated
 
+**Strategic decision (locked):** Option A — rehabilitate C engine in place (Windows-only, legacy GL). Options B (rgl) and C (Shiny/WebGL) out of scope.
+
 ---
 *Roadmap created: 2026-06-13*
+*Updated: 2026-06-13 — expanded to 9 phases per full modernization + Option A*
