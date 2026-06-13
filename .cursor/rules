@@ -1,0 +1,63 @@
+<!-- gsd-project-start source:PROJECT.md -->
+## Project
+
+**GUImorph Modernization**
+
+GUImorph is an R package for **3D geometric morphometrics** — researchers load PLY mesh specimens, digitize landmarks, curves, and anchors in a Tk GUI, then export coordinates for statistical shape analysis (`geomorph`, `Morpho`, `Rvcg`, `vegan`). This project modernizes an ~8-year-old research codebase (student-era C/OpenGL engine + R/Tk app) so it builds, runs, and can be maintained on current Windows R without Visual Studio.
+
+**Core Value:** A researcher can open the GUI on Windows R, load a 3D specimen, digitize anatomical landmarks/curves, and run a `geomorph` analysis end-to-end — proving the tool still works and is worth further investment.
+
+### Constraints
+
+- **Platform**: Windows-only for runtime — must use Windows R, not WSL/Linux R
+- **Build**: MinGW-w64 cross-compile from WSL (no Visual Studio IDE dependency)
+- **Graphics**: Fixed-function OpenGL + WGL — legacy but required for current C engine
+- **Dependencies**: `geomorph` had breaking API changes since 2020 — migrate incrementally
+- **Scope**: Restore working tool first; strategic modernization is a separate milestone
+<!-- gsd-project-end -->
+
+<!-- gsd-stack-start source:STACK.md -->
+## Technology Stack
+
+Technology stack not yet documented. Will populate after codebase mapping or first phase.
+<!-- gsd-stack-end -->
+
+<!-- gsd-conventions-start source:CONVENTIONS.md -->
+## Conventions
+
+Conventions not yet established. Will populate as patterns emerge during development.
+<!-- gsd-conventions-end -->
+
+<!-- gsd-architecture-start source:ARCHITECTURE.md -->
+## Architecture
+
+Architecture not yet mapped. Follow existing patterns found in the codebase.
+<!-- gsd-architecture-end -->
+
+<!-- gsd-skills-start source:skills/ -->
+## Project Skills
+
+No project skills found. Add skills to any of: `.cursor/skills/`, `.agents/skills/`, `.cursor/skills/`, `.github/skills/`, or `.codex/skills/` with a `SKILL.md` index file.
+<!-- gsd-skills-end -->
+
+<!-- gsd-workflow-start source:GSD defaults -->
+## GSD Workflow Enforcement
+
+Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
+
+Use these entry points:
+- `/gsd-quick` for small fixes, doc updates, and ad-hoc tasks
+- `/gsd-debug` for investigation and bug fixing
+- `/gsd-execute-phase` for planned phase work
+
+Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
+<!-- gsd-workflow-end -->
+
+
+
+<!-- gsd-profile-start -->
+## Developer Profile
+
+> Profile not yet configured. Run `/gsd-profile-user` to generate your developer profile.
+> This section is managed by `generate-claude-profile` -- do not edit manually.
+<!-- gsd-profile-end -->
