@@ -1,0 +1,302 @@
+LOG FILE OPEN
+[   0] {14:29:06}  <ATTENTION : opening the log file with message [-1]>
+[   1] {14:29:11}  <TCL_CMD_SET_DOT>
+[   2] {14:29:11}  <TclIF_LogCommands ... have objects>
+[   3] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[   4] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[   5] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[   6] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[   7] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[   8] {14:29:11}  <FAIL ... TclIF_LogCommands ... returning -1>
+[   9] {14:29:11}  <setDot ... labeled>
+[  10] {14:29:11}  <object 2>
+[  11] {14:29:11}  <Tcl_Object ... >
+  ref count [2]
+  bytes <NULL>
+  length [1427954016] 
+  Tcl_ObjType <int>
+  longValue   [1]
+[  12] {14:29:11}  <Tcl_Object ... complete>
+
+[  13] {14:29:11}  <... variable 'labeled' assigned value [1]>
+[  14] {14:29:11}  <setDot ... labeled ... end >
+[  15] {14:29:11}  <END TCL_CMD_SET_DOT>
+[  16] {14:29:11}  <TCL_CMD_SET_DOT>
+[  17] {14:29:11}  <TclIF_LogCommands ... have objects>
+[  18] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  19] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  20] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  21] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  22] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  23] {14:29:11}  <FAIL ... TclIF_LogCommands ... returning -1>
+[  24] {14:29:11}  <setDot ... alabeled>
+[  25] {14:29:11}  <object 2>
+[  26] {14:29:11}  <Tcl_Object ... >
+  ref count [2]
+  bytes <NULL>
+  length [0] 
+  Tcl_ObjType <int>
+  longValue   [1]
+[  27] {14:29:11}  <Tcl_Object ... complete>
+
+[  28] {14:29:11}  <... variable 'alabeled' assigned value [1]>
+[  29] {14:29:11}  <setDot ... alabeled ... end>
+[  30] {14:29:11}  <END TCL_CMD_SET_DOT>
+[  31] {14:29:11}  <TCL_CMD_SET_DOT>
+[  32] {14:29:11}  <TclIF_LogCommands ... have objects>
+[  33] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  34] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  35] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  36] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  37] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  38] {14:29:11}  <FAIL ... TclIF_LogCommands ... returning -1>
+[  39] {14:29:11}  <setDot ... labeled>
+[  40] {14:29:11}  <object 2>
+[  41] {14:29:11}  <Tcl_Object ... >
+  ref count [2]
+  bytes <NULL>
+  length [0] 
+  Tcl_ObjType <int>
+  longValue   [1]
+[  42] {14:29:11}  <Tcl_Object ... complete>
+
+[  43] {14:29:11}  <... variable 'labeled' assigned value [1]>
+[  44] {14:29:11}  <setDot ... labeled ... end >
+[  45] {14:29:11}  <END TCL_CMD_SET_DOT>
+[  46] {14:29:11}  <TCL_CMD_SET_DOT>
+[  47] {14:29:11}  <TclIF_LogCommands ... have objects>
+[  48] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  49] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  50] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  51] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  52] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  53] {14:29:11}  <FAIL ... TclIF_LogCommands ... returning -1>
+[  54] {14:29:11}  <setDot ... alabeled>
+[  55] {14:29:11}  <object 2>
+[  56] {14:29:11}  <Tcl_Object ... >
+  ref count [2]
+  bytes <NULL>
+  length [0] 
+  Tcl_ObjType <int>
+  longValue   [1]
+[  57] {14:29:11}  <Tcl_Object ... complete>
+
+[  58] {14:29:11}  <... variable 'alabeled' assigned value [1]>
+[  59] {14:29:11}  <setDot ... alabeled ... end>
+[  60] {14:29:11}  <END TCL_CMD_SET_DOT>
+
+[  61] {14:29:11}  <TCL_CMD_SET_WINDOW>
+[  62] {14:29:11}  <TclIF_LogCommands ... have objects>
+[  63] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  64] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  65] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  66] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  67] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  68] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  69] {14:29:11}  <FAIL ... TclIF_LogCommands ... returning -1>
+[  70] {14:29:11}  <function setWindow ... attr mode>
+[  71] {14:29:11}  <set Window mode ... secondary argument is <none>>
+[  72] {14:29:11}  <function setWindow mode  ... end>
+[  73] {14:29:11}  <END TCL_CMD_SET_WINDOW>
+
+[  74] {14:29:11}  <TCL_CMD_SET_SPECIMEN>
+[  75] {14:29:11}  <TclIF_LogCommands ... have objects>
+[  76] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  77] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  78] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  79] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  80] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  81] {14:29:11}  <FAIL ... TclIF_LogCommands ... returning -1>
+[  82] {14:29:11}  <setSpecimen ... allocate>
+[  83] {14:29:11}  <object 2>
+[  84] {14:29:11}  <Tcl_Object ... >
+  ref count [2]
+  bytes <NULL>
+  length [0] 
+  Tcl_ObjType <int>
+  longValue   [3]
+[  85] {14:29:11}  <Tcl_Object ... complete>
+
+[  86] {14:29:11}  <allocating memory space for [3] context_t data types>
+[  87] {14:29:11}  <INFO : set specimen allocate >
+[  88] {14:29:11}  <model_index [0] ... model amount [3]>
+[  89] {14:29:11}  <setSpecimen allocate ... end>
+[  90] {14:29:11}  <END TCL_CMD_SET_SPECIMEN>
+
+
+[  91] {14:29:11}  <TCL_CMD_ADD>
+[  92] {14:29:11}  <TclIF_LogCommands ... have objects>
+[  93] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  94] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  95] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  96] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  97] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[  98] {14:29:11}  <FAIL ... TclIF_LogCommands ... returning -1>
+[  99] {14:29:11}  <function add ... shape InfoLandmarks>
+[ 100] {14:29:11}  <objects 2, 3, and 4>
+[ 101] {14:29:11}  <Tcl_Object ... >
+  ref count [2]
+  bytes <NULL>
+  length [0] 
+  Tcl_ObjType <int>
+  longValue   [5]
+[ 102] {14:29:11}  <Tcl_Object ... complete>
+
+[ 103] {14:29:11}  <Tcl_Object ... >
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [3]
+[ 104] {14:29:11}  <Tcl_Object ... complete>
+
+[ 105] {14:29:11}  <Tcl_Object ... >
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [3]
+[ 106] {14:29:11}  <Tcl_Object ... complete>
+
+[ 107] {14:29:11}  <INFO : landmark information :  rows [5]   colums  [3] nSpecimens [3]>
+[ 108] {14:29:11}  <function add ... shape InfoLandmarks end>
+[ 109] {14:29:11}  <END TCL_CMD_ADD>
+
+
+[ 110] {14:29:11}  <TCL_CMD_ADD>
+[ 111] {14:29:11}  <TclIF_LogCommands ... have objects>
+[ 112] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 113] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 114] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 115] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 116] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 117] {14:29:11}  <FAIL ... TclIF_LogCommands ... returning -1>
+[ 118] {14:29:11}  <function add ... shape InfoCurves>
+[ 119] {14:29:11}  <objects 2, 3, and 4>
+[ 120] {14:29:11}  <Tcl_Object ... >
+  ref count [2]
+  bytes <NULL>
+  length [0] 
+  Tcl_ObjType <int>
+  longValue   [2]
+[ 121] {14:29:11}  <Tcl_Object ... complete>
+
+[ 122] {14:29:11}  <Tcl_Object ... >
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [3]
+[ 123] {14:29:11}  <Tcl_Object ... complete>
+
+[ 124] {14:29:11}  <Tcl_Object ... >
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [3]
+[ 125] {14:29:11}  <Tcl_Object ... complete>
+
+[ 126] {14:29:11}  <INFO : curve information :  number of curves [2] curve length [3] number of specimens [3]>
+[ 127] {14:29:11}  <SUCCESS : Allocated [3] curve items>
+[ 128] {14:29:11}  <function add ... shape InfoCurves end>
+[ 129] {14:29:11}  <END TCL_CMD_ADD>
+
+
+[ 130] {14:29:11}  <TCL_CMD_ADD>
+[ 131] {14:29:11}  <TclIF_LogCommands ... have objects>
+[ 132] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 133] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 134] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 135] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 136] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 137] {14:29:11}  <FAIL ... TclIF_LogCommands ... returning -1>
+[ 138] {14:29:11}  <function add ... shape SetCurveIndex>
+[ 139] {14:29:11}  <object 2>
+[ 140] {14:29:11}  <Tcl_Object ... >
+  ref count [2]
+  bytes <NULL>
+  length [0] 
+  Tcl_ObjType <int>
+  longValue   [1]
+[ 141] {14:29:11}  <Tcl_Object ... complete>
+
+[ 142] {14:29:11}  <function add ... shape SetCurveIndex ... end>
+[ 143] {14:29:11}  <END TCL_CMD_ADD>
+
+
+[ 144] {14:29:11}  <TCL_CMD_ADD>
+[ 145] {14:29:11}  <TclIF_LogCommands ... have objects>
+[ 146] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 147] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 148] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 149] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 150] {14:29:11}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 151] {14:29:11}  <FAIL ... TclIF_LogCommands ... returning -1>
+[ 152] {14:29:11}  <function add ... shape curve>
+[ 153] {14:29:11}  <objects 2, 3, and 4>
+[ 154] {14:29:11}  <Tcl_Object ... >
+  ref count [2]
+  bytes <NULL>
+  length [0] 
+  Tcl_ObjType <int>
+  longValue   [1]
+[ 155] {14:29:11}  <Tcl_Object ... complete>
+
+[ 156] {14:29:11}  <Tcl_Object ... >
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [2]
+[ 157] {14:29:11}  <Tcl_Object ... complete>
+
+[ 158] {14:29:11}  <Tcl_Object ... >
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [3]
+[ 159] {14:29:11}  <Tcl_Object ... complete>
+
+[ 160] {14:29:11}  <beg[1]  mid [2] end [3]>
+[ 161] {14:29:11}  <model_amount  [3]>
+[ 162] {14:29:11}  <ERROR : dot_size() null first pointer ... How did this happen ??>
+[ 163] {14:29:11}  <ERROR : dot_size() null first pointer ... How did this happen ??>
+[ 164] {14:29:11}  <ERROR : dot_size() null first pointer ... How did this happen ??>
+[ 165] {14:29:11}  <calling curve_addDot ... i [0]>
+[ 166] {14:29:11}  <ERROR : curve_addDot : null pointer for dot>
+[ 167] {14:29:11}  <rv from call to curve_addDot (beginning dot) [-1]>
+[ 168] {14:29:11}  <ERROR : curve_addDot : null pointer for dot>
+[ 169] {14:29:11}  <rv from call to curve_addDot (middle dot)[-1]>
+[ 170] {14:29:11}  <ERROR : curve_addDot : null pointer for dot>
+[ 171] {14:29:11}  <rv from call to curve_addDot (ending dot)[-1]>
+[ 172] {14:29:11}  <ERROR  : NULL pointer for curve type >
+[ 173] {14:29:11}  <function add curve ... end>
+[ 174] {14:29:11}  <END TCL_CMD_ADD>
+
+
+[ 175] {14:29:18}  <TCL_CMD_ADD>
+[ 176] {14:29:18}  <TclIF_LogCommands ... have objects>
+[ 177] {14:29:18}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 178] {14:29:18}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 179] {14:29:18}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 180] {14:29:18}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 181] {14:29:18}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 182] {14:29:18}  <FAIL ... TclIF_LogCommands ... returning -1>
+
+[ 183] {14:29:18}  <ATTENTION : LOG MESSAGE [-23]>
+[ 184] {14:29:18}  <ATTENTION : LOG MESSAGE ... secondary integer [0]>
+
+[ 185] {14:29:18}  <TCL_RESULT changed to SUCCESS>
+
+[ 186] {14:29:21}  <TCL_CMD_ADD>
+[ 187] {14:29:21}  <TclIF_LogCommands ... have objects>
+[ 188] {14:29:21}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 189] {14:29:21}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 190] {14:29:21}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 191] {14:29:21}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 192] {14:29:21}  <FAIL ... TclIF_LogCommands ... did not write object to file. File closed ?>
+[ 193] {14:29:21}  <FAIL ... TclIF_LogCommands ... returning -1>
+[ 194] {14:29:21}  <ATTENTION : closing the log file with message [-4]>
+LOG FILE CLOSE

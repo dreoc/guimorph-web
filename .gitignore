@@ -1,3 +1,88 @@
-zips
-node_modules
-.Rproj.*
+# ---------------------------------------------------------------------------
+# GUImorph .gitignore
+#
+# Policy (Phase 0 cleanup):
+#  - Visual Studio IDE caches & build-output dirs are NEVER tracked.
+#  - Release artifacts WE produce (tkogl2.dll/.lib/.exp/.pdb, *.obj) are NOT
+#    tracked.
+#  - Third-party BUILD INPUTS are intentionally still tracked (Tcl/Tk stub
+#    libs, glut*, OpenGL32.lib, etc.) so a build still has its dependencies.
+#  - VS project/solution files (.sln/.vcxproj*) are kept for reference.
+# ---------------------------------------------------------------------------
+
+# --- Large archives / media ---
+zips/
+*.zip
+*.mp4
+
+# --- Node (tooling only) ---
+node_modules/
+
+# ===========================================================================
+# Visual Studio / MSBuild IDE caches (safe to delete; never track)
+# ===========================================================================
+.vs/
+*.diagsession
+*.tlog
+*.VC.db
+*.VC.opendb
+*.opensdf
+*.sdf
+*.suo
+*.aps
+*.ncb
+*.cache
+
+# ===========================================================================
+# VS build output / intermediate directories
+# (Scoped to the C-project build dirs so we do NOT match inst/libs/x64,
+#  which holds vendored third-party DLLs we keep.)
+# ===========================================================================
+integrated-guimorph-development_EOC/Project/tkogl2/Debug/
+integrated-guimorph-development_EOC/Project/tkogl2/[Rr]elease/
+integrated-guimorph-development_EOC/Project/tkogl2/x64/
+integrated-guimorph-development_EOC/Project/tkogl2/Win32/
+integrated-guimorph-development_EOC/Standalone/**/Debug/
+integrated-guimorph-development_EOC/Standalone/**/[Rr]elease/
+integrated-guimorph-development_EOC/Standalone/**/x64/
+integrated-guimorph-development_EOC/Standalone/**/Win32/
+
+# --- Compiler intermediates (anywhere) ---
+*.obj
+*.o
+*.ilk
+*.idb
+*.ipch
+*.pch
+*.res
+
+# ===========================================================================
+# Release artifacts WE build (do NOT track).
+# Named explicitly so vendored third-party .dll/.lib are still tracked.
+# ===========================================================================
+tkogl2.dll
+tkogl2_old.dll
+tkogl2.lib
+tkogl2.exp
+tkogl2.pdb
+*.pdb
+
+# ===========================================================================
+# R / RStudio session cruft
+# ===========================================================================
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# ===========================================================================
+# OS cruft
+# ===========================================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===========================================================================
+# Editor / agent local files
+# ===========================================================================
+.cursorrules

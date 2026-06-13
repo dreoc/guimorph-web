@@ -1,0 +1,224 @@
+Command Recording OPEN FILE
+<...................>
+Tcl_Object ... 
+  ref count [2]
+  bytes <add>
+  length [3] 
+  Tcl_ObjType <cmdName>
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <openLogFile>
+  length [11] 
+  Tcl_ObjType <NULL>
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [0] 
+  Tcl_ObjType <int>
+  longValue   [-1]
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [0]
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [0]
+Tcl_Object ... complete
+<...................>
+Tcl_Object ... 
+  ref count [2]
+  bytes <show>
+  length [4] 
+  Tcl_ObjType <cmdName>
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <landmark>
+  length [8] 
+  Tcl_ObjType <NULL>
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <xyz>
+  length [3] 
+  Tcl_ObjType <NULL>
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [1]
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [551959968] 
+  Tcl_ObjType <int>
+  longValue   [0]
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [0]
+Tcl_Object ... complete
+<...................>
+Tcl_Object ... 
+  ref count [2]
+  bytes <show>
+  length [4] 
+  Tcl_ObjType <cmdName>
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <landmark>
+  length [8] 
+  Tcl_ObjType <NULL>
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <xyz>
+  length [3] 
+  Tcl_ObjType <NULL>
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [2]
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [0]
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [0]
+Tcl_Object ... complete
+<...................>
+Tcl_Object ... 
+  ref count [2]
+  bytes <show>
+  length [4] 
+  Tcl_ObjType <cmdName>
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <landmark>
+  length [8] 
+  Tcl_ObjType <NULL>
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <xyz>
+  length [3] 
+  Tcl_ObjType <NULL>
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [3]
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [0]
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [0]
+Tcl_Object ... complete
+<...................>
+Tcl_Object ... 
+  ref count [2]
+  bytes <add>
+  length [3] 
+  Tcl_ObjType <cmdName>
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <closeLogFile>
+  length [12] 
+  Tcl_ObjType <NULL>
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [0] 
+  Tcl_ObjType <int>
+  longValue   [-4]
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [4526431] 
+  Tcl_ObjType <int>
+  longValue   [0]
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [984068614] 
+  Tcl_ObjType <int>
+  longValue   [0]
+Tcl_Object ... complete
+<...................>
+Tcl_Object ... 
+  ref count [2]
+  bytes <add>
+  length [3] 
+  Tcl_ObjType <cmdName>
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <endRecording>
+  length [12] 
+  Tcl_ObjType <NULL>
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [0] 
+  Tcl_ObjType <int>
+  longValue   [-25]
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [0]
+Tcl_Object ... complete
+Tcl_Object ... 
+  ref count [2]
+  bytes <NULL>
+  length [-1] 
+  Tcl_ObjType <int>
+  longValue   [0]
+Tcl_Object ... complete
+Command Recording FILE CLOSE
