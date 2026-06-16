@@ -244,6 +244,7 @@ switchTab <- function(e, id)
 
 
 
+    if (length(e$activeDataList) > 0) {
     e$activeDataList[[e$currImgId]][[8]] <- 0
 
     if (e$activeDataList[[e$currImgId]][[8]] == "NULL")
@@ -272,6 +273,7 @@ switchTab <- function(e, id)
       print ("3dDigitizeMain line 223 call to add turned off")
       # turn this OFF ! it causes repetative reloading od already existing data !
       #add("downsample", vertToDownsample, e$currImgId)
+    }
     }
 
     showPicture(e)
@@ -313,6 +315,7 @@ switchTab <- function(e, id)
 
 
 
+    if (length(e$activeDataList) > 0) {
     myNumberOfSpecimens <-length(e$activeDataList)
     print (paste ("Specimen Count :", myNumberOfSpecimens ))
     print (paste ("Current specimen number :", e$currImgId))
@@ -386,8 +389,7 @@ if(1)
       print (".............. all done .........................")
     }
 }
-
-
+    }
 
 
 
@@ -830,6 +832,12 @@ motion <- function(e, x, y)
 #show next specimen
 onNext <- function(e)
 {
+  if (length(e$activeDataList) == 0)
+  {
+    print ("function NEXT 3dDigitizeMain ... length of data list is 0 ... returning")
+    return ()
+  }
+
   nCurrA  <- e$activeDataList[[e$currImgId]][[9]]
   nCurrLM <- e$activeDataList[[e$currImgId]][[3]]
 
@@ -845,12 +853,6 @@ onNext <- function(e)
   print (paste ("e$currImgId : ", e$currImgId))
   print (paste ("number current anchors      " ,nCurrA))
   print (paste ("number of current landmarks ", nCurrLM))
-  }
-
-  if (length(e$activeDataList) == 0)
-  {
-    print ("function NEXT 3dDigitizeMain ... length of data list is 0 ... returning")
-    return ()
   }
 
   if (e$currImgId == length(e$activeDataList))
@@ -1527,7 +1529,7 @@ if(0)
         specimens[[i]],
         0.01,
         e$landmarkNum,
-        list(),
+        matrix(nrow = 0, ncol = 3),
         tmpt[i],
         c(0, 0),
         0,
@@ -1553,34 +1555,20 @@ if(0)
     print (paste ("nSpecimens  ", nSpecimens))
 }
 
-if(0)
+if (!is.null(curves) && length(curves) > 0 && nrow(curves) > 0)
 {
-    if ( 0 ==  length(curves))
-    {
-      print ("length of 'curves' is zero ... no curve data")
-      # do nothing if no curves ... NOT SURE ADD IN TCL_IF WILL HANDLE THIS !
-    }
-    else
-    {
-      add ("InfoCurves", nrow(curves), ncol(curves), nSpecimens)
+  add("InfoCurves", nrow(curves), ncol(curves), nSpecimens)
 
-      print ("ready to draw curves")
-      print ("ready to draw curves")
+  print("ready to draw curves")
+  print("ready to draw curves")
 
-      print ("ready to draw curves")
-      if (length(curves) != 0)
-      {
-        draw.curves(curves)
-        dgtDataList[[1]][[4]] <- curves
+  print("ready to draw curves")
+  draw.curves(curves)
+  dgtDataList[[1]][[4]] <- curves
+  e$dgtcurvestuff <- curves
 
-      }
-
-      print ("back from  draw curves")
-      print ("back from  draw curves")
-
-
-    }
-
+  print("back from  draw curves")
+  print("back from  draw curves")
 }
 
     e$activeDataList <- dgtDataList
@@ -2399,7 +2387,7 @@ loadPlyTest <- function(e, yourFileName)
 
       #updated to handle anchor points number
       dgtDataList[[length(dgtDataList) + 1]] <-
-        list(imgList[[i]], 0.01, 0, list(), "NULL", c(0, 0), 0, "NULL", 0) #last 0 for anchor points num
+        list(imgList[[i]], 0.01, 0, matrix(nrow = 0, ncol = 3), "NULL", c(0, 0), 0, "NULL", 0) #last 0 for anchor points num
     }
 
     print (paste("Tested for file existence : there are ", nSpecimens, " specimen files found"))
