@@ -1261,7 +1261,7 @@ loadPly <- function(e)
 
       #updated to handle anchor points number
       dgtDataList[[length(dgtDataList) + 1]] <-
-        list(imgList[[i]], 0.01, 0, list(), "NULL", c(0, 0), 0, "NULL", 0) #last 0 for anchor points num
+        list(imgList[[i]], 0.01, 0, matrix(nrow = 0, ncol = 3), "NULL", c(0, 0), 0, "NULL", 0) #last 0 for anchor points num
     }
 
     print (paste("Tested for file existence : there are ", nSpecimens, " specimen files found"))
