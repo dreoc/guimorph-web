@@ -110,6 +110,31 @@ itob <- function(int) {
   }
 }
 
+# gpagen return uses $coords in geomorph 4.x; legacy code used $coord
+.gm_aligned_coords <- function(gm.res) {
+  if (!is.null(gm.res$coords)) {
+    return(gm.res$coords)
+  }
+  gm.res$coord
+}
+
+.gm_results_or_warn <- function(e) {
+  gm.res <- e$gm.results
+  if (is.null(gm.res)) {
+    gm.res <- get0("gm.results", envir = .GlobalEnv, ifnotfound = NULL)
+  }
+  if (is.null(gm.res)) {
+    tkmessageBox(
+      title = "Information",
+      message = "Run Compute first",
+      icon = "info",
+      type = "ok"
+    )
+    return(NULL)
+  }
+  gm.res
+}
+
 #computes shape object data and performs analysis
 compute <- function(e) {
   #e$sliderNum<-nrow(e$activeDataList[[1]][[8]])
@@ -196,10 +221,10 @@ compute <- function(e) {
   }
 
   print("before gpagen")
-  e$gm.results <- gpagen(A=coords.A,
+  e$gm.results <- geomorph::gpagen(A=coords.A,
                          curves = curves,
                          surfaces = surfaces,
-                         max.iter = tclvalue(e$maxiter),
+                         max.iter = as.numeric(tclvalue(e$maxiter)),
                          PrinAxes = itob(tclvalue(e$PrinAxes)),
                          ProcD = itob(tclvalue(e$ProcD)),
                          Proj = itob(tclvalue(e$Proj)),
@@ -216,13 +241,26 @@ compute <- function(e) {
 save <- function(e) {
   filename <- tclvalue(tkgetSaveFile())
   if (nchar(filename)) {
-    dfram<-data.frame(Csize=e$gm.results$Csize,coords=two.d.array(e$gm.results$coord))
-    write.csv(dfram, paste(filename,".csv",sep=""))
+    gm.res <- .gm_results_or_warn(e)
+    if (is.null(gm.res)) {
+      return()
+    }
+    aligned <- .gm_aligned_coords(gm.res)
+    dfram <- data.frame(
+      Csize = gm.res$Csize,
+      coords = geomorph::two.d.array(aligned)
+    )
+    write.csv(dfram, paste(filename, ".csv", sep = ""))
   }
 }
 
 #graphs landmarks in xyz plane
 plotspecs <- function(e) {
-  geomorph::plotAllSpecimens(gm.results$coords, mean = TRUE, links = NULL,
-                             label = FALSE, plot.param=list(pt.bg="blue", pt.cex=as.numeric(tclvalue(e$ptcex)), mean.bg="red", mean.cex=as.numeric(tclvalue(e$meancex))))
+  gm.res <- .gm_results_or_warn(e)
+  if (is.null(gm.res)) {
+    return()
+  }
+  aligned <- .gm_aligned_coords(gm.res)
+  geomorph::plotAllSpecimens(aligned, mean = TRUE, links = NULL,
+                             label = FALSE, plot_param=list(pt.bg="blue", pt.cex=as.numeric(tclvalue(e$ptcex)), mean.bg="red", mean.cex=as.numeric(tclvalue(e$meancex))))
 }
