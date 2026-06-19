@@ -11,8 +11,8 @@ Full modernization of GUImorph on modern Windows R: validate the MinGW-built nat
 - [x] **Phase 1: Native Runtime Validation** — Prove `tkogl2.dll` loads and Tcl/OpenGL init works
 - [x] **Phase 2: Package Load & GUI Launch** — `load_all` + `GUImorph()` opens the window
 - [x] **Phase 3: 3D Viewer Smoke Test** — Load PLY specimen and confirm mesh renders
-- [ ] **Phase 4: Digitize Workflow** — Landmarks, curves, `.dgt` save/reload
-- [ ] **Phase 5: Analysis Round-Trip** — `geomorph` analysis + API migration
+- [x] **Phase 4: Digitize Workflow** — Landmarks, curves, `.dgt` save/reload
+- [x] **Phase 5: Analysis Round-Trip** — `geomorph` analysis + API migration
 - [ ] **Phase 6: Reproducible Dev Environment** — `renv`, build docs, DLL deploy workflow
 - [ ] **Phase 7: C Engine Modularization** — Split `tcl_if` god file into focused modules
 - [ ] **Phase 8: C Engine Deduplication** — Unify dot/anchor implementations
@@ -104,9 +104,9 @@ Plans:
 
 - [x] 04-02-PLAN.md — Fix curve slot init; validate legacy 3-click curve bind + Fit smoke (DGT-02)
 
-**Wave 2** *(blocked on Wave 1 completion)*
+**Wave 2**
 
-- [ ] 04-03-PLAN.md — Re-enable drawElements curve restore; multi-specimen save/reload round-trip (DGT-03, DGT-04)
+- [x] 04-03-PLAN.md — Re-enable drawElements curve restore; multi-specimen save/reload round-trip (DGT-03, DGT-04)
 
 **Cross-cutting constraints:**
 
@@ -125,13 +125,30 @@ Plans:
   2. At least one analysis (e.g. GPA via `gpagen`, PCA via `gm.prcomp`) runs on exported coordinates
   3. All deprecated API calls migrated (`procD.lm`/RRPP, etc.)
 
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 
-- [ ] 05-01: Inventory geomorph/Morpho call sites in R sources
-- [ ] 05-02: Run first analysis end-to-end on test `.dgt` data
-- [ ] 05-03: Migrate remaining breaking API calls
+- [ ] 05-01-PLAN.md — Inventory geomorph/Morpho call sites; HOT vs DEFERRED classification (ANAL-02)
+
+**Wave 1**
+
+- [x] 05-01-PLAN.md — Grep R sources → `05-INVENTORY.md` (ANAL-02)
+
+**Wave 2**
+
+- [x] 05-02-PLAN.md — Fix GPA hot-path APIs; GUI UAT on `test_fresh.dgt` Compute→Plot→Save (ANAL-01) — **complete 2026-06-19**
+
+**Wave 3**
+
+- [x] 05-03-PLAN.md — Close hot-path migration; mark ANAL-02/03 complete (ANAL-03) — **complete 2026-06-19**
+
+**Cross-cutting constraints:**
+
+- Landmarks-only GPA (3 LM × 2 specimens); sliding checkboxes OFF (D-01)
+- GPA hot path first; vendored `geomorph.support.code.r` deferred (D-10)
+- Manual Windows R GUI UAT; append to smoke-test-findings.md (D-13)
+- Reuse Phase 4 `test_fresh.dgt`; same-session reload (D-06, D-07)
 
 ### Phase 6: Reproducible Dev Environment
 
@@ -144,13 +161,30 @@ Plans:
   2. `BUILD.md` covers WSL build → DLL deploy → Windows R test
   3. New contributor can follow docs and reach working GUI without tribal knowledge
 
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 
-- [ ] 06-01: Initialize `renv` and pin dependencies
-- [ ] 06-02: Update BUILD.md with validated deploy workflow
-- [ ] 06-03: Add quick-start section to project README
+- [x] 06-01-PLAN.md — Initialize renv in GUImorphDevelopment/; snapshot deps; warning baseline + HOT triage (DEV-01)
+
+**Wave 1**
+
+- [ ] 06-01-PLAN.md — renv lockfile, scaffold, restore verification checkpoint (DEV-01)
+
+**Wave 2**
+
+- [ ] 06-02-PLAN.md — Root BUILD.md, deploy-dll.ps1, tkogl2/BUILD.md restructure; deploy UAT checkpoint (DEV-02, DEV-03)
+
+**Wave 3**
+
+- [x] 06-03-PLAN.md — README quick-start + Known behavior quirks linking to BUILD.md (DEV-02)
+
+**Cross-cutting constraints:**
+
+- renv restore on Windows R only (D-04); WSL not contributor default (D-09)
+- Windows-native MSYS2 MinGW primary build path (D-11)
+- Warning triage HOT only after renv baseline (D-19)
+- deploy-dll.ps1: validate source, repo-root paths, backup before swap (D-14)
 
 ### Phase 7: C Engine Modularization
 
@@ -219,9 +253,9 @@ Phases execute in numeric order: 1 → 2 → … → 9
 | 1. Native Runtime Validation | 3/3 | Complete | 2026-06-15 |
 | 2. Package Load & GUI Launch | 3/3 | Complete | 2026-06-15 |
 | 3. 3D Viewer Smoke Test | 3/3 | Complete | 2026-06-15 |
-| 4. Digitize Workflow | 1/2 | In Progress|  |
+| 4. Digitize Workflow | 3/3 | Complete | 2026-06-15 |
 | 5. Analysis Round-Trip | 0/3 | Not started | - |
-| 6. Reproducible Dev Environment | 0/3 | Not started | - |
+| 6. Reproducible Dev Environment | 2/3 | In Progress|  |
 | 7. C Engine Modularization | 0/3 | Not started | - |
 | 8. C Engine Deduplication | 0/3 | Not started | - |
 | 9. C Engine Cleanup & Validation | 0/3 | Not started | - |
@@ -233,11 +267,39 @@ Phases execute in numeric order: 1 → 2 → … → 9
 - GSD Phase 1 (runtime): **Complete** — MinGW `build/tkogl2.dll` deployed to `inst/libs/x64/`, `Tkogl2_Init` verified, Windows R load confirmed (2026-06-15)
 - GSD Phase 2 (package/GUI): **Complete** — `load_all`, MinGW DLL wired, startup OOB fixed (`activeDataList` guards) — 2026-06-15
 - GSD Phase 3 (viewer): **Complete** — mesh visible (`C13.1.ply`); landmark placement confirmed during viewer use (2026-06-15)
-- GSD Phase 4 (digitize): **In progress** — 04-01 landmark placement validated (double-click to place; single-click is pick/select only)
-- **Open:** 04-02 curves, 04-03 `.dgt` save/reload; capture 26 warnings
+- GSD Phase 4 (digitize): **Complete** — DGT-01–04 validated; openDgt reload fixes for Surface=0 + queryFromR (2026-06-15)
+- **Open:** capture 26 warnings (D-10); multi-specimen curve overlay documented for future work
 
 **Strategic decision (locked):** Option A — rehabilitate C engine in place (Windows-only, legacy GL). Options B (rgl) and C (Shiny/WebGL) out of scope.
 
+## Backlog
+
+Parking-lot items (999.x) — not sequenced; promote with `/gsd-review-backlog` when ready.
+
+### Phase 999.1: GPA plot window opens but nothing rendered (BACKLOG)
+
+**Goal:** Fix Plot Aligned Specimens so aligned landmark geometry is visible after Compute.
+**Source:** Phase 5 UAT (2026-06-19) — rgl window opens; canvas appears empty.
+**Context:** `plotspecs()` → `geomorph::plotAllSpecimens` on 3×3×2 gpagen `$coords`; Compute + Save CSV work. Suspect rgl/Tk event-loop interaction, plot_param sizing, or geomorph 4.x 3D backend on Windows R 4.6.
+**Requirements:** TBD
+**Plans:** 2/3 plans executed
+
+Plans:
+
+- [ ] TBD (promote with `/gsd-review-backlog` when ready)
+
+### Phase 999.2: openDgt shows second specimen first on load (BACKLOG)
+
+**Goal:** After Load DGT File, GUI should display specimen 1 without Next→Previous workaround.
+**Source:** Phase 5 UAT (2026-06-19) — multi-specimen `test_fresh.dgt`; `currImgId` is 1 but viewer shows specimen 2 until user navigates Next then Previous.
+**Context:** `drawElements` loads all specimens sequentially; C display ends on last loaded. Attempted fix (`showPicture(e)` after openDgt) did not resolve in user retest.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (promote with `/gsd-review-backlog` when ready)
+
 ---
 *Roadmap created: 2026-06-13*
-*Updated: 2026-06-15 — Phase 3 complete; 04-01 validated (landmarks via double-click, not a render bug)*
+*Updated: 2026-06-15 — Phase 4 complete (DGT-01–04 validated)*

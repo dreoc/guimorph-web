@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 4 planned — ready for execute-phase
-last_updated: "2026-06-16T01:25:20.701Z"
-last_activity: 2026-06-16 -- Phase 04 execution started
+stopped_at: Phase 6 context gathered
+last_updated: "2026-06-19T18:35:03.417Z"
+last_activity: 2026-06-19 -- Phase 06 execution started
 progress:
-  total_phases: 9
-  completed_phases: 0
-  total_plans: 2
-  completed_plans: 0
-  percent: 0
+  total_phases: 11
+  completed_phases: 2
+  total_plans: 8
+  completed_plans: 5
+  percent: 18
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-15)
 
 **Core value:** Researcher can digitize a 3D specimen in the GUI, run `geomorph` analysis end-to-end, and maintain a modular C engine on Windows R.
-**Current focus:** Phase 04 — digitize-workflow
+**Current focus:** Phase 06 — reproducible-dev-environment
 
 ## Current Position
 
-Phase: 04 (digitize-workflow) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 04
-Last activity: 2026-06-16 -- Phase 04 execution started
+Phase: 06 (reproducible-dev-environment) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 06
+Last activity: 2026-06-19 -- Phase 06 execution started
 
-Progress: [███░░░░░░░] ~33%
+Progress: [█████░░░░░] ~56%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
+- Total plans completed: 11
 - Average duration: —
-- Total execution time: 0 hours
+- Total execution time: —
 
 ## Accumulated Context
 
@@ -49,14 +49,17 @@ Progress: [███░░░░░░░] ~33%
 - **Landmark placement requires double-click** on canvas (`addDot` via `<Double-Button-1>`); single-click triggers pick/select (`set dot selected`) — not a display bug (2026-06-15)
 - WSL UNC paths work for package load and PLY file access
 - Legacy 2020 DLL backed up before MinGW swap
+- **Curve slot `[[4]]` must be matrix** for `rbind`/`openDgt` — `list()` init was a blocker (04-02)
+- **`openDgt` Surface=0** is valid; reload path fixed (`printf`, vacuous NA, `queryFromR`/`e` scope) (04-03)
+- **ANAL-03 scoped to hot path** — vendored procD and Morpho surface paths deferred per D-10; full replacement when sliding GPA enabled (2026-06-19)
 
 ### Blockers/Concerns
 
 - 26 warnings on `load_all` — not yet captured (`warnings()`)
-- Curves (DGT-02) and `.dgt` save/reload (DGT-03, DGT-04) not yet validated
+- Per-specimen curve bind / C curve state on specimen switch — future work
 
 ## Session Continuity
 
-Last session: 2026-06-15
-Stopped at: Phase 4 planned — ready for execute-phase
-Resume file: `.planning/phases/04-digitize-workflow/04-02-PLAN.md`
+Last session: 2026-06-19
+Stopped at: Phase 6 context gathered
+Resume file: .planning/phases/06-reproducible-dev-environment/06-CONTEXT.md
