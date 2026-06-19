@@ -1465,20 +1465,23 @@ if(0)
   set("specimen", "allocate", nSpecimens)
   print (paste ("Memory allocated in C library for", nSpecimens, "specimens"))
 
+  e$lmkLoadedInC <- as.list(rep(FALSE, nSpecimens))
+  names(e$lmkLoadedInC) <- as.character(seq_len(nSpecimens))
 
   # we assume that the landmark data is of identical size across the
   # nSpecimens. Element 0 does not exist but the R environment returns
   # the row and column information
 
-  landmarks <- digitize[, , 0]
-  print ("LINE 1269 landmarks for argument 0")
+  # Use first specimen slice for landmark dimensions (R is 1-based; index 0 is empty)
+  landmarks <- digitize[, , 1]
+  print ("LINE 1269 landmarks for argument 1 (first specimen)")
   print(landmarks)
 
 
 
   # Tell the tcl_if function the sizes of the anchors and the landmarks
   add("InfoLandmarks", nrow(landmarks), ncol(landmarks), nSpecimens)
-  if (!anyNA(anchors[, , i]) && !is.null(anchors))
+  if (!is.null(anchors) && dim(anchors)[3] >= 1 && !anyNA(anchors[, , 1]))
   {
    add("InfoAnchors",  nrow(anchors), ncol(anchors), nSpecimens  )
   }
@@ -2563,10 +2566,10 @@ openDgt <- function(e)
     print (paste ("length of surface data ", length(surfaceData) ))
 
 
-    if(is.null( surfaceData ))
+    if (is.null(surfaceData))
     {
-      print ("NULL surface data : returning FALSE")
-      return(FALSE)
+      print("NULL surface data : treating as Surface=0 (no sliders)")
+      surfaceData <- list()
     }
 
 

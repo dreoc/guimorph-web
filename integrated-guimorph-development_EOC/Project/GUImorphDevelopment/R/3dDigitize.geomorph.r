@@ -110,6 +110,21 @@ itob <- function(int) {
   }
 }
 
+# C landmark query can duplicate after specimen switch (queryFromR false negative).
+# Prefer C when count matches; fall back to R-side activeDataList[[10]] from openDgt.
+.landmarks_for_specimen <- function(e, i) {
+  expected <- as.numeric(e$landmarkNum)
+  from_c <- getLandmark(i)
+  if (!is.null(from_c) && nrow(from_c) == expected) {
+    return(from_c)
+  }
+  stored <- e$activeDataList[[i]][[10]]
+  if (!is.null(stored) && is.matrix(stored) && nrow(stored) == expected) {
+    return(stored)
+  }
+  from_c
+}
+
 # gpagen return uses $coords in geomorph 4.x; legacy code used $coord
 .gm_aligned_coords <- function(gm.res) {
   if (!is.null(gm.res$coords)) {
@@ -147,8 +162,8 @@ compute <- function(e) {
   coords.anc <- array(NA, c(as.numeric(e$anchorNum), 3, nSpecimen))
   #grabs landmarks for ith specimen
   for(i in 1:nSpecimen){
-    landmarks <- getLandmark(i)
-    if(nrow(landmarks) != as.numeric(e$landmarkNum)) {
+    landmarks <- .landmarks_for_specimen(e, i)
+    if(is.null(landmarks) || nrow(landmarks) != as.numeric(e$landmarkNum)) {
       tkmessageBox(title = "Information", message = paste("Incorrect num of landmark for specimen", i), icon = "info", type = "ok")
       return ()
     }

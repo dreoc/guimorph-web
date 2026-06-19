@@ -42,6 +42,7 @@ init.digitize <- function(e)
   # been loaded, say as a result of reading a .dgt file
   e$landmarksPresentInMemory <- 0
   e$anchorsPresentInMemory <- 0
+  e$lmkLoadedInC <- list()
 
   e$dColor <- c(1, 0, 0)     # initial dot color is RED
   e$daColor <- c(0, 1, 0)    # initial anchor color is GREEN
@@ -611,6 +612,10 @@ onLabelAnchor <- function(e)
 
 onPlaceAnchor <- function(e)
 {
+  if (length(e$activeDataList) == 0) {
+    return()
+  }
+
   if (e$activeDataList[[e$currImgId]][[3]] == e$landmarkNum &&
       tclvalue(e$placeAnchorsVar) == "1")
   {
@@ -1045,6 +1050,10 @@ updateAnchorNum <- function(e, delt)
 updateWidgets.digitize <- function(e)
 {
   #print("updateWidgets.digitize ")
+  if (length(e$activeDataList) == 0) {
+    return()
+  }
+
   dotNum <- e$activeDataList[[e$currImgId]][[3]]
   tkconfigure(e$landMarkNumLabel, text = paste("Number of Landmarks: ", dotNum))
   tkconfigure(e$imgPath, text = paste("Specimen Id: ", e$activeDataList[[e$currImgId]][[1]]))
@@ -1055,6 +1064,10 @@ updateWidgets.digitize <- function(e)
 
 updateWidgets.anchor <- function(e)
 {
+  if (length(e$activeDataList) == 0) {
+    return()
+  }
+
   anchorNum <- e$activeDataList[[e$currImgId]][[9]]
   tkconfigure(e$anchorNumLabel, text = paste("Number of Anchors: ", anchorNum))
   tkconfigure(e$imgPath, text = paste("Specimen Id: ", e$activeDataList[[e$currImgId]][[1]]))
@@ -1231,11 +1244,16 @@ draw.digitize <- function(e, id, specimen, landmarks)
 {
 
   sliceID <- id
-  add("queryFromR", 1, sliceID);
-  add("queryFromR", 2, sliceID);
+  add("queryFromR", 1, sliceID)
+  lmQuery <- suppressWarnings(as.integer(
+    tclvalue(tcl("add", "queryFromR", 2, sliceID, 0))
+  ))
+  if (is.na(lmQuery)) lmQuery <- 0L
+  e$landmarksPresentInMemory <- lmQuery
+  alreadyLoaded <- isTRUE(e$lmkLoadedInC[[as.character(id)]])
+  print(paste("landmarks already in C code", lmQuery, "R-tracked loaded:", alreadyLoaded))
 
-
-  if (0 == e$landmarksPresentInMemory)
+  if (!alreadyLoaded && lmQuery == 0L)
   {
 
     print ("file 3dDigitize.digitize ... function draw.digitize ... line 1229" )
@@ -1263,10 +1281,13 @@ draw.digitize <- function(e, id, specimen, landmarks)
       add("rawdot", landmarks[j, 1], landmarks[j, 2], landmarks[j, 3])
     }
     add("InfoLandmarks_complete", 1, -1, -2)
+    e$lmkLoadedInC[[as.character(id)]] <- TRUE
   }
   else
   {
     print ("landmarks already loaded in memory ... skipped adding more landmarks")
+    add("specimen", specimen, id)
+    set("specimen", "id", id)
   }
 
 
