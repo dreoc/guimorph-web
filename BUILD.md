@@ -178,6 +178,18 @@ For maintainer UAT history and warning triage, see `.planning/smoke-test-finding
 
 ---
 
+## C source layout (Phase 7)
+
+Incremental modularization of `tcl_if_ZARF_9.c` (Option A). The god file still holds window setup, runtime state, logging, and `Tkogl2_Init` until plans 07-02 and 07-03.
+
+| File | Responsibility |
+|------|----------------|
+| `tcl_dispatch.c` | Tcl handlers (`add`, `show`, `setSpecimen`, …), draw pass (`drawDots`, `onDisplay`), `Wrapper_Get*` helpers |
+| `tcl_if_ZARF_9.c` | Globals, `initialize_state`, `setWindowId`/`setWindow`, logging, `Tkogl2_Init` (until 07-03) |
+| `dot_ZARF_9.c`, `curve_ZARF_9.c`, `ogl_*.c` | Unchanged logic |
+
+---
+
 ## 7. Advanced: WSL cross-compile
 
 Maintainers may cross-compile from WSL using the Linux-host toolchain file. This is **not**
