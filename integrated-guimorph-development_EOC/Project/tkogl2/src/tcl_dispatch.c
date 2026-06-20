@@ -41,6 +41,29 @@ extern point_t downSampleOffset;
 extern char messageBuffer[128];
 extern char buffer[1024];
 extern int UT_MY_INTEGER_VALUE;
+extern int temp_index;
+
+extern float GBL_INWORK_LABEL_SCALEFACTOR_MPY;
+extern float GBL_INWORK_LABEL_SCALEFACTOR_ADD;
+extern float GBL_INWORK_CURVE_SCALEFACTOR_MPY;
+extern float GBL_INWORK_CURVE_SCALEFACTOR_ADD;
+extern float GBL_ROTATION_ANGLE_X;
+extern float GBL_ROTATION_ANGLE_Y;
+extern int GBL_ENABLE_TCL_OBJECT_LOGGING;
+extern int GBL_LANDMARKS_NUM_SPECIMENS;
+extern int GBL_SET_NUMBER_OF_LANDMARKS;
+extern int GBL_SET_NUMBER_OF_ANCHORS;
+extern model_t* GBL_PTR_TO_A_MODEL;
+extern curve_t* GBL_PTR_CURVE_1;
+extern curve_t* GBL_PTR_CURVE_2;
+extern curve_t* GBL_PTR_CURVE_3;
+extern curve_t* GBL_PTR_CURVE_4;
+extern curve_t* GBL_PTR_CURVE_5;
+extern curve_t* GBL_PTR_CURVE_6;
+
+extern int resetContext(int id, float maxXY);
+extern int unit_test_ogl_loadLandmark(const char* filename);
+extern int unit_test_ogl_loadCurve(const char* filename);
 
 extern void* ALLOCATE_WRAPPER(unsigned int howMuch);
 extern void FREE_WRAPPER(void* pointer);
