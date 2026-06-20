@@ -256,14 +256,26 @@ There were 26 warnings (use warnings() to see them)
 
 ## Phase 6 — BUILD.md UAT (06-02)
 
-**Date:** 2026-06-19 (pending human UAT)  
-**Status:** ⏳ Docs + deploy script written; MSYS2 native build UAT not yet run
+**Date:** 2026-06-19  
+**Environment:** Windows PowerShell, WSL UNC repo path  
+**Status:** ⏳ Deploy script verified; GUI smoke after deploy pending user confirm
 
 | Step | Result | Notes |
 |------|--------|-------|
-| Root `BUILD.md` | ✅ | Prerequisites through troubleshooting + WSL appendix link |
-| `scripts/deploy-dll.ps1` | ✅ | RepoRoot resolution, Src validation, `.bak` backup |
-| `tkogl2/BUILD.md` restructure | ✅ | Windows-native primary; WSL cross-compile appendix |
-| MSYS2 native build UAT (A1) | ⏳ | Human verify per plan 06-02 Task 3 |
-| deploy + GUI smoke after deploy | ⏳ | Human verify per D-16 |
+| Root `BUILD.md` | ✅ | Committed in `db55a3b` |
+| `scripts/deploy-dll.ps1` | ✅ | Fixed ASCII throw string (em-dash broke PS parser); exit 0 |
+| Deploy backup `.bak` | ✅ | Prior `inst/libs/x64/tkogl2.dll` (1,242,624 B, 2020) → `tkogl2.dll.bak` |
+| Deploy swap | ✅ | WSL MinGW `build/tkogl2.dll` (883,519 B, 2026-06-13) → `inst/libs/x64/` |
+| MSYS2 native build UAT (A1) | **DEFERRED** | Maintainer used existing WSL cross-compile artifact (Option B) |
+| Post-deploy GUI smoke (D-16) | ✅ **After rollback** | Restored `.bak` (1.2 MB 2020 DLL); mesh + `.dgt` visuals confirmed — user approved Checkpoint 2 |
 
+**Recovery applied:** `Copy-Item tkogl2.dll.bak → tkogl2.dll` — do not deploy `build/tkogl2.dll` until UAT'd for render.
+
+**Deploy command (verified mechanically):**
+
+```powershell
+cd \\wsl$\Ubuntu\home\akagi\home\GUImorph
+powershell -ExecutionPolicy Bypass -File scripts/deploy-dll.ps1
+```
+
+---

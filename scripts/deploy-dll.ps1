@@ -10,7 +10,7 @@ $Dest = Join-Path $DestDir "tkogl2.dll"
 $Backup = Join-Path $DestDir "tkogl2.dll.bak"
 
 if (-not (Test-Path $Src)) {
-    throw "Build output not found: $Src — run Native Build in BUILD.md first."
+    throw "Build output not found: $Src - run Native Build in BUILD.md first."
 }
 
 if (-not (Test-Path $DestDir)) {

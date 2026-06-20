@@ -13,7 +13,7 @@ Full modernization of GUImorph on modern Windows R: validate the MinGW-built nat
 - [x] **Phase 3: 3D Viewer Smoke Test** — Load PLY specimen and confirm mesh renders
 - [x] **Phase 4: Digitize Workflow** — Landmarks, curves, `.dgt` save/reload
 - [x] **Phase 5: Analysis Round-Trip** — `geomorph` analysis + API migration
-- [ ] **Phase 6: Reproducible Dev Environment** — `renv`, build docs, DLL deploy workflow
+- [x] **Phase 6: Reproducible Dev Environment** — `renv`, build docs, DLL deploy workflow (completed 2026-06-20)
 - [ ] **Phase 7: C Engine Modularization** — Split `tcl_if` god file into focused modules
 - [ ] **Phase 8: C Engine Deduplication** — Unify dot/anchor implementations
 - [ ] **Phase 9: C Engine Cleanup & Validation** — Globals, debug removal, regression test
@@ -169,11 +169,11 @@ Plans:
 
 **Wave 1**
 
-- [ ] 06-01-PLAN.md — renv lockfile, scaffold, restore verification checkpoint (DEV-01)
+- [x] 06-01-PLAN.md — renv lockfile, scaffold, restore verification checkpoint (DEV-01)
 
 **Wave 2**
 
-- [ ] 06-02-PLAN.md — Root BUILD.md, deploy-dll.ps1, tkogl2/BUILD.md restructure; deploy UAT checkpoint (DEV-02, DEV-03)
+- [x] 06-02-PLAN.md — Root BUILD.md, deploy-dll.ps1, tkogl2/BUILD.md restructure; deploy UAT checkpoint (DEV-02, DEV-03)
 
 **Wave 3**
 
@@ -255,7 +255,7 @@ Phases execute in numeric order: 1 → 2 → … → 9
 | 3. 3D Viewer Smoke Test | 3/3 | Complete | 2026-06-15 |
 | 4. Digitize Workflow | 3/3 | Complete | 2026-06-15 |
 | 5. Analysis Round-Trip | 0/3 | Not started | - |
-| 6. Reproducible Dev Environment | 2/3 | In Progress|  |
+| 6. Reproducible Dev Environment | 3/3 | Complete   | 2026-06-20 |
 | 7. C Engine Modularization | 0/3 | Not started | - |
 | 8. C Engine Deduplication | 0/3 | Not started | - |
 | 9. C Engine Cleanup & Validation | 0/3 | Not started | - |
@@ -282,7 +282,7 @@ Parking-lot items (999.x) — not sequenced; promote with `/gsd-review-backlog` 
 **Source:** Phase 5 UAT (2026-06-19) — rgl window opens; canvas appears empty.
 **Context:** `plotspecs()` → `geomorph::plotAllSpecimens` on 3×3×2 gpagen `$coords`; Compute + Save CSV work. Suspect rgl/Tk event-loop interaction, plot_param sizing, or geomorph 4.x 3D backend on Windows R 4.6.
 **Requirements:** TBD
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 

@@ -79,6 +79,10 @@ The script:
 - Backs up the current DLL to `inst/libs/x64/tkogl2.dll.bak` before overwrite
 - Copies the build artifact to `GUImorphDevelopment/inst/libs/x64/tkogl2.dll`
 
+> **Rollback:** If the viewer is blank after deploy, restore the backup:
+> `Copy-Item inst/libs/x64/tkogl2.dll.bak inst/libs/x64/tkogl2.dll -Force`
+> Only deploy from `build/` after UAT confirms mesh + `.dgt` render on your machine.
+
 ### Manual fallback
 
 ```powershell
