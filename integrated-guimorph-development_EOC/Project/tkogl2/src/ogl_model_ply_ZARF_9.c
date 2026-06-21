@@ -733,6 +733,7 @@ int  ogl_loadModel(const char* filename, model_t* model)
 	// Read vertices
 	i = 0;
 	int anotherCounter = 0;
+	int anyColorSeen = 0;   // tracks whether the PLY carries non-zero vertex colors
 	for (int iterator = 0; iterator < vertexNum; iterator++)
 	{
 		fgets(buffer, HEADER_SIZE, file);
@@ -741,6 +742,10 @@ int  ogl_loadModel(const char* filename, model_t* model)
 		{
 			sscanf(buffer, "%f %f %f %f %f %f", &Vertex_Buffer[i], &Vertex_Buffer[i + 1], &Vertex_Buffer[i + 2],
 				&VertexColor_Buffer[i], &VertexColor_Buffer[i + 1], &VertexColor_Buffer[i + 2]);
+			if (VertexColor_Buffer[i] != 0.0f || VertexColor_Buffer[i + 1] != 0.0f || VertexColor_Buffer[i + 2] != 0.0f)
+			{
+				anyColorSeen = 1;
+			}
 		}
 		else
 		{
@@ -764,6 +769,17 @@ int  ogl_loadModel(const char* filename, model_t* model)
 			}
 		}
 		i += 3;
+	}
+
+	// Geometry-only scans (e.g. NextEngine PLYs) declare red/green/blue properties but
+	// store all-zero colors. A zero color array renders the mesh flat black. Drop it so
+	// ogl_drawModel uses the lighting path instead, producing a visible shaded surface.
+	if (model->color != NULL && !anyColorSeen)
+	{
+		free(model->color);
+		model->color = NULL;
+		model->colorSize = 0;
+		simpleLog("INFO : PLY vertex colors are all zero -> using lighting (no color array)");
 	}
 
 	model->vertexCountActual = anotherCounter;

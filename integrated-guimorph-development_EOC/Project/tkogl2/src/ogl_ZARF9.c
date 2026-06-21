@@ -16,6 +16,7 @@ int  ogl_init()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);/*defines the operation of blending for all draw buffers when it is enabled*/
 	glClearDepth(1.0f); /*clear value for depth buffer*/
 	glEnable(GL_DEPTH_TEST); /*do depth comparisons and update depth buffer*/
+	glEnable(GL_NORMALIZE); /*renormalize normals after model scaling so lighting stays correct*/
 	glEnable(GL_LINE_SMOOTH); /*draw lines with correct filtering, otherwise draw aliased lines*/
 	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST); /*indicates sampling quality of antialiased(smoothing jagged edges on curved lines and diagonals) lines, as well as more pixel fragments being generated during rasterization*/
 	glDepthFunc(GL_LEQUAL); /*depth buffer comparisons, passes if incoming depth value is less than or equal to stored depth value*/
@@ -26,7 +27,7 @@ int  ogl_init()
 	gluLookAt(0, 0, 1, 0, 0, 0, 0, 1, 0); /*defines a viewing transform for camera*/
 	glMatrixMode(GL_MODELVIEW); /*now apply matrix operations to modelview stack*/
 	glLoadIdentity(); /*replaces current matrix with identity matrix*/
-	glClearColor(1.0, 1.0, 1.0, 0.0); /*clear values for color buffers*/
+	glClearColor(1.0, 1.0, 1.0, 0.0);
 	return 0;
 }
 
@@ -67,7 +68,8 @@ int ogl_enableLight()
 	glEnable(GL_DEPTH_TEST);
 
 	glShadeModel(GL_SMOOTH); /*choosing shading technique, in this case, smooth causes the computed colors of the vertices to be interpolated as the primitive is rasterized.*/
-	glLightModeli(GL_FRONT, GL_AMBIENT_AND_DIFFUSE); /*sets light MODEL parameters*/
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE); /*two-sided lighting (was glLightModeli(GL_FRONT,...) which is GL_INVALID_ENUM)*/
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE); /*track glColor for material*/
 	glEnable(GL_COLOR_MATERIAL); /*color driven materials enabled*/
 	return 0;
 }

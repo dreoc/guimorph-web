@@ -515,8 +515,14 @@ ui.main <- function(e)
 
 
   ##print(paste("canvas frame : ", canvasFrame))
+  # Ensure the canvas frame's native window (HWND) is fully created and mapped
+  # before the C engine binds the OpenGL/WGL context to it. Binding to a
+  # not-yet-realized window makes GL render to a stale/wrong surface (blank
+  # viewport + ghosted sibling widgets).
+  tcl("update", "idletasks")
   set("window", "id", canvasFrame)
   set("window", "size", 600, 600)
+  tcl("update", "idletasks")
 
 
 
@@ -2755,6 +2761,9 @@ openDgt <- function(e)
     updateWidgets(e)
 
     e$indicator <- 1
+
+    e$currImgId <- 1
+    showPicture(e)
   }
 
 
