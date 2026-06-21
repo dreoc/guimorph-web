@@ -1,8 +1,13 @@
 # Building and developing GUImorph
 
 GUImorph is an R package with a native **Windows DLL** (`tkogl2.dll`) loaded at runtime
-via Tcl/Tk. Contributors need **Windows R 4.6+**, a **Windows-native MinGW build** of
+via Tcl/Tk. Contributors need **Windows R 4.6+**, a **Windows-native MSVC build** of
 `tkogl2`, and a reproducible R library via **renv**.
+
+> **Toolchain note (2026-06):** Build `tkogl2.dll` with **MSVC** (the toolchain that
+> produced the original working DLL). MinGW-w64 builds (WSL cross-compile *or* MSYS2
+> native) currently link successfully but **render incorrectly** (black/blank mesh), so
+> they are not supported for distribution. See `.planning/smoke-test-findings.md`.
 
 > **Important:** `tkogl2.dll` is **gitignored** and not committed. A fresh clone plus
 > `renv::restore()` alone does **not** provide a working GUI — you must **build and deploy**
@@ -23,7 +28,8 @@ For compile internals, see
 | **Windows 10+** | — |
 | **R 4.6+** | `winget install -e --id RProject.R` |
 | **Git** | `winget install -e --id Git.Git` |
-| **MSYS2** (native C build) | `winget install -e --id MSYS2.MSYS2` |
+| **VS Build Tools** (MSVC C compiler) | `winget install -e --id Microsoft.VisualStudio.2022.BuildTools --override "--quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"` |
+| **CMake** | `winget install -e --id Kitware.CMake` |
 
 Clone this repository to a **Windows path** (not a WSL-only mount if you can avoid it):
 
@@ -36,28 +42,26 @@ After installing R via winget, restart your terminal so `R` and `Rscript` are on
 
 ---
 
-## 2. Native build (Windows — primary)
+## 2. Native build (Windows — MSVC, primary)
 
-Open the **MSYS2 UCRT64** shell (Start → MSYS2 UCRT64).
+Open a **Developer PowerShell for VS** (or any PowerShell after running the VS
+`vcvars64.bat`), then configure and build from the `tkogl2` project directory:
 
-Install the toolchain once:
-
-```bash
-pacman -S --needed mingw-w64-ucrt-x86_64-toolchain cmake make
+```powershell
+cd C:\dev\GUImorph\integrated-guimorph-development_EOC\Project\tkogl2
+cmake -B build-msvc -G "Visual Studio 17 2022" -A x64
+cmake --build build-msvc --config Release
 ```
 
-Configure and build from the `tkogl2` project directory:
+On success the DLL is at **`build-msvc\Release\tkogl2.dll`** (multi-config generators
+place output under the config subfolder). All required import libraries
+(`tclstub86_64.lib`, `glut64.lib`) and the GL/glut shim are vendored in-tree — no extra
+SDK setup beyond VS Build Tools is needed. The CRT is statically linked, so the DLL is
+self-contained (no VC++ redistributable required on end-user machines).
 
-```bash
-cd /c/dev/GUImorph/integrated-guimorph-development_EOC/Project/tkogl2
-cmake -B build -S . -G "MinGW Makefiles"
-cmake --build build -j
-```
-
-On success you get **`build/tkogl2.dll`**.
-
-> Do **not** use `cmake/mingw-w64-x86_64.cmake` on Windows — that file is for **WSL
-> cross-compile** only (Linux sysroot paths).
+> **MinGW is not supported for distribution.** The MinGW-w64 paths (MSYS2 native or the
+> WSL cross-compile via `cmake/mingw-w64-x86_64.cmake`) build but render a black/blank
+> mesh. Use the MSVC path above.
 
 ---
 
@@ -86,13 +90,18 @@ The script:
 ### Manual fallback
 
 ```powershell
-$Src = "integrated-guimorph-development_EOC/Project/tkogl2/build/tkogl2.dll"
+# MSVC build output (primary). For a MinGW build use .../tkogl2/build/tkogl2.dll instead.
+$Src = "integrated-guimorph-development_EOC/Project/tkogl2/build-msvc/Release/tkogl2.dll"
 $Dest = "integrated-guimorph-development_EOC/Project/GUImorphDevelopment/inst/libs/x64/tkogl2.dll"
 Copy-Item $Dest "$Dest.bak" -ErrorAction SilentlyContinue
 Copy-Item $Src $Dest -Force
 ```
 
 To roll back: copy `tkogl2.dll.bak` back to `tkogl2.dll`.
+
+> The `scripts/deploy-dll.ps1` helper currently validates the MinGW output path
+> (`.../tkogl2/build/tkogl2.dll`). When deploying an MSVC build, use the manual copy above
+> (or pass the MSVC path to the script if it accepts one).
 
 ---
 
@@ -180,12 +189,15 @@ For maintainer UAT history and warning triage, see `.planning/smoke-test-finding
 
 ## C source layout (Phase 7)
 
-Incremental modularization of `tcl_if_ZARF_9.c` (Option A). The god file still holds window setup, runtime state, logging, and `Tkogl2_Init` until plans 07-02 and 07-03.
+Incremental modularization of `tcl_if_ZARF_9.c` (Option A). Plan 07-03 completed the split; the god file is removed from the CMake build.
 
 | File | Responsibility |
 |------|----------------|
-| `tcl_dispatch.c` | Tcl handlers (`add`, `show`, `setSpecimen`, …), draw pass (`drawDots`, `onDisplay`), `Wrapper_Get*` helpers |
-| `tcl_if_ZARF_9.c` | Globals, `initialize_state`, `setWindowId`/`setWindow`, logging, `Tkogl2_Init` (until 07-03) |
+| `tcl_init.c` | `Tkogl2_Init` — registers 8 Tcl commands (`add`, `show`, `setWindow`, `setSpecimen`, `setDownSample`, `setDot`, `del`, `loadDgt`) |
+| `tcl_dispatch.c` | Tcl handlers, draw pass (`drawDots`, `onDisplay`), `Wrapper_Get*` helpers, `GBL_RTN_*` constants |
+| `tcl_window.c` | `setWindowId`, HWND/WGL setup, window dimensions (`dc`, `width`, `height`), `setWindow` handler |
+| `tcl_state.c` | Globals (`GBL_*`, `models`, `context`, `deltas`), `initialize_state`, `resetContext`, `ALLOCATE_WRAPPER` |
+| `tcl_log.c` | `simpleLog*`, command stream recording, debug snapshot writers |
 | `dot_ZARF_9.c`, `curve_ZARF_9.c`, `ogl_*.c` | Unchanged logic |
 
 ---

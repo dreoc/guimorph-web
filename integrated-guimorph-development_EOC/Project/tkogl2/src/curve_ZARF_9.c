@@ -8,7 +8,7 @@ const char CURVE_VERSION_INFORMATION[] = "File curve Edit revision date is 15 Au
 
 
 
-extern const char* curveVersionPtr = CURVE_VERSION_INFORMATION;
+const char* curveVersionPtr = CURVE_VERSION_INFORMATION;
 
 
 

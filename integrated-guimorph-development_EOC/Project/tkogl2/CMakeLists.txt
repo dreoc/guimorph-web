@@ -4,14 +4,26 @@ cmake_minimum_required(VERSION 3.16)
 # tkogl2 -- Tcl extension DLL for the GUImorph 3D digitizing engine.
 #
 # This is a WINDOWS DLL (the engine embeds OpenGL into a Tk widget's HWND via
-# WGL, so it cannot build as a native Linux .so). The supported build path is
-# a MinGW-w64 cross-compile from WSL/Linux:
+# WGL, so it cannot build as a native Linux .so).
+#
+# PRIMARY (recommended) build path -- native Windows / MSVC. This matches the
+# toolchain that produced the original working DLL. Install "Build Tools for
+# Visual Studio" (the free C++ workload) and CMake, then from this directory:
+#
+#   cmake -B build-msvc -G "Visual Studio 17 2022" -A x64
+#   cmake --build build-msvc --config Release
+#
+# Produces: build-msvc/tkogl2.dll
+#
+# ALTERNATIVE (advanced) build path -- MinGW-w64 cross-compile from WSL/Linux.
+# Note: as of 2026-06 the MinGW build links but renders incorrectly (black mesh)
+# and is NOT recommended for distribution; use the MSVC path above.
 #
 #   sudo apt install mingw-w64 mingw-w64-tools cmake
 #   cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=cmake/mingw-w64-x86_64.cmake
 #   cmake --build build -j
 #
-# Produces: build/tkogl2.dll  (loaded by Windows-R via `tcl("load", ..., "Tkogl2")`)
+# Either path loads in Windows-R via `tcl("load", ..., "Tkogl2")`.
 # ============================================================================
 
 project(tkogl2 C)
@@ -19,24 +31,37 @@ project(tkogl2 C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+# Statically link the MSVC C runtime so the DLL is self-contained (no VC++
+# redistributable required on end-user machines). No-op for the MinGW path.
+cmake_policy(SET CMP0091 NEW)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
 set(SRC        ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(VENDOR_LIB ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
 # --- Sources (note: includes StatisticsFunction_ZARF_9.c, which the old
 #     .vcxproj omitted even though tcl_if references statisticsVersionPtr) ---
 add_library(tkogl2 SHARED
+    ${SRC}/tcl_init.c
     ${SRC}/tcl_dispatch.c
-    ${SRC}/tcl_if_ZARF_9.c
+    ${SRC}/tcl_window.c
+    ${SRC}/tcl_state.c
+    ${SRC}/tcl_log.c
     ${SRC}/ogl_ZARF9.c
     ${SRC}/ogl_model_ZARF_9.c
     ${SRC}/ogl_model_ply_ZARF_9.c
     ${SRC}/curve_ZARF_9.c
     ${SRC}/dot_ZARF_9.c
     ${SRC}/StatisticsFunction_ZARF_9.c
-    # Self-contained Tcl stub bootstrap (replaces the unreadable MSVC
-    # tclstub86_64.lib; see tcl_stub_bootstrap.c for the rationale).
-    ${SRC}/tcl_stub_bootstrap.c
 )
+
+# Tcl stub linkage differs by toolchain:
+#   MSVC  -> link the vendored COFF stub lib (lib/tclstub86_64.lib) directly.
+#   MinGW -> GNU ld cannot read that COFF archive, so compile the self-contained
+#            bootstrap TU instead (see tcl_stub_bootstrap.c for the rationale).
+if(NOT MSVC)
+    target_sources(tkogl2 PRIVATE ${SRC}/tcl_stub_bootstrap.c)
+endif()
 
 # Tcl/R expect the file to be exactly "tkogl2.dll" (no "lib" prefix).
 set_target_properties(tkogl2 PROPERTIES
@@ -51,8 +76,11 @@ target_compile_definitions(tkogl2 PRIVATE
     # CODE_FOR_LIBRARY is hard-#defined in RunTime_Defines_ZARF_9.h.
 )
 
-# Silence the MSVC-style `#pragma warning(...)` lines under gcc.
-target_compile_options(tkogl2 PRIVATE -Wno-unknown-pragmas)
+# MSVC understands the in-source `#pragma warning(...)` lines natively; gcc does
+# not, so silence the resulting noise only under non-MSVC toolchains.
+if(NOT MSVC)
+    target_compile_options(tkogl2 PRIVATE -Wno-unknown-pragmas)
+endif()
 
 target_include_directories(tkogl2 PRIVATE
     ${SRC}
@@ -66,28 +94,39 @@ target_include_directories(tkogl2 PRIVATE
 # ----------------------------------------------------------------------------
 # External libraries
 #
-# opengl32 / glu32 / gdi32 / user32 ship with MinGW-w64 (system import libs).
+# opengl32 / glu32 / gdi32 / user32 ship with both MSVC (Windows SDK) and
+# MinGW-w64 as system import libs.
 #
-# GLUT: the vendored glut64.dll is linked directly (ld synthesizes the import
-# table). MinGW has no GLUT of its own.
-#
-# Tcl stubs: NOT linked from the vendored MSVC tclstub86_64.lib (GNU ld cannot
-# read its COFF archive). Instead src/tcl_stub_bootstrap.c provides the stub
-# bootstrap directly inside the DLL.
+# GLUT and Tcl stubs are toolchain-specific:
+#   MSVC  -> link the vendored COFF import libs (glut64.lib, tclstub86_64.lib).
+#   MinGW -> link glut64.dll directly (ld synthesizes the import table); GNU ld
+#            cannot read the COFF tclstub86_64.lib, so the stub bootstrap TU
+#            (added above) provides Tcl_InitStubs instead.
 # ----------------------------------------------------------------------------
-set(TKOGL2_GLUT_LIB "${VENDOR_LIB}/glut64.dll"
-    CACHE FILEPATH "GLUT library (or DLL) to link against")
+if(MSVC)
+    target_link_libraries(tkogl2 PRIVATE
+        ${VENDOR_LIB}/glut64.lib
+        ${VENDOR_LIB}/tclstub86_64.lib
+        opengl32
+        glu32
+        gdi32
+        user32
+    )
+else()
+    set(TKOGL2_GLUT_LIB "${VENDOR_LIB}/glut64.dll"
+        CACHE FILEPATH "GLUT library (or DLL) to link against")
 
-target_link_libraries(tkogl2 PRIVATE
-    ${TKOGL2_GLUT_LIB}
-    opengl32
-    glu32
-    gdi32
-    user32
-)
+    target_link_libraries(tkogl2 PRIVATE
+        ${TKOGL2_GLUT_LIB}
+        opengl32
+        glu32
+        gdi32
+        user32
+    )
 
-# Avoid a runtime dependency on libgcc_s_seh-1.dll.
-target_link_options(tkogl2 PRIVATE -static-libgcc)
+    # Avoid a runtime dependency on libgcc_s_seh-1.dll (MinGW only).
+    target_link_options(tkogl2 PRIVATE -static-libgcc)
+endif()
 
 # Drop the build output next to the project for convenience.
 set_target_properties(tkogl2 PROPERTIES

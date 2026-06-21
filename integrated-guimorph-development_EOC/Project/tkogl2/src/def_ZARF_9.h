@@ -2,12 +2,15 @@
 #ifndef DEF_H
 #define DEF_H
 
-#include <Windows.h>
+// NOTE: header names use canonical casing. Windows is case-insensitive, but a
+// MinGW-w64 cross-compile on a case-sensitive (Linux/WSL) filesystem requires
+// the exact case: <windows.h> and the <GL/...> directory.
+#include <windows.h>
 #include <tcl.h>
 #include <tclDecls.h>
-#include <gl/glut.h>
-#include <gl/GL.h>
-#include <gl/GLU.h>
+#include <GL/glut.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 #include "RunTime_Defines_ZARF_9.h"
 #include "main.h"
 

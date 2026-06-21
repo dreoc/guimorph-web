@@ -12,61 +12,15 @@
 #include "def_ZARF_9.h"
 #include "RunTime_Defines_ZARF_9.h"
 #include "tcl_dispatch.h"
+#include "tcl_state.h"
+#include "tcl_log.h"
+#include "tcl_window.h"
 
 const char DISPATCH_VERSION_INFORMATION[] = "File tcl_dispatch : Phase 7 dispatch extraction 2026-06-19";
 const char* dispatchVersionPtr = DISPATCH_VERSION_INFORMATION;
 
-extern const char COMPILE_INFORMATION[];
-
-/* Globals defined in tcl_if_ZARF_9.c until 07-03 state extraction */
-extern HDC dc;
-extern model_t* models;
-extern context_t* context;
-extern float deltas[1000][4];
-extern int model_index;
-extern int model_amount;
-extern show_mode_t showModel;
-extern int width;
-extern int height;
-extern int labeled;
-extern int alabeled;
-extern int anchorPlaced;
-extern int downsampled;
-extern color_t defaultDotColor;
-extern color_t defaultAnchorColor;
-extern GLdouble dotRadius;
-extern GLdouble anchorRadius;
-extern point_t downSampleOffsetBeg;
-extern point_t downSampleOffset;
-extern char messageBuffer[128];
-extern char buffer[1024];
-extern int UT_MY_INTEGER_VALUE;
-extern int temp_index;
-
-extern float GBL_INWORK_LABEL_SCALEFACTOR_MPY;
-extern float GBL_INWORK_LABEL_SCALEFACTOR_ADD;
-extern float GBL_INWORK_CURVE_SCALEFACTOR_MPY;
-extern float GBL_INWORK_CURVE_SCALEFACTOR_ADD;
-extern float GBL_ROTATION_ANGLE_X;
-extern float GBL_ROTATION_ANGLE_Y;
-extern int GBL_ENABLE_TCL_OBJECT_LOGGING;
-extern int GBL_LANDMARKS_NUM_SPECIMENS;
-extern int GBL_SET_NUMBER_OF_LANDMARKS;
-extern int GBL_SET_NUMBER_OF_ANCHORS;
-extern model_t* GBL_PTR_TO_A_MODEL;
-extern curve_t* GBL_PTR_CURVE_1;
-extern curve_t* GBL_PTR_CURVE_2;
-extern curve_t* GBL_PTR_CURVE_3;
-extern curve_t* GBL_PTR_CURVE_4;
-extern curve_t* GBL_PTR_CURVE_5;
-extern curve_t* GBL_PTR_CURVE_6;
-
-extern int resetContext(int id, float maxXY);
 extern int unit_test_ogl_loadLandmark(const char* filename);
 extern int unit_test_ogl_loadCurve(const char* filename);
-
-extern void* ALLOCATE_WRAPPER(unsigned int howMuch);
-extern void FREE_WRAPPER(void* pointer);
 
 int Wrapper_GetIntFromObj(Tcl_Interp* interp, Tcl_Obj* objPtr, int* ptrToYourInteger)
 {
@@ -3663,7 +3617,9 @@ void onDisplay()
 	glFlush();
 
 #ifdef _WIN32
-	SwapBuffers(dc); //throw that sucker on the main screen
+	{
+		SwapBuffers(dc); //throw that sucker on the main screen
+	}
 #elif __linux__
 	glXSwapBuffers(__glDisplay__, __glWindow__);
 #endif

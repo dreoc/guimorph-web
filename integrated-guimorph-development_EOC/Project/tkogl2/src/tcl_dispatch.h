@@ -4,7 +4,12 @@
 
 #include "def_ZARF_9.h"
 
-/* Tcl command handlers — registered from Tkogl2_Init (god file until 07-03) */
+extern const int GBL_RTN_SUCCESS;
+extern const int GBL_RTN_ERROR;
+extern const int GBL_RTN_IGNORE;
+extern const int GBL_RTN_UNDER_CONSTRUCTION;
+
+/* Tcl command handlers — registered from Tkogl2_Init */
 int add(ClientData, Tcl_Interp*, int, Tcl_Obj* const[]);
 int show(ClientData, Tcl_Interp*, int, Tcl_Obj* const[]);
 int setSpecimen(ClientData, Tcl_Interp*, int, Tcl_Obj* const[]);
