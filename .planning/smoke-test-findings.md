@@ -279,3 +279,300 @@ powershell -ExecutionPolicy Bypass -File scripts/deploy-dll.ps1
 ```
 
 ---
+
+## Phase 7 — Dispatch Extraction (07-01)
+
+**Date:** 2026-06-20  
+**Specimen:** `zips/Folsom 3D models/C8.1.ply`  
+**Environment:** Windows R 4.6, WSL UNC paths, Phase 7 `tcl_dispatch.c` extraction build  
+**DLL:** Post-07-01 deploy (commits `d1be586`, `0f12e12`); compare against `inst/libs/x64/tkogl2.dll.pre-phase7.bak`
+
+| Step | Result | Notes |
+|------|--------|-------|
+| Build + `Tkogl2_Init` export | ✅ | CMake includes `tcl_dispatch.c`; build succeeds per maintainer |
+| `devtools::load_all(".")` | ✅ | (assumed — user reached GUI) |
+| `GUImorph()` opens | ✅ | Init tests pass |
+| Load PLY (`C8.1.ply`) | ⚠️ **FAIL** | Mesh visible but renders **black** (not vertex-colored as with pre-Phase-7 DLL) |
+| Double-click landmark placement | ⚠️ **FAIL** | 3 existing red dots (labels 1, 2, 3); **cannot place new dots** |
+| Rotation / interaction | ✅ | No crash on rotate |
+
+### Investigation summary (07-01 debugger)
+
+**Dispatch extraction (`tcl_dispatch.c`):** Compared `onDisplay`, `drawDots`, `getSpecimenCoordinate`, and `add("dot")` paths against pre-extraction structure. Handler logic appears verbatim from `tcl_if_ZARF_9.c` via `scripts/extract-tcl-dispatch.py`. Gap line ranges (2991–3152, 4139–5062, 5134–5274) remain in `tcl_if_ZARF_9.c` (logging, snapshot, helpers) — not dropped. Commit `0f12e12` added missing `extern` refs for `GBL_*`, `resetContext`, and curve/model globals in the dispatch TU.
+
+**No confirmed extraction regression** in the digitize hot path. **No code fix applied** pending A/B DLL evidence.
+
+### Black mesh — likely cause
+
+| Hypothesis | Likelihood | Evidence |
+|------------|------------|----------|
+| **2026 MinGW build render regression** (pre-existing) | **High** | Phase 6 §06-02: 2026 `build/tkogl2.dll` blank/wrong render; **rollback to 2020 `.bak` restored colored mesh** |
+| Dispatch `onDisplay` / GL state leak | Low | `onDisplay` body unchanged; `ogl_drawModel` still toggles `ogl_disableLight` + `GL_COLOR_ARRAY` for colored PLY |
+| C8.1.ply never had colors | Low | `ogl_model_ply` requires color property for load success; user reports colored mesh with backup DLL |
+
+**Recommended check:** A/B swap `tkogl2.dll` ↔ `tkogl2.dll.pre-phase7.bak` (same PLY, no R code changes). If backup is colored and Phase 7 build is black → **build/render issue**, not dispatch logic.
+
+### Cannot place dots — likely cause
+
+| Hypothesis | Likelihood | Evidence |
+|------------|------------|----------|
+| **R landmark quota** (`dotNum >= e$landmarkNum`) | **High** | `addDot()` in `3dDigitize.digitize.r` silently skips when `activeDataList[[3]] >= landmarkNum`; 3 dots visible + count preset **3** → expected no-op (Phase 4 documented same quirk) |
+| C `validateDot` / `getSpecimenCoordinate` regression | Medium | Would print `WARNING : add dot : not inside the specimen` in R console; check console on failed double-click |
+| `dot_add` failure in C | Low | Would set Tcl WARNING result; same console signature |
+
+**Recommended check:** On double-click, read R console for `dotNum raw : N -of- M`. If `N >= M`, increase **Set number of landmarks** (default 5) before retest. If WARNING appears, capture log for `validateDot` / `getSpecimenCoordinate`.
+
+### User retest protocol
+
+1. **A/B DLL (primary):**
+   ```powershell
+   cd \\wsl$\Ubuntu\home\akagi\home\GUImorph\integrated-guimorph-development_EOC\Project\GUImorphDevelopment\inst\libs\x64
+   Copy-Item tkogl2.dll tkogl2.dll.phase7-test -Force   # save current
+   Copy-Item tkogl2.dll.pre-phase7.bak tkogl2.dll -Force
+   ```
+   Restart R → `load_all` → `GUImorph()` → load `C8.1.ply` → confirm mesh color.
+
+2. **Landmark quota:** Set landmark count to **5**; with 3 dots placed, double-click should allow dots 4–5 if C path OK.
+
+3. **Restore Phase 7 DLL** after A/B:
+   ```powershell
+   Copy-Item tkogl2.dll.phase7-test tkogl2.dll -Force
+   ```
+
+4. **Optional C log:** `add("openLogFile", -1, 0)` before digitize; inspect `DATA_LOG_FILES/DL_*.txt` for `ADD/SHAPE/DOT`, `validateDot`, `getSpecimenCoordinate`.
+
+### CONFIRMED ROOT CAUSE (2026-06-20, A/B + source diff)
+
+User completed the A/B DLL swap and confirmed:
+- **Phase 7 fresh MinGW build** (`tkogl2.dll.phase7-test`, compile banner `15 AUGUST 2020 04:22 PM`) → mesh **black** (PLY via openDgt) / **blank** (PLY via menu load).
+- **Pre-Phase-7 `.bak`** (1.24 MB **2020 MSVC-era prebuilt** DLL) → **restores full functionality**.
+
+**The black/blank render is a property of the 2026 MinGW-w64 build pipeline, NOT the dispatch extraction.** This is the same regression Phase 6 §06-02 deferred ("do not deploy `build/tkogl2.dll` until UAT'd for render" — they shipped the 2020 `.bak` as a workaround). The MinGW build (`CMakeLists.txt` + `tcl_stub_bootstrap.c` + `glut_shim`, 883 KB) has **never** been render-validated; the only working DLL is the 2020 MSVC build.
+
+**Dispatch extraction proven faithful:** a line-level content diff of the original god file (5580 lines) against the union of the current `tcl_dispatch.c` + trimmed `tcl_if_ZARF_9.c` shows the union contains **all** original code — the only differences are 4 forward declarations (now in `tcl_dispatch.h`), one duplicated comment, and a redundant `static UT_MY_INTEGER_VALUE` line. No code was dropped, duplicated, or altered. Build links cleanly with library semantics. So the extraction itself does not change runtime behavior.
+
+**Other observations (pre-existing, separately tracked):**
+- Blank canvas after `openDgt` + Next/Prev → `999.2-opendgt-first-specimen-display` (there is even a disabled `if(0)` "forcibly switch specimens" patch in `openDgt`).
+- "Cannot place dots" with 3/3 → landmark quota full (set count > placed to add more).
+- Double `< Previous` / `Next >` buttons → Tk repaint cosmetic; source creates the nav frame once in `ui.main` → `createNavFrame`.
+
+**Implication for Phase 7:** Phase 7 is a pure C refactor whose only verification gate (07-01/02/03 smoke) requires building a render-correct DLL from source. That is **blocked** by the unresolved 2026 MinGW build/render regression. Phase 7 cannot be smoke-verified until the build pipeline produces a working DLL — independent of the (correct) extraction.
+
+**Status (superseded):** Initially blocked by MinGW build regression; resolved 2026-06-21 — see "07-01 smoke gate — PASSED" below.
+
+### CORRECTION + ACTUAL ROOT CAUSE (2026-06-20, MSVC build)
+
+The "build-toolchain regression" framing above was **incomplete**. After making the build
+MSVC-native (`CMakeLists.txt`), a fresh MSVC build was produced and tested:
+
+- The C engine works correctly under MSVC — `queryFromR` now returns real counts
+  (e.g. `dot slice length for slice [1] is [3]`) and `validateDot` passes. (With the older
+  prebuilt `.bak`, `queryFromR` returned empty strings.)
+- **Render is still blank** under MSVC (MinGW had rendered a black silhouette).
+
+**True root cause — uninitialized `HWND` (latent UB), `tcl_if_ZARF_9.c` setWindow "id":**
+```c
+HWND hwnd;                                        // 64-bit, upper 32 bits = stack garbage
+Wrapper_GetIntFromObj(interp, objv[2], (int*)&hwnd);  // writes only low 32 bits
+...
+setWindowId(hwnd);  // -> GetDC(bad handle) -> no GL surface -> blank viewport
+```
+The Tk window id is a 32-bit Tcl int; HWND is 64-bit on Win64. Only the low 32 bits were
+written, leaving the upper 32 uninitialized. This "worked by luck" in the 2020 MSVC build
+and (zero-upper-bits) under MinGW, but MSVC 19.37 Release codegen leaves garbage there →
+`GetDC` fails → blank. **Fix applied:** zero-init and assign via `(HWND)(INT_PTR)hwndId`.
+
+**Black mesh is partly the data, not a bug:** the Folsom PLYs (`C13.1.ply` etc.) declare
+`property uchar red/green/blue` but every vertex color is `0 0 0` (NextEngine geometry-only
+scan). `ogl_drawModel` takes the color path → flat-black mesh. A visible *shaded* render
+requires falling back to lighting when colors are absent/all-zero (optional follow-up).
+
+**Toolchain note still valid:** MSVC remains the correct build (matches the working DLL);
+MinGW additionally mis-renders. But the *blank* was the HWND UB, not the toolchain.
+
+**Misc:** the `15 AUGUST 2020` console banner is a hardcoded `COMPILE_INFORMATION[]` string
+literal in `tcl_if_ZARF_9.c`, not the real build date — builds are fresh.
+
+### DEFINITIVE DIAGNOSIS (2026-06-21, GLDIAG instrumentation) — HANDOFF FOR NEW CHAT
+
+Added runtime `printf` diagnostics (tag `GLDIAG`) to `setWindowId` and `onDisplay`. Fresh
+MSVC build, deployed, `C13.1.ply` loaded. Console showed:
+
+```
+GLDIAG setWindowId: hwnd=0x230BC8 dc=0x15011CAD pf=7 rc=0x30000 makeCurrent=1
+                    ver=<4.6.0 Build 32.0.101.7026> renderer=<Intel(R) Iris(R) Xe Graphics>
+GLDIAG onDisplay: w=600 h=600 model_amount=1 showModel=2 models=0x.. context=0x..
+                  scale=1.000000 count=558732 color=yes glerr=0
+GLDIAG draw: vtx0=(-0.2756,0.4266,0.0005) col0=(0.000,0.000,0.000,0.900) drawErr=0
+GLDIAG swap: SwapBuffers=1
+```
+
+**Conclusion — the C engine and OpenGL are FULLY WORKING:**
+- Valid GL 4.6 context (Intel Iris Xe), `makeCurrent=1`.
+- Model loaded: `count=558732` verts, sane coords (`vtx0≈(-0.28,0.43,0.0)`), color array present.
+- `drawErr=0`, `glerr=0`, `SwapBuffers=1` — the frame renders and presents with no errors.
+- Clear color was changed to **gray** for the test, yet the visible viewport **stayed white**.
+
+**ROOT CAUSE (still open): the GL context renders to a surface that is NOT the visible Tk
+canvas.** This is an **R/Tk window/compositing problem**, not C, not the build toolchain, not
+the 07-01 extraction. The doubled "Specimen Id" label + doubled Previous/Next buttons in the
+GUI are the same issue surfacing as Tk repaint ghosting. `ui.main` runs exactly once (single
+`"ui.main ... starting"`), so the doubling is a paint artifact, not duplicate widget creation.
+
+**Definitively RULED OUT this session:**
+- Dispatch extraction (07-01) — proven content-faithful by line diff.
+- MSVC vs MinGW toolchain — MSVC also blank (engine works under both).
+- Stale DLL — GLDIAG prints are new code and appear; `glerr` went 1280→0 after a source fix.
+- HWND truncation — fixed; context now created fine.
+- GL_INVALID_ENUM (1280) — was `glLightModeli(GL_FRONT,...)`; fixed.
+- PLY data — colors are genuinely all-zero (black); secondary, mesh would be a black
+  silhouette once it actually displays.
+
+**Fixes applied this session (real, keep):**
+- `tcl_if_ZARF_9.c` setWindow "id": zero-init HWND, assign via `(HWND)(INT_PTR)hwndId`.
+- `ogl_ZARF9.c` `ogl_enableLight`: `glLightModeli(GL_FRONT,...)` → `GL_LIGHT_MODEL_TWO_SIDE`
+  + `glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)` (was GL_INVALID_ENUM).
+- `tcl_if_ZARF_9.c`: `COMPILE_INFORMATION` now uses `__DATE__ " " __TIME__` → the console
+  banner prints `FRESH BUILD <date> <time>` so DLL freshness is always verifiable.
+- `3dDigitize.main.r` `ui.main`: `tcl("update","idletasks")` around `set("window","id",...)`
+  to realize the canvas HWND before GL binds (attempt at the window-surface bug).
+
+**Diagnostics still in tree (REMOVE once fixed):**
+- Gray clear color in `ogl_ZARF9.c` `ogl_init` (was `glClearColor(1,1,1,0)`).
+- `GLDIAG` `printf`s in `setWindowId` (`tcl_if_ZARF_9.c`) and `onDisplay` + draw/swap
+  (`tcl_dispatch.c`).
+
+**Next-chat starting hypotheses (R/Tk ↔ GL compositing):**
+1. Tk erases the `canvasFrame` background (white) on every `<Expose>`/`<Configure>`,
+   overpainting GL. Fix: bind `<Expose>`/`<Configure>` on `canvasFrame` to re-trigger
+   `onDisplay` via the existing `add("invoke_on_display", 0,0,0)` shape.
+2. Embedding WGL in a plain `tkframe` may need a dedicated child HWND with
+   `WS_CLIPCHILDREN`/no background-erase; verify `tkwinfo id canvasFrame` is the real
+   drawing surface, not a parent.
+3. Diff `ui.main` / canvas construction in `3dDigitize.main.r` history against the era when
+   the 2020 `.bak` rendered, to spot a window-setup regression.
+4. The 2020 `.bak` may have rendered continuously or owned the window differently — confirm
+   whether this source EVER rendered with a fresh build (vs always shipping the `.bak`).
+
+**Build/deploy reference (Windows MSVC, verified working):**
+```
+cmake --build build-msvc --config Release   # in .../Project/tkogl2
+# copy build-msvc/Release/tkogl2.dll -> GUImorphDevelopment/inst/libs/x64/tkogl2.dll
+# restart R fully (DLL stays mapped while R runs)
+```
+
+### RESOLVED: blank viewport (2026-06-21)
+
+The `tcl("update","idletasks")` calls around `set("window","id", canvasFrame)` in `ui.main`
+**fixed the blank viewport.** Confirmed by user: PLY load renders, landmarks can be placed,
+and the freshness banner now prints `FRESH BUILD Jun 21 2026 11:39:44` (proves rebuild→deploy
+works). Root cause was binding the WGL context to the canvas HWND before Tk had realized the
+window; forcing realization first makes GL render into the visible canvas.
+
+### Black mesh = all-zero PLY vertex colors (fix applied 2026-06-21)
+
+Remaining symptom: `load .dgt` renders both specimens flat black. GLDIAG showed
+`col0=(0.000,0.000,0.000,0.900)` — the Folsom PLYs declare `uchar red/green/blue` but every
+vertex is `0 0 0` (geometry-only NextEngine scans), so the color path draws a black mesh.
+**Fix:** `ogl_model_ply_ZARF_9.c` now detects an all-zero color array during vertex read,
+frees `model->color`, and leaves it NULL → `ogl_drawModel` uses the lighting path → shaded
+visible surface. Also added `glEnable(GL_NORMALIZE)` in `ogl_init` for correct lighting under
+model scaling. Pending user confirmation that the mesh now renders shaded (not black).
+
+**Cleanup still owed once render is confirmed good:** revert the gray diagnostic clear color
+in `ogl_ZARF9.c` `ogl_init` back to white, and remove the `GLDIAG` `printf`s from
+`setWindowId` (`tcl_if_ZARF_9.c`) and `onDisplay`/draw/swap (`tcl_dispatch.c`).
+
+### 07-01 smoke gate — PASSED (2026-06-21)
+
+User confirmed all blocking symptoms resolved after MSVC rebuild + deploy:
+
+| Step | Result | Notes |
+|------|--------|-------|
+| `devtools::load_all(".")` | ✅ | MSVC `tkogl2.dll`; freshness banner via `__DATE__`/`__TIME__` |
+| `GUImorph()` | ✅ | Window opens; no doubled Previous/Next buttons |
+| Load PLY (`C13.1.ply`) | ✅ | Shaded mesh visible (not blank/black) |
+| Load `.dgt` (2 specimens) | ✅ | Both specimens render shaded (not flat black) |
+| Double-click landmark | ✅ | Placement works |
+| Rotation / interaction | ✅ | No crash |
+
+**Real fixes kept (beyond dispatch extraction):**
+- `tcl_if_ZARF_9.c`: zero-init HWND, assign via `(HWND)(INT_PTR)hwndId` (blank viewport).
+- `ogl_ZARF9.c`: `glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, …)` + `glColorMaterial` (was `GL_INVALID_ENUM`); `glEnable(GL_NORMALIZE)`.
+- `ogl_model_ply_ZARF_9.c`: drop all-zero vertex color arrays → lighting path for geometry-only scans.
+- `3dDigitize.main.r`: `tcl("update","idletasks")` around canvas HWND bind (blank viewport + Tk ghosting).
+- `CMakeLists.txt` + `BUILD.md`: MSVC-first build path.
+
+**Diagnostics removed (2026-06-21):** gray clear color and `GLDIAG` printfs reverted/removed after smoke pass.
+
+**Deferred (not blocking 07-01):**
+- **PLY vertex coloration** — Folsom PLYs declare `red/green/blue` but store all zeros (NextEngine geometry-only scans). Current behavior: shaded lighting fallback. Future work: preserve/display true scan coloration when present, or document expected appearance for zero-color PLYs.
+- MinGW build path — links but renders incorrectly; MSVC remains the supported toolchain.
+
+**Status:** ✅ **07-01 smoke PASSED.** Dispatch extraction validated end-to-end. Proceed to 07-02 (window/WGL extraction).
+
+---
+
+## Phase 7 — Window Extraction (07-02)
+
+**Date:** 2026-06-21  
+**Change:** Extract `setWindowId`, `setWindow`, and `dc`/`width`/`height` → `tcl_window.c`/`tcl_window.h`  
+**Build:** MSVC rebuild + deploy on Windows
+
+| Step | Result | Notes |
+|------|--------|-------|
+| `tcl_window.c`/`tcl_window.h` created | ✅ | WGL + setWindow handler moved verbatim |
+| God file trimmed | ✅ | No setWindow/setWindowId bodies; dc/width/height defs removed |
+| CMake updated | ✅ | `tcl_window.c` added after `tcl_dispatch.c` |
+| BUILD.md updated | ✅ | Phase 7 layout includes `tcl_window.c` |
+| MinGW/WSL link build | ✅ | Link + `Tkogl2_Init` export verified |
+| `load_all` + `GUImorph()` | ✅ | User approved — WGL init via setWindow id branch |
+| Load PLY (`C13.1.ply`) | ✅ | Mesh renders |
+| Window resize | ✅ | Viewer redraws without crash |
+| Double-click landmark | ✅ | Placement works |
+
+**Status:** ✅ **07-02 smoke PASSED.** Window/WGL module validated. Proceed to 07-03 (state/log/init extraction).
+
+---
+
+## Phase 7 — Modularization Complete (07-03)
+
+**Date:** 2026-06-21  
+**Change:** Final god-file split — `tcl_state.c`, `tcl_log.c`, `tcl_init.c`; `tcl_if_ZARF_9.c` removed from build  
+**Build:** MSVC rebuild + deploy on Windows (MinGW link verified on WSL)
+
+### Module layout (final)
+
+| File | Responsibility |
+|------|----------------|
+| `tcl_init.c` | `Tkogl2_Init`, 8 Tcl command registrations |
+| `tcl_dispatch.c` | Tcl handlers, draw pass, `onDisplay` |
+| `tcl_window.c` | `setWindowId`, WGL, `setWindow`, `dc`/`width`/`height` |
+| `tcl_state.c` | Globals, `initialize_state`, `resetContext`, alloc wrappers |
+| `tcl_log.c` | `simpleLog*`, command stream, debug writers |
+
+### Part A — Per-plan smoke (D-05)
+
+| Step | Result | Notes |
+|------|--------|-------|
+| Five-module CMake build | ✅ | No `tcl_if_ZARF_9.c`; MinGW link + `Tkogl2_Init` export |
+| `load_all` + `GUImorph()` | ✅ | User approved |
+| Load PLY (`C13.1.ply`) | ✅ | Mesh renders |
+| Double-click landmark | ✅ | Placement works |
+
+### Part B — Full digitize round-trip (D-06)
+
+| Step | Result | Notes |
+|------|--------|-------|
+| Load 2 specimens or `test_fresh.dgt` | ✅ | User approved |
+| 3 landmarks per specimen | ✅ | Double-click |
+| Curve bind on specimen 1 | ✅ | 3-landmark IDs |
+| Fit click | ✅ | No crash |
+| Save `.dgt` | ✅ | Local file |
+| Same-session `openDgt` reload | ✅ | Landmarks + curve restore |
+
+**CENG-01 validation:** God file split into five `tcl_*` modules with no regression vs Phase 4 digitize baseline.
+
+**Status:** ✅ **07-03 smoke PASSED. Phase 7 complete.**
+
+---

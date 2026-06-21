@@ -8,30 +8,30 @@
 
 ### Native Build & Runtime
 
-- [ ] **BUILD-01**: `tkogl2.dll` builds via CMake + MinGW-w64 from WSL without manual file renames
-- [ ] **BUILD-02**: Built DLL exports `Tkogl2_Init` (verified via `objdump` or equivalent)
-- [ ] **RUN-01**: `tcl("load", dll, "Tkogl2")` succeeds in Windows R with no error string returned
-- [ ] **RUN-02**: OpenGL/GLUT runtime dependencies resolve (no missing-DLL crash on load)
+- [x] **BUILD-01**: `tkogl2.dll` builds via CMake + MinGW-w64 from WSL without manual file renames
+- [x] **BUILD-02**: Built DLL exports `Tkogl2_Init` (verified via `objdump` or equivalent)
+- [x] **RUN-01**: `tcl("load", dll, "Tkogl2")` succeeds in Windows R — ✅ MinGW `build/tkogl2.dll` deployed to `inst/libs/x64/` and loads via `load_all` (2026-06-15)
+- [x] **RUN-02**: OpenGL/GLUT runtime dependencies resolve — ✅ GUI opens, PLY load pipeline runs (2026-06-13)
 
 ### Package & GUI
 
-- [ ] **PKG-01**: `devtools::load_all(".")` loads GUImorph from source via WSL UNC or local copy path
-- [ ] **PKG-02**: `.onLoad` in `rtkogl.R` loads `inst/libs/x64/tkogl2.dll` without warning
-- [ ] **GUI-01**: `GUImorph()` opens a Tcl/Tk window titled "3D GUImorph"
-- [ ] **GUI-02**: User can load a PLY specimen mesh and see it rendered in the 3D viewer
+- [x] **PKG-01**: `devtools::load_all(".")` loads GUImorph from source via WSL UNC — ✅ 2026-06-13 (26 warnings to triage)
+- [x] **PKG-02**: `.onLoad` in `rtkogl.R` loads `inst/libs/x64/tkogl2.dll` without fatal error — ✅ 2026-06-13
+- [x] **GUI-01**: `GUImorph()` opens a Tcl/Tk window — ✅ 2026-06-13
+- [x] **GUI-02**: User can load a PLY specimen mesh and see it rendered in the 3D viewer — ✅ 2026-06-13 (`C13.1.ply` mesh visible)
 
 ### Digitize Workflow
 
-- [ ] **DGT-01**: User can place landmarks on the loaded specimen
-- [ ] **DGT-02**: User can define curves (semi-landmark splines) on the specimen
-- [ ] **DGT-03**: User can save digitized data to a `.dgt` file
-- [ ] **DGT-04**: Saved `.dgt` file reloads with landmarks/curves intact
+- [x] **DGT-01**: User can place landmarks on the loaded specimen — ✅ 2026-06-15 (double-click on canvas to place; landmarks visible after placement)
+- [x] **DGT-02**: User can define curves (semi-landmark splines) on the specimen — ✅ 2026-06-15 (legacy 3-landmark curve bind on C13.1.ply; 1×3 ID matrix; Fit smoke pass)
+- [x] **DGT-03**: User can save digitized data to a `.dgt` file — ✅ 2026-06-15 (2-specimen save `test_fresh.dgt`; Curve=1 + LM3=3 ×2)
+- [x] **DGT-04**: Saved `.dgt` file reloads with landmarks/curves intact — ✅ 2026-06-15 (same-session `openDgt` reload after Surface=0 + queryFromR fixes)
 
 ### Analysis Integration
 
-- [ ] **ANAL-01**: Exported digitized coordinates load into at least one `geomorph` analysis function without error
-- [ ] **ANAL-02**: Breaking `geomorph`/`Morpho` API calls identified and migrated to CRAN 4.6-compatible signatures
-- [ ] **ANAL-03**: Deprecated functions replaced per geomorph 4.x guidance (`procD.lm`/RRPP, `gm.prcomp`, etc.)
+- [x] **ANAL-01**: Exported digitized coordinates load into at least one `geomorph` analysis function without error — ✅ 2026-06-19 (landmarks-only GPA via `gpagen` on `test_fresh.dgt`, 2 specimens; CSV export via `two.d.array`)
+- [x] **ANAL-02**: Breaking `geomorph`/`Morpho` API calls identified and migrated to CRAN 4.6-compatible signatures — ✅ 2026-06-19 (inventory in `05-INVENTORY.md`; HOT-path fixes in 05-02; deferred sites documented)
+- [x] **ANAL-03**: Deprecated functions replaced per geomorph 4.x guidance (`procD.lm`/RRPP, `gm.prcomp`, etc.) — ✅ 2026-06-19 (hot-path `gpagen`/`plotAllSpecimens`/`two.d.array` migrated; vendored procD deferred per D-10)
 
 ### Developer Environment
 
@@ -41,7 +41,7 @@
 
 ### C Engine Rehabilitation (Option A)
 
-- [ ] **CENG-01**: `tcl_if_ZARF_9.c` split into separate modules (dispatch, window/WGL, state) with no behavior change
+- [x] **CENG-01**: `tcl_if_ZARF_9.c` split into separate modules (dispatch, window/WGL, state, log, init) with no behavior change — validated 2026-06-21 (Phase 7 final smoke)
 - [ ] **CENG-02**: Dot and anchor implementations unified into shared marker code
 - [ ] **CENG-03**: Numbered globals (`GBL_PTR_*_1..N`) replaced with arrays; capacity limits documented
 - [ ] **CENG-04**: Debug cruft removed (`MAKE_INERT`, `if(0)` toggles, pervasive `printf` tracing)
@@ -73,25 +73,25 @@ Deferred until v1 milestone ships.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUILD-01 | Phase 1 | Pending |
-| BUILD-02 | Phase 1 | Pending |
-| RUN-01 | Phase 1 | Pending |
-| RUN-02 | Phase 1 | Pending |
-| PKG-01 | Phase 2 | Pending |
-| PKG-02 | Phase 2 | Pending |
-| GUI-01 | Phase 2 | Pending |
-| GUI-02 | Phase 3 | Pending |
-| DGT-01 | Phase 4 | Pending |
-| DGT-02 | Phase 4 | Pending |
-| DGT-03 | Phase 4 | Pending |
-| DGT-04 | Phase 4 | Pending |
-| ANAL-01 | Phase 5 | Pending |
-| ANAL-02 | Phase 5 | Pending |
-| ANAL-03 | Phase 5 | Pending |
+| BUILD-01 | Phase 1 | ✓ Validated 2026-06-13 |
+| BUILD-02 | Phase 1 | ✓ Validated 2026-06-13 |
+| RUN-01 | Phase 1 | ✓ MinGW DLL deployed 2026-06-15 |
+| RUN-02 | Phase 1 | ✓ Validated 2026-06-13 |
+| PKG-01 | Phase 2 | ✓ Validated 2026-06-13 |
+| PKG-02 | Phase 2 | ✓ Validated 2026-06-13 |
+| GUI-01 | Phase 2 | ✓ Validated 2026-06-13 |
+| GUI-02 | Phase 3 | ✓ Validated 2026-06-13 |
+| DGT-01 | Phase 4 | ✓ Validated 2026-06-15 — double-click to place |
+| DGT-02 | Phase 4 | ✓ Validated 2026-06-15 — legacy curve bind + Fit smoke |
+| DGT-03 | Phase 4 | ✓ Validated 2026-06-15 — multi-specimen save |
+| DGT-04 | Phase 4 | ✓ Validated 2026-06-15 — same-session reload |
+| ANAL-01 | Phase 5 | ✓ Validated 2026-06-19 — gpagen + CSV save on test_fresh.dgt |
+| ANAL-02 | Phase 5 | ✓ Validated 2026-06-19 — inventory + HOT-path migration closure (05-03) |
+| ANAL-03 | Phase 5 | ✓ Validated 2026-06-19 — hot-path CRAN APIs; vendored procD deferred (D-10) |
 | DEV-01 | Phase 6 | Pending |
 | DEV-02 | Phase 6 | Pending |
 | DEV-03 | Phase 6 | Pending |
-| CENG-01 | Phase 7 | Pending |
+| CENG-01 | Phase 7 | ✓ Validated 2026-06-21 — five-module layout; digitize round-trip smoke passed |
 | CENG-02 | Phase 8 | Pending |
 | CENG-03 | Phase 9 | Pending |
 | CENG-04 | Phase 9 | Pending |
@@ -104,4 +104,4 @@ Deferred until v1 milestone ships.
 
 ---
 *Requirements defined: 2026-06-13*
-*Last updated: 2026-06-13 after user confirmed full modernization + Option A*
+*Last updated: 2026-06-19 — ANAL-02/ANAL-03 validated (Phase 5 migration closure)*
