@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_execute
-stopped_at: Phase 7 complete
-last_updated: "2026-06-21"
-last_activity: 2026-06-21 — Phase 7 complete; CENG-01 validated; digitize round-trip smoke passed
+status: CONTEXT.md written — unify dot/anchor into shared marker.c (wrappers + marker_set_t; fix anchor asymmetry)
+stopped_at: Phase 8 context gathered
+last_updated: "2026-06-22T14:57:40.664Z"
+last_activity: 2026-06-21 — Phase 8 discuss complete (structure, behavior, module, verify)
 progress:
   total_phases: 9
   completed_phases: 7
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-15)
 
 ## Current Position
 
-Phase: 07 (c-engine-modularization) — **COMPLETE**
-Plan: All 3 plans done (07-01, 07-02, 07-03)
-Status: CENG-01 validated — five-module layout; no regression vs Phase 4 baseline
-Last activity: 2026-06-21 — final digitize round-trip smoke passed
+Phase: 08 (c-engine-deduplication) — **CONTEXT GATHERED**
+Plan: Not yet planned (ROADMAP sketches 08-01 characterize / 08-02 marker.c / 08-03 remove + verify)
+Status: CONTEXT.md written — unify dot/anchor into shared marker.c (wrappers + marker_set_t; fix anchor asymmetry)
+Last activity: 2026-06-21 — Phase 8 discuss complete (structure, behavior, module, verify)
 
 Progress: [███████░░░] ~78%
 
@@ -65,5 +65,5 @@ Progress: [███████░░░] ~78%
 ## Session Continuity
 
 Last session: 2026-06-21
-Stopped at: Phase 7 complete
-Resume file: `.planning/ROADMAP.md` — Phase 8 (CENG-02)
+Stopped at: Phase 8 context gathered
+Resume file: `.planning/phases/08-c-engine-deduplication/08-CONTEXT.md` — then `/gsd-plan-phase 8`
