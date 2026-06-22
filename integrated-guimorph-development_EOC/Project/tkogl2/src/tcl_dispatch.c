@@ -3268,13 +3268,28 @@ TCL_CMD(setDot)
 		}
 		else  // valid dot ... 
 		{
-			if (0 != dot_move(&p))
+			// Route the drag to the active marker set. Anchors must move the
+			// selected anchor (g_anchors); landmarks and curve points move the
+			// selected landmark (g_landmarks). Before the Phase 8 dedup this
+			// branch always called dot_move and "worked" only because the legacy
+			// anchor_select wrote the dot globals (the D-03 asymmetry). With each
+			// set owning its selection state, the move must dispatch on showModel.
+			int moveResult;
+			if (ANCHOR == showModel)
 			{
-				simpleLog("ERROR : ... negative return from dot move ... dot not moved ?");
+				moveResult = anchor_move(&p);
+			}
+			else
+			{
+				moveResult = dot_move(&p);
+			}
+			if (0 != moveResult)
+			{
+				simpleLog("ERROR : ... negative return from move ... marker not moved ?");
 				simpleLog(buffer);
 				UT_MY_INTEGER_VALUE = GBL_RTN_ERROR;
 			}
-			// else dot move returned 0 ... good return - but what happened ?
+			// else move returned 0 ... good return - but what happened ?
 		}
 		simpleLog((const char*)"setDot ... coordinate ... end");
 		onDisplay();
