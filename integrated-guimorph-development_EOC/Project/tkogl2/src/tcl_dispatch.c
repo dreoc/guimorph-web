@@ -3121,6 +3121,16 @@ TCL_CMD(setDownSample)
 	return TCL_OK;
 }
 
+// Selection grab tolerance is intentionally larger than the drawn marker radius.
+// A marker is drawn as a solid sphere of radius dotRadius sitting on the mesh
+// surface, so a click on the marker reads (via getSpecimenCoordinate) the
+// sphere-surface depth, which is offset from the stored mesh-surface center by up
+// to ~dotRadius along the view direction. With an equal-size hit box the click
+// lands on the tolerance boundary and selection flakes out (falling through to
+// specimen rotation). Widening the grab box makes selection forgiving without
+// enlarging the drawn marker.
+#define GBL_SELECT_TOLERANCE_FACTOR 3.0
+
 //updates dot parameters
 #ifdef STAND_ALONE_TOOL
 int setDot(ClientData clientData, Tcl_Interp* interp, int objc, Tcl_Obj* const objv[])
@@ -3175,7 +3185,7 @@ TCL_CMD(setDot)
 		if (LANDMARK == showModel)
 		{
 
-			if (0 != dot_select(&p, dotRadius))
+			if (0 != dot_select(&p, dotRadius * GBL_SELECT_TOLERANCE_FACTOR))
 			{
 				sprintf(buffer, "INFO : (landmark) No dot selected at %d %d", x, y);
 				simpleLog(buffer); // NOT an error 
@@ -3198,7 +3208,7 @@ TCL_CMD(setDot)
 
 		if (ANCHOR == showModel)
 		{
-			if (0 != anchor_select(&p, anchorRadius))
+			if (0 != anchor_select(&p, anchorRadius * GBL_SELECT_TOLERANCE_FACTOR))
 			{
 				sprintf(buffer, "INFO : No anchor selected at %d %d\n", x, y);
 				simpleLog(buffer); // NOT an error 
@@ -3222,7 +3232,7 @@ TCL_CMD(setDot)
 		if (CURVE == showModel)
 		{
 
-			if (0 != dot_select(&p, dotRadius))
+			if (0 != dot_select(&p, dotRadius * GBL_SELECT_TOLERANCE_FACTOR))
 			{
 				sprintf(buffer, "INFO : (curve) No dot selected at %d %d", x, y);
 				simpleLog(buffer); // NOT an error 
