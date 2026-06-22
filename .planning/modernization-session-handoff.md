@@ -5,9 +5,11 @@
 `C:\Users\akagi\.cursor\projects\wsl-Ubuntu-home-akagi-home-GUImorph\agent-transcripts\e7bdb991-33c4-49a2-ac4b-a1bccd548453\e7bdb991-33c4-49a2-ac4b-a1bccd548453.jsonl`
 
 **Started:** 2026-06-12 — architecture review & modernization plan  
-**Last activity:** 2026-06-13 — Phase 1 MinGW build scaffold; R install question at end
+**Last activity:** 2026-06-13 — Plan 1 MinGW build scaffold; R install question at end
 
 Use `@.planning/modernization-session-handoff.md` in a new agent chat to continue this work.
+
+> **Naming:** **Plan 0–3** = original modernization outline (`guimorph-modernization-plan.md`). **GSD Phase 1–9** = execution roadmap (`.planning/ROADMAP.md`).
 
 ---
 
@@ -25,18 +27,18 @@ R package for **3D geometric morphometrics**: load PLY meshes, digitize landmark
 
 ---
 
-## Modernization roadmap (agreed)
+## Modernization plans (original outline)
 
-| Phase | Goal | Status |
-|-------|------|--------|
+| Plan | Goal | Status |
+|------|------|--------|
 | **0** | Repo cleanup: flatten embedded git, purge VS caches, `.gitignore` | ✅ Done (committed on `repo-cleanup`) |
-| **1** | Get `tkogl2.dll` building again without Visual Studio (MinGW + CMake) | 🟡 Scaffold done; build validated in follow-on R chat |
-| **2** | Reproducible R env (`renv`), GUI launch, dependency migration | ⏳ Not started |
-| **3** | Strategic fork: rehabilitate C / swap renderer (`rgl`) / rebuild UI | ⏳ Decision deferred |
+| **1** | Get `tkogl2.dll` building again without Visual Studio (MinGW + CMake) | ✅ Complete — validated 2026-06-13 |
+| **2** | Reproducible R env (`renv`), GUI launch, dependency migration | 🟡 GUI launch ✅ (2026-06-13); renv + analyze round-trip pending |
+| **3** | Strategic fork: rehabilitate C / swap renderer (`rgl`) / rebuild UI | ⏳ Option A chosen; maps to GSD Phases 7–9 |
 
 ---
 
-## Phase 0 — completed decisions & results
+## Plan 0 — completed decisions & results
 
 **User decisions:**
 
@@ -54,9 +56,9 @@ R package for **3D geometric morphometrics**: load PLY meshes, digitize landmark
 
 ---
 
-## Phase 1 — completed work
+## Plan 1 — completed work
 
-**Build target chosen:** MinGW-w64 cross-compile in WSL → Windows `tkogl2.dll` (user runs commands; R not required for compile-only phase).
+**Build target chosen:** MinGW-w64 cross-compile in WSL → Windows `tkogl2.dll` (user runs commands; R not required for compile-only plan).
 
 **Key findings driving the build:**
 
@@ -66,7 +68,7 @@ R package for **3D geometric morphometrics**: load PLY meshes, digitize landmark
 - MinGW has GL/GLU but not GLUT → `third_party/glut_shim/GL/glut.h` + link vendored `glut64.dll`
 - GLUT usage: `glutInitDisplayMode`, `glutBitmapCharacter`, `glutSolidSphere` only
 
-**Files created/modified in Phase 1:**
+**Files created/modified in Plan 1:**
 
 | Path | Purpose |
 |------|---------|
@@ -91,31 +93,16 @@ cmake --build build -j
 
 ## Where the lost chat stopped
 
-Last user messages in the original session:
+Superseded by **2026-06-13 PowerShell smoke test** — see `.planning/smoke-test-findings.md`.
 
-1. Terminal output validation during Phase 1 build iterations
-2. **"are you able to install R on my windows env from your sandbox"**
-
-Follow-on work happened in a **separate chat** (`b0ee6d08-...`): Windows R installed via winget, CRAN deps installed, findings recorded in `.planning/r-guimorph-setup-findings.md`. MinGW `tkogl2.dll` build succeeded (exports `Tkogl2_Init`).
+User successfully ran `load_all(".")`, `GUImorph()`, and loaded `C13.1.ply`. Startup OOB errors and landmark click warnings remain.
 
 ---
 
 ## Next steps (pick up here)
 
-1. **Runtime smoke test** — Windows R:
-   ```r
-   dll <- "\\\\wsl.localhost\\Ubuntu\\home\\akagi\\home\\GUImorph\\integrated-guimorph-development_EOC\\Project\\tkogl2\\build\\tkogl2.dll"
-   library(tcltk)
-   tcl("load", dll, "Tkogl2")
-   ```
-2. **Load GUImorph package:**
-   ```r
-   setwd("\\\\wsl.localhost\\Ubuntu\\home\\akagi\\home\\GUImorph\\integrated-guimorph-development_EOC\\Project\\GUImorphDevelopment")
-   devtools::load_all(".")
-   GUImorph()
-   ```
-3. Optionally copy new `build/tkogl2.dll` → `inst/libs/x64/` before testing
-4. **Phase 2:** pin R deps with `renv`, verify digitize→analyze round-trip
+1. **Did the mesh render?** ✅ Yes — `C13.1.ply` artifact visible
+2. **Landmarks** — ❌ not seen on specimen; debug dot display / pick path (GSD Phases 3–4)
 
 ---
 
@@ -134,5 +121,5 @@ Follow-on work happened in a **separate chat** (`b0ee6d08-...`): Windows R insta
 ## Related artifacts
 
 - `.planning/r-guimorph-setup-findings.md` — R install & first load attempt (separate chat)
-- `.gitignore` — Phase 0 policy
+- `.gitignore` — Plan 0 policy
 - `integrated-guimorph-development_EOC/Project/tkogl2/build.log` — build output log (if present)

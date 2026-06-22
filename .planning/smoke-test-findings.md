@@ -576,3 +576,46 @@ User confirmed all blocking symptoms resolved after MSVC rebuild + deploy:
 **Status:** ✅ **07-03 smoke PASSED. Phase 7 complete.**
 
 ---
+
+## Phase 8 — C Engine Deduplication (08-03 UAT)
+
+**Date:** 2026-06-22  
+**Specimen / fixture:** `C13.1.ply`; `zips/Folsom 3D models/test_dgt_anchors_curves.dgt` (landmarks + curve + anchor)  
+**Environment:** Windows R 4.6, MSVC `tkogl2.dll` (unified `marker.c` build)  
+**Rollback:** `inst/libs/x64/tkogl2.dll.pre-phase8.bak` (316,416 B — pre-Phase-8 baseline, D-13)
+
+### Deploy
+
+| Step | Result | Notes |
+|------|--------|-------|
+| MSVC `build-msvc/Release/tkogl2.dll` → `inst/libs/x64/` | ✅ | Commit `0118a8e`; 312,832 B |
+| Pre-Phase-8 backup preserved | ✅ | `tkogl2.dll.pre-phase8.bak` untouched |
+
+### UAT results (D-04, D-03, D-10, D-11)
+
+| Check | Result | Notes |
+|-------|--------|-------|
+| Landmark place / select / move / delete | ✅ | Parity with pre-Phase-8 baseline (D-04) |
+| Anchor place / select / move / delete | ✅ | Selected anchor moves/deletes correctly (D-03/D-10) |
+| `.dgt` save → same-session `openDgt` reload | ✅ | Landmarks + curve + **anchor** restore (D-11) |
+| Anchor-id +1 discrepancy (A1) | ✅ | Coordinate-based flows correct; no blocking id-getter issue observed |
+
+### Gap fixes applied during UAT (not in original 08-02 scope)
+
+| Issue | Root cause | Fix | Commit |
+|-------|------------|-----|--------|
+| `del("dot")` / `del("anchor")` error | R `del()` referenced missing `arg1..arg3` | Default args; `tcl("del","dot")` / `tcl("del","anchor")` → `*_del_selected` | `195b568` |
+| Moving anchor moved landmark | `setDot coordinate` always called `dot_move`; legacy relied on D-03 asymmetry | Route `anchor_move` when `showModel==ANCHOR` | `220ee51` |
+| Selection imprecise (rotation fall-through) | Click reads sphere-surface depth ~radius from stored mesh-center; hit box was equal to draw radius | `GBL_SELECT_TOLERANCE_FACTOR=3.0` on select | `065e895` |
+| `.dgt` load: `object 'e' not found` | `draw.anchors` used `e$anchorsPresentInMemory` without `e` param | `draw.anchors(e, id, anchors)` + call-site updates | `45bfeec` |
+
+### CENG-02 validation
+
+- `dot_ZARF_9.c` removed; `marker.c` + thin wrappers serve all dispatched `dot_*` / `anchor_*` names
+- Anchor selection uses per-set `g_anchors` state (D-03 fix observable in UAT)
+- Landmark behavior preserved (D-04)
+- `Tkogl2_Init` exported from MSVC Release build (08-02)
+
+**Status:** ✅ **Phase 8 UAT PASSED.** C engine deduplication complete. Proceed to Phase 9 (numbered globals / debug cleanup).
+
+---

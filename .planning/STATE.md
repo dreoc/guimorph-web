@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
+status: All UAT passed — landmarks, anchors, .dgt round-trip with anchor
 stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-06-22"
-last_activity: 2026-06-22 — 08-02 marker.c unified; dot_ZARF_9.c deleted; MSVC Release build green
+last_updated: "2026-06-22T20:13:20.516Z"
+last_activity: 2026-06-22
 progress:
-  total_phases: 9
-  completed_phases: 7
+  total_phases: 11
+  completed_phases: 5
   total_plans: 14
-  completed_plans: 13
-  percent: 93
+  completed_plans: 14
+  percent: 45
 ---
 
 # Project State
@@ -25,18 +25,18 @@ See: .planning/PROJECT.md (updated 2026-06-15)
 
 ## Current Position
 
-Phase: 08 (c-engine-deduplication) — **EXECUTING**
-Plan: 08-03 (3/3) — deploy DLL + landmark/anchor GUI UAT
-Status: 08-02 complete — marker.c replaces dot_ZARF_9.c; MSVC Release build succeeded
-Last activity: 2026-06-22 — unified marker_* core + wrappers committed; ready for 08-03 deploy/UAT
+Phase: 9
+Plan: Not started
+Status: All UAT passed — landmarks, anchors, .dgt round-trip with anchor
+Last activity: 2026-06-22
 
-Progress: [█████████░] 93%
+Progress: [████████░░] 89%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 13
+- Total plans completed: 19
 - Average duration: —
 - Total execution time: —
 - 08-c-engine-deduplication / 02: 45min (3 tasks, 3 files)

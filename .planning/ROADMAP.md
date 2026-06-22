@@ -15,7 +15,7 @@ Full modernization of GUImorph on modern Windows R: validate the MinGW-built nat
 - [x] **Phase 5: Analysis Round-Trip** — `geomorph` analysis + API migration
 - [ ] **Phase 6: Reproducible Dev Environment** — `renv`, build docs, DLL deploy workflow
 - [x] **Phase 7: C Engine Modularization** — Split `tcl_if` god file into focused modules
-- [ ] **Phase 8: C Engine Deduplication** — Unify dot/anchor implementations
+- [x] **Phase 8: C Engine Deduplication** — Unify dot/anchor implementations (completed 2026-06-22)
 - [ ] **Phase 9: C Engine Cleanup & Validation** — Globals, debug removal, regression test
 
 ## Phase Details
@@ -246,7 +246,7 @@ Plans:
 
 **Wave 3**
 
-- [ ] 08-03-PLAN.md — Deploy DLL; manual Windows R GUI UAT (landmark parity D-04, anchor place/select/move/delete D-03/D-10, `.dgt` round-trip incl. anchor D-11); document in smoke-test-findings.md D-12 (CENG-02)
+- [x] 08-03-PLAN.md — Deploy DLL; manual Windows R GUI UAT (landmark parity D-04, anchor place/select/move/delete D-03/D-10, `.dgt` round-trip incl. anchor D-11); document in smoke-test-findings.md D-12 (CENG-02)
 
 **Cross-cutting constraints:**
 
@@ -289,7 +289,7 @@ Phases execute in numeric order: 1 → 2 → … → 9
 | 5. Analysis Round-Trip | 0/3 | Not started | - |
 | 6. Reproducible Dev Environment | 0/3 | Not started | - |
 | 7. C Engine Modularization | 0/3 | Not started | - |
-| 8. C Engine Deduplication | 2/3 | In Progress|  |
+| 8. C Engine Deduplication | 3/3 | Complete    | 2026-06-22 |
 | 9. C Engine Cleanup & Validation | 0/3 | Not started | - |
 
 **Prior work (outside GSD phases):**
@@ -314,7 +314,7 @@ Parking-lot items (999.x) — not sequenced; promote with `/gsd-review-backlog` 
 **Source:** Phase 5 UAT (2026-06-19) — rgl window opens; canvas appears empty.
 **Context:** `plotspecs()` → `geomorph::plotAllSpecimens` on 3×3×2 gpagen `$coords`; Compute + Save CSV work. Suspect rgl/Tk event-loop interaction, plot_param sizing, or geomorph 4.x 3D backend on Windows R 4.6.
 **Requirements:** TBD
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 

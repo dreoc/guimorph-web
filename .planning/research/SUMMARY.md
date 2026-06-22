@@ -44,7 +44,7 @@ R (Tk GUI) → stringly-typed Tcl protocol → tkogl2.dll (WGL/OpenGL). C rehabi
 |----------|--------|
 | Codebase map | Skip — use existing planning docs |
 | Milestone scope | **Full modernization** (includes C rehab) |
-| Phase 3 fork | **Option A** — rehabilitate C in place (Windows-only) |
+| Plan 3 fork | **Option A** — rehabilitate C in place (Windows-only) |
 | Workflow | YOLO + standard + parallel + all quality agents |
 | Research | Yes |
 

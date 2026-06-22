@@ -3,6 +3,8 @@
 **Source:** Initial architecture review from agent transcript `e7bdb991-33c4-49a2-ac4b-a1bccd548453` (2026-06-12)  
 **Scope:** `integrated-guimorph-development_EOC/` — ~8 years untouched, written as student-era research code
 
+> **Naming:** This document uses **Plan 0–3** for the original four-stage modernization outline. **GSD Phases 1–9** (execution roadmap) live in `.planning/ROADMAP.md` — different numbering, finer granularity.
+
 ---
 
 ## Original review questions
@@ -171,11 +173,11 @@ None of this is unusual for a research tool written solo as a student — but it
 
 ## 4. Proposed modernization plan
 
-Stage the work so you get something *running* before investing in deeper rewrites. Roughly four phases:
+Stage the work so you get something *running* before investing in deeper rewrites. Roughly four plans:
 
 ---
 
-### Phase 0 — Triage & repo cleanup
+### Plan 0 — Triage & repo cleanup
 
 **Effort:** Low  
 **Leverage:** High
@@ -187,11 +189,11 @@ Stage the work so you get something *running* before investing in deeper rewrite
 - Decide whether the prebuilt DLLs should be release artifacts rather than tracked source
 - Confirm what actually compiled last — the `inst/libs/x64/tkogl2.dll` is dated 2020 and may still load; worth testing first to establish a known-good baseline
 
-**Why first:** Cleans the repo so every later phase works against real source, not stale artifacts and IDE caches.
+**Why first:** Cleans the repo so every later plan works against real source, not stale artifacts and IDE caches.
 
 ---
 
-### Phase 1 — Get the existing DLL building again
+### Plan 1 — Get the existing DLL building again
 
 **Effort:** Medium  
 **Goal:** Smallest path to "working"
@@ -205,13 +207,25 @@ Stage the work so you get something *running* before investing in deeper rewrite
 - Build against current Tcl/Tk 8.6 stubs
 - Confirm the R package loads the freshly built DLL
 
-**Important constraint:** This phase changes **no logic** — it just restores a compile. This is where to start, and it may be most of what "get it working" requires.
+**Important constraint:** This plan changes **no logic** — it just restores a compile. This is where to start, and it may be most of what "get it working" requires.
 
-**Note:** In follow-on work, Phase 1 was adapted for Cursor (no Visual Studio IDE): MinGW-w64 cross-compile from WSL + CMake. See `integrated-guimorph-development_EOC/Project/tkogl2/BUILD.md`.
+**Note:** In follow-on work, Plan 1 was adapted for Cursor (no Visual Studio IDE): MinGW-w64 cross-compile from WSL + CMake. See `integrated-guimorph-development_EOC/Project/tkogl2/BUILD.md`.
+
+**Validation (2026-06-13):** ✅ Complete — compile-only goal met.
+
+| Criterion (original VS plan) | CMake/MinGW equivalent | Status |
+|------------------------------|------------------------|--------|
+| Fix `.vcxproj` `_ZARF_9` filenames | All 7 `*_ZARF_9.c` + `tcl_stub_bootstrap.c` in `CMakeLists.txt` | ✅ |
+| Relative include/lib paths | `${CMAKE_CURRENT_SOURCE_DIR}` / `${SRC}` | ✅ |
+| Release\|x64 → `DynamicLibrary` | `add_library(tkogl2 SHARED …)` → `tkogl2.dll` | ✅ |
+| Tcl 8.6 stubs | `src/tcl_stub_bootstrap.c` (MinGW can't read MSVC `.lib`) | ✅ |
+| Confirm R package loads DLL | **Not in compile plan** — pending Windows R `tcl("load", …)` smoke test | ⏳ |
+
+Fresh build output: `build/tkogl2.dll` — 883,519 bytes, PE32+ x86-64, export `[0] Tkogl2_Init`. Runtime deps: `OPENGL32`, `GLU32`, `GDI32`, `USER32`, `glut64.dll`.
 
 ---
 
-### Phase 2 — De-risk the dependencies (R side)
+### Plan 2 — De-risk the dependencies (R side)
 
 **Effort:** Medium–High  
 **Goal:** Reproducible, testable R environment
@@ -225,7 +239,7 @@ Stage the work so you get something *running* before investing in deeper rewrite
    - Stay on 8.6 (lower risk), or
    - Move to 9.0 (bigger lift, ABI break)
 
-**Why after Phase 1:** No point migrating R APIs until the native DLL loads and the GUI actually opens.
+**Why after Plan 1:** No point migrating R APIs until the native DLL loads and the GUI actually opens.
 
 **Suggested verification:**
 
@@ -236,7 +250,7 @@ Stage the work so you get something *running* before investing in deeper rewrite
 
 ---
 
-### Phase 3 — Strategic modernization (the real decision)
+### Plan 3 — Strategic modernization (the real decision)
 
 **Effort:** High (depends on chosen path)  
 **Goal:** Long-term maintainability and portability
@@ -268,7 +282,7 @@ The honest question is whether to *rehabilitate* the C engine or *replace* it. T
 
 **Tradeoff:** Most work, but most future-proof UI.
 
-**Decision point:** Input is needed before committing to Phase 3 since it's the expensive fork in the road.
+**Decision point:** Input is needed before committing to Plan 3 since it's the expensive fork in the road.
 
 ---
 
@@ -278,14 +292,14 @@ These were identified but not yet verified at the time of the original review:
 
 1. **Try loading the existing 2020 DLL** with current R to see if anything runs at all (establishes the real starting point)
 2. **Read the GUI files end-to-end** (`3dDigitize.digitize.r`, `.curve.r`, `.surface.r`) to map the full feature set and find where `geomorph` is actually called
-3. **Inventory exactly which `geomorph`/`Morpho` functions are used** so the API-migration work in Phase 2 can be quantified
+3. **Inventory exactly which `geomorph`/`Morpho` functions are used** so the API-migration work in Plan 2 can be quantified
 
 ---
 
-## Phase summary
+## Plan summary
 
-| Phase | Name | Primary deliverable |
-|-------|------|---------------------|
+| Plan | Name | Primary deliverable |
+|------|------|---------------------|
 | **0** | Triage & repo cleanup | Clean git repo, real `.gitignore`, baseline DLL test |
 | **1** | Restore the build | Compiling `tkogl2.dll` that R can load |
 | **2** | De-risk R dependencies | `renv`, GUI launch, digitize→analyze round-trip, API migration |
@@ -295,6 +309,6 @@ These were identified but not yet verified at the time of the original review:
 
 ## Related documents
 
-- `.planning/modernization-session-handoff.md` — session state and progress after Phase 0/1 work
+- `.planning/modernization-session-handoff.md` — session state and progress after Plan 0/1 work
 - `.planning/r-guimorph-setup-findings.md` — Windows R install and first load attempt
-- `integrated-guimorph-development_EOC/Project/tkogl2/BUILD.md` — Phase 1 MinGW/CMake build instructions
+- `integrated-guimorph-development_EOC/Project/tkogl2/BUILD.md` — Plan 1 MinGW/CMake build instructions

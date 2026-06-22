@@ -1,5 +1,7 @@
 # GUImorph Modernization
 
+> **Naming:** **Plan 0–3** = original outline (`.planning/guimorph-modernization-plan.md`). **GSD Phase 1–9** = execution roadmap (`.planning/ROADMAP.md`).
+
 ## What This Is
 
 GUImorph is an R package for **3D geometric morphometrics** — researchers load PLY mesh specimens, digitize landmarks, curves, and anchors in a Tk GUI, then export coordinates for statistical shape analysis (`geomorph`, `Morpho`, `Rvcg`, `vegan`). This project **fully modernizes** an ~8-year-old research codebase: restore it on current Windows R, migrate stale dependencies, and **rehabilitate the C/OpenGL engine in place** (Option A) for long-term maintainability without replacing the renderer.
@@ -12,14 +14,18 @@ A researcher can open the GUI on Windows R, load a 3D specimen, digitize anatomi
 
 ### Validated
 
-- ✓ Repository cleanup — Phase 0 (`repo-cleanup` branch): flattened embedded git, comprehensive `.gitignore`, purged VS caches/diagsession (~3 GB → ~55 MB)
-- ✓ Native DLL compiles via MinGW-w64 + CMake — Phase 1 scaffold: `tkogl2.dll` exports `Tkogl2_Init` from ZARF_9 sources
+- ✓ Repository cleanup — Plan 0 (`repo-cleanup` branch): flattened embedded git, comprehensive `.gitignore`, purged VS caches/diagsession (~3 GB → ~55 MB)
+- ✓ Native DLL compiles via MinGW-w64 + CMake — validated 2026-06-13: `build/tkogl2.dll` (883 KB PE32+ x64), exports `Tkogl2_Init`
+- ✓ MinGW DLL deployed — 2026-06-15: `build/tkogl2.dll` → `inst/libs/x64/tkogl2.dll`, `Tkogl2_Init` verified, Windows R load confirmed
+- ✓ Windows R smoke test — 2026-06-13: `load_all(".")`, `GUImorph()` opens, PLY load pipeline runs (`C13.1.ply`); now running MinGW build in `inst/libs/x64/`
 - ✓ Windows R 4.6 toolchain available — `winget install RProject.R`, CRAN deps installed to user library
+- ✓ Package load + GUI launch — 2026-06-13; Phase 2 complete 2026-06-15 (MinGW DLL, startup OOB fix)
+- ✓ Specimen mesh renders in 3D viewer — 2026-06-13: `C13.1.ply` artifact **visible** after load (user confirmed)
+- ✓ PLY load pipeline — 2026-06-13: file found, `add specimen` invoked
+- ✓ Landmark placement on specimen — 2026-06-15: landmarks **visible** after placement; requires **double-click** on canvas (single-click is pick/select only, not placement)
 
 ### Active
 
-- [ ] Runtime smoke test: new `tkogl2.dll` loads via Tcl without error
-- [ ] GUImorph package loads from source (`devtools::load_all`) and opens "3D GUImorph" window
 - [ ] Reproducible R environment (`renv`) with documented dependency versions
 - [ ] Digitize workflow: load PLY → place landmarks/curves → export `.dgt`
 - [ ] Analysis round-trip: exported data runs at least one `geomorph` analysis call
@@ -63,12 +69,13 @@ A researcher can open the GUI on Windows R, load a 3D specimen, digitize anatomi
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Flatten embedded git repo | Single outer repo (`dreoc/GUImorph`) instead of nested history | ✓ Good — Phase 0 |
+| Flatten embedded git repo | Single outer repo (`dreoc/GUImorph`) instead of nested history | ✓ Good — Plan 0 |
 | MinGW + CMake over Visual Studio | User works in Cursor/WSL; VS project was broken anyway | ✓ Good — DLL builds |
 | **Option A — rehabilitate C in place** | User chose cheapest path; accepts Windows-only + legacy GL | — Pending |
 | Skip formal codebase map | Detailed architecture review already in `.planning/` | ✓ Good |
 | Full modernization milestone | Includes C rehab (Phases 7–9), not just "get it running" | — Pending |
 | Reject rgl/Shiny swap (Options B/C) | Explicit user choice of Option A | — Pending |
+| **Double-click to place landmarks** | Single-click runs pick/select (`set dot selected`); placement is `<Double-Button-1>` → `addDot` | ✓ Good — documented 2026-06-15 |
 
 ## Evolution
 
@@ -88,4 +95,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-13 after user confirmed milestone scope (full modernization, Option A)*
+*Last updated: 2026-06-15 after landmark placement validated (double-click UX)*

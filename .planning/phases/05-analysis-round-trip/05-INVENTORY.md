@@ -10,18 +10,18 @@
 
 | Function | File:Line | Tier | Phase 5 action |
 |----------|-----------|------|----------------|
-| `geomorph::gpagen` | `3dDigitize.geomorph.r:224` | HOT | fix — verify `max.iter` numeric coercion; ProcD explicit from checkbox |
-| `summary` (on gpagen result) | `3dDigitize.geomorph.r:237` | HOT | document — base R `summary()` on gpagen list; no geomorph API change |
-| `geomorph::two.d.array` | `3dDigitize.geomorph.r:251` | HOT | fix — input must be `$coords` (`.gm_aligned_coords` helper added) |
-| `geomorph::plotAllSpecimens` | `3dDigitize.geomorph.r:264` | HOT | fix — `plot.param` → `plot_param` per geomorph 4.x |
-| `getLandmark` | `3dDigitize.main.r:1699` | HOT (bridge) | verify — C/Tcl coordinate extraction before `gpagen`; not geomorph |
-| `@import geomorph` | `3dDigitize.main.r:20` | HOT (package) | document — DESCRIPTION/NAMESPACE import; CRAN gpagen used |
-| `@import Morpho` | `3dDigitize.main.r:26` | SURFACE | document — surface downsampling only |
-| `Morpho::fastKmeans` | `3dDigitize.surface.r:274` | SURFACE | defer — inventory only per D-09 unless GPA UAT blocked |
-| `Morpho::fastKmeans` | `3dDigitize.surface.r:290` | SURFACE | defer — inventory only per D-09 |
-| `Morpho::fastKmeans` | `3dDigitize.surface.r:361` | SURFACE | defer — inventory only per D-09 |
-| `read.ply` (commented) | `3dDigitize.surface.r:246,326,416` | VENDORED-DEFER | document — migrated to `Rvcg::vcgPlyRead` in 2017 |
-| Vendored procD / gpagen suite | `geomorph.support.code.r` (~2814 lines) | VENDORED-DEFER | defer — not reachable from landmarks-only GPA per D-10 |
+| `geomorph::gpagen` | `3dDigitize.geomorph.r:239` | HOT | **DONE** — `as.numeric(max.iter)`, explicit `ProcD=` (05-02) |
+| `summary` (on gpagen result) | `3dDigitize.geomorph.r:252` | HOT | **DONE** — base R `summary()`; no geomorph API change |
+| `geomorph::two.d.array` | `3dDigitize.geomorph.r:266` | HOT | **DONE** — `.gm_aligned_coords()` → `$coords` (05-02) |
+| `geomorph::plotAllSpecimens` | `3dDigitize.geomorph.r:289` | HOT | **DONE** — `plot_param` per geomorph 4.x (05-02) |
+| `getLandmark` | `3dDigitize.main.r:1699` | HOT (bridge) | **DONE (N/A)** — C/Tcl bridge; `.landmarks_for_specimen()` fallback (05-02) |
+| `@import geomorph` | `3dDigitize.main.r:20` | HOT (package) | **DONE** — CRAN geomorph 4.x via package import |
+| `@import Morpho` | `3dDigitize.main.r:26` | SURFACE | **DEFERRED** — surface downsampling only; not on landmarks-only GPA path |
+| `Morpho::fastKmeans` | `3dDigitize.surface.r:274` | SURFACE | **DEFERRED** — surface downsampling only; not on landmarks-only GPA path |
+| `Morpho::fastKmeans` | `3dDigitize.surface.r:290` | SURFACE | **DEFERRED** — surface downsampling only; not on landmarks-only GPA path |
+| `Morpho::fastKmeans` | `3dDigitize.surface.r:361` | SURFACE | **DEFERRED** — surface downsampling only; not on landmarks-only GPA path |
+| `read.ply` (commented) | `3dDigitize.surface.r:246,326,416` | VENDORED-DEFER | **DEFERRED** — migrated to `Rvcg::vcgPlyRead` in 2017 |
+| Vendored procD / gpagen suite | `geomorph.support.code.r` (~2814 lines) | VENDORED-DEFER | **DEFERRED** — Phase 5 scope per D-10; reachable when curve/surface sliding GPA enabled |
 | *(none)* | `rtkogl.R` | — | confirm — no geomorph/Morpho calls |
 
 **Search command used:**
@@ -39,10 +39,10 @@ Landmarks-only GPA (D-01): `compute()` → `gpagen` → `summary` → `plotspecs
 
 | Call | Line | Qualified? | Notes |
 |------|------|------------|-------|
-| `geomorph::gpagen` | 224 | yes (`geomorph::`) | `A=coords.A`, `curves`/`surfaces` NULL when checkboxes OFF; `max.iter = tclvalue(e$maxiter)` is **character** — coerce in 05-02 if UAT warns |
-| `summary(e$gm.results)` | 237 | n/a | Prints gpagen result to console after Compute |
-| `geomorph::two.d.array` | 251 | yes | Uses `.gm_aligned_coords()` fallback `$coords` / legacy `$coord` |
-| `geomorph::plotAllSpecimens` | 264 | yes | Still passes `plot.param=` — **breaking** in geomorph 4.x (`plot_param`) |
+| `geomorph::gpagen` | 239 | yes (`geomorph::`) | `max.iter = as.numeric(tclvalue(...))`; explicit `ProcD=` from checkbox — geomorph 4.x compatible |
+| `summary(e$gm.results)` | 252 | n/a | Base R `summary()` on gpagen list; no API migration needed |
+| `geomorph::two.d.array` | 266 | yes | `.gm_aligned_coords()` → `$coords` / legacy `$coord` fallback |
+| `geomorph::plotAllSpecimens` | 289 | yes | `plot_param=` (geomorph 4.x); `rgl` optional with error dialog |
 
 **Global handoff:** `compute()` assigns `e$gm.results` and `gm.results` to `.GlobalEnv` (line 236). `plotspecs()` / `save()` read via `.gm_results_or_warn()`.
 
@@ -124,11 +124,33 @@ Confirmed: **no** `geomorph`, `Morpho`, `gpagen`, `two.d.array`, or `plotAllSpec
 
 ## Downstream: Plan 05-02 Priority
 
-Fix order for GPA UAT (D-08):
+Fix order for GPA UAT (D-08) — **all applied 2026-06-19 (05-02)**:
 
-1. `plot_param` rename in `plotspecs()` (line 265)
-2. Confirm `$coords` / `two.d.array` path in `save()` (lines 248–251)
-3. Optional `as.numeric(tclvalue(e$maxiter))` in `gpagen` call (line 227)
-4. Windows R UAT: Compute → Plot → Save CSV with `test_fresh.dgt`
+1. ✅ `plot_param` rename in `plotspecs()` (line 294)
+2. ✅ `$coords` / `two.d.array` path in `save()` via `.gm_aligned_coords()` (lines 263–266)
+3. ✅ `as.numeric(tclvalue(e$maxiter))` in `gpagen` call (line 242)
+4. ✅ Windows R UAT: Compute → Save CSV with `test_fresh.dgt` (Plot quirk documented)
 
 Morpho `fastKmeans` and vendored `geomorph.support.code.r` remain **out of scope** unless UAT is blocked.
+
+---
+
+## Migration Status (2026-06-15)
+
+Re-audit completed 2026-06-19 (plan 05-03). No new calls into vendored `geomorph.support.code.r` (grep confirmed). `summary(e$gm.results)` prints gpagen output without blocking Compute.
+
+| Function | Tier | Status | Reference / note |
+|----------|------|--------|------------------|
+| `geomorph::gpagen` | HOT | **DONE** | 05-02 — `as.numeric(max.iter)`, `ProcD=` explicit |
+| `summary` (gpagen result) | HOT | **DONE** | Base R; no geomorph API change |
+| `geomorph::two.d.array` | HOT | **DONE** | 05-02 — `.gm_aligned_coords()` for `$coords` |
+| `geomorph::plotAllSpecimens` | HOT | **DONE** | 05-02 — `plot_param`; rgl error dialog |
+| `getLandmark` / `.landmarks_for_specimen` | HOT (bridge) | **DONE** | 05-02 — C + `activeDataList[[10]]` fallback |
+| `@import geomorph` | HOT (package) | **DONE** | CRAN geomorph 4.x |
+| `@import Morpho` | SURFACE | **DEFERRED** | Surface downsampling only; not on landmarks-only GPA path |
+| `Morpho::fastKmeans` (×3) | SURFACE | **DEFERRED** | Surface downsampling only; not on landmarks-only GPA path |
+| `read.ply` (commented) | VENDORED-DEFER | **DEFERRED** | Replaced by `Rvcg::vcgPlyRead` (2017) |
+| Vendored procD / gpagen suite | VENDORED-DEFER | **DEFERRED** | Phase 5 scope per D-10; reachable when curve/surface sliding GPA enabled |
+| `rtkogl.R` | — | **N/A** | No geomorph/Morpho calls |
+
+**ANAL-03 scope note:** Hot-path `gpagen` / `plotAllSpecimens` / `two.d.array` / `save()` migrated to geomorph 4.x CRAN APIs. Full vendored `procD.lm` / `advanced.procD.lm` replacement deferred per D-10 — not reachable from landmarks-only GPA tab.
