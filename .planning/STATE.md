@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: CONTEXT.md written — unify dot/anchor into shared marker.c (wrappers + marker_set_t; fix anchor asymmetry)
-stopped_at: Phase 8 context gathered
-last_updated: "2026-06-22T14:57:40.664Z"
-last_activity: 2026-06-21 — Phase 8 discuss complete (structure, behavior, module, verify)
+status: executing
+stopped_at: Phase 8 plan 08-01 — MSVC checkpoint
+last_updated: "2026-06-22"
+last_activity: 2026-06-22 — Phase 8 execution started; 08-01 tasks 1-2 committed; awaiting MSVC gate
 progress:
   total_phases: 9
   completed_phases: 7
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-06-15)
 
 ## Current Position
 
-Phase: 08 (c-engine-deduplication) — **CONTEXT GATHERED**
-Plan: Not yet planned (ROADMAP sketches 08-01 characterize / 08-02 marker.c / 08-03 remove + verify)
-Status: CONTEXT.md written — unify dot/anchor into shared marker.c (wrappers + marker_set_t; fix anchor asymmetry)
-Last activity: 2026-06-21 — Phase 8 discuss complete (structure, behavior, module, verify)
+Phase: 08 (c-engine-deduplication) — **EXECUTING**
+Plan: 08-01 (1/3) — interface contract + rollback baseline
+Status: Tasks 1-2 committed; Task 3 MSVC human-verify checkpoint
+Last activity: 2026-06-22 — marker.h + tkogl2.dll.pre-phase8.bak landed; MSVC gate pending
 
 Progress: [███████░░░] ~78%
 
