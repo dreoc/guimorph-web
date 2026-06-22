@@ -51,7 +51,7 @@ add_library(tkogl2 SHARED
     ${SRC}/ogl_model_ZARF_9.c
     ${SRC}/ogl_model_ply_ZARF_9.c
     ${SRC}/curve_ZARF_9.c
-    ${SRC}/dot_ZARF_9.c
+    ${SRC}/marker.c
     ${SRC}/StatisticsFunction_ZARF_9.c
 )
 
