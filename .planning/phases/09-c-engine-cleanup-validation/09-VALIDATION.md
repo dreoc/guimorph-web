@@ -1,8 +1,8 @@
 ---
 phase: 9
 slug: c-engine-cleanup-validation
-status: draft
-nyquist_compliant: false
+status: ready
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-22
 ---
@@ -41,9 +41,10 @@ created: 2026-06-22
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 09-01-xx | 01 | 1 | CENG-03 | — | N/A (internal cleanup) | build + manual | MSVC build green; `Tkogl2_Init` exported; capacity `#define`s present in `tcl_state.h` | ❌ W0 (manual) | ⬜ pending |
-| 09-02-xx | 02 | 2 | CENG-04 | — | Must not weaken `.dgt`/`.ply` parse guards (V5) while deleting nearby `printf` | build + manual | MSVC build green; bare `printf(` count → 0 live trace; load-bearing diagnostics on `simpleLog` | ❌ W0 (manual) | ⬜ pending |
-| 09-03-xx | 03 | 3 | CENG-05 | — | N/A | manual UAT | Full round-trip × 2 fixtures matches Phase 4–5 / Phase 8 baseline | ❌ W0 (manual) | ⬜ pending |
+| 09-01-xx | 01 | 1 | CENG-03 | — | N/A (internal cleanup); preserve curve-index bug verbatim (D-02) | build + manual | MSVC build green; `Tkogl2_Init` exported; capacity `#define`s (MODEL/CONTEXT/CURVE → 5/5/6) present in `tcl_state.h`; GUI smoke checkpoint | ❌ W0 (manual) | ⬜ pending |
+| 09-02-xx | 02 | 2 | CENG-04 | — | Must not weaken `.dgt`/`.ply` parse guards (V5) while deleting nearby `printf` (D-05 loader zone) | build + manual | MSVC build green; 74 loader trace `printf` + D-05-zone `if(0)` removed; load-bearing `TAG_*` on `simpleLog`; reload re-test (`Surface=0` does not abort `openDgt`) | ❌ W0 (manual) | ⬜ pending |
+| 09-03-xx | 03 | 3 | CENG-04 | — | N/A; `def_ZARF_9.h` `dot_t`/enum layout byte-unchanged (only `D*` macros removed after call sites) | build + manual | MSVC build green; state dump (30) + stats (9) + dispatch (4) trace `printf` removed; `if(0)`/`MAKE_INERT` docs pruned; GUI smoke checkpoint | ❌ W0 (manual) | ⬜ pending |
+| 09-04-xx | 04 | 4 | CENG-05 | — | N/A | manual UAT | Full round-trip × 2 fixtures (`test_fresh.dgt`, `test_dgt_anchors_curves.dgt`) incl. GPA + CSV matches Phase 4–5 / Phase 8 baseline; BUILD.md D-14 module table | ❌ W0 (manual) | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 

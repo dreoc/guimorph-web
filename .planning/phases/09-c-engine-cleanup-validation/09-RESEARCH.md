@@ -422,7 +422,13 @@ if (0)   // when enabled this provides a lot of output ...
 | A5 | Editing `RunTime_Defines_ZARF_9.h` (prune MAKE_INERT docs) and removing `D/D1/D2/D3` macro **call sites** does not violate the `def_ZARF_9.h` *type-layout* freeze | CENG-04 / Open Q2 | LOW — macros/comments are not the protected `dot_t`/enum layout; confirm intent |
 | A6 | Capacity values 5/5/6 for MODEL/CONTEXT/CURVE are the intended limits (derived from the numbered-slot counts) | CENG-03 | LOW — they match the declared families exactly |
 
-## Open Questions
+## Open Questions (RESOLVED — adopted into 09-01..09-04 plans, 2026-06-22)
+
+> All four resolved during planning (user in `yolo` mode; recommended dispositions adopted):
+> (1) **Array-ify all three families + delete commented assignment ladders** → 09-01 T2 / 09-03.
+> (2) **Remove `D/D1/D2/D3` call sites AND their definitions; prune `MAKE_INERT` docs** — confirmed the Phase-8 freeze is `dot_t`/enum *layout* only → 09-03 T2.
+> (3) **`STAND_ALONE_TOOL` blocks OUT OF SCOPE** (CONTEXT named only MAKE_INERT/if(0)/printf).
+> (4) **Curve-index bug PRESERVED VERBATIM** under D-02 (comment-flagged, not fixed) → 09-01 T2.
 
 1. **Dead context/model families — array-ify or delete?**
    - What we know: `GBL_PTR_CONTEXT_1..5` is entirely dead; `GBL_PTR_MODEL_2..5` and

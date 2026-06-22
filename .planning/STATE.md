@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: complete
-stopped_at: Phase 9 context gathered
-last_updated: "2026-06-22"
-last_activity: 2026-06-22 — Phase 9 context gathered (cleanup + validation decisions locked)
+status: All UAT passed — landmarks, anchors, .dgt round-trip with anchor
+stopped_at: Phase 9 context gathered — ready for planning
+last_updated: "2026-06-22T21:21:07.841Z"
+last_activity: 2026-06-22 — Phase 8 closed; CENG-02 validated end-to-end
 progress:
   total_phases: 9
   completed_phases: 8
