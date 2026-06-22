@@ -575,3 +575,72 @@ int marker_size_for_slice_index(marker_set_t* s, int index)
 	simpleLog(buffer);
 	return size;
 }
+
+/* ============================================================================
+ * dot_* wrappers (forward to g_landmarks)
+ * ============================================================================ */
+
+int isDotArrayNull(void) { return marker_is_array_null(&g_landmarks); }
+int isDotArrayNotNull(void) { return !marker_is_array_null(&g_landmarks); }
+int isAnchorArrayNull(void) { return marker_is_array_null(&g_anchors); }
+int isAnchorArrayNotNull(void) { return !marker_is_array_null(&g_anchors); }
+
+int get_dot_slice_id(void) { return marker_get_slice_id(&g_landmarks); }
+int get_anchor_slice_id(void) { return marker_get_slice_id(&g_anchors); }
+int get_dot_slice_index(void) { return marker_get_slice_id(&g_landmarks); }
+int get_anchor_slice_index(void) { return marker_get_slice_id(&g_anchors); }
+int get_dot_slice_amount(void) { return marker_get_slice_amount(&g_landmarks); }
+int get_anchor_slice_amount(void) { return marker_get_slice_amount(&g_anchors); }
+int get_dot_selected_id(void) { return marker_selected_id(&g_landmarks); }
+int get_anchor_selected_id(void) { return marker_selected_id(&g_anchors); }
+
+int dot_size(void) { return marker_size(&g_landmarks); }
+int dot_select(point_t* p, float dotRadius) { return marker_select(&g_landmarks, p, dotRadius); }
+int dotGetSelectedIndex(void) { return dot_selected_id(); }
+int dot_selected_id(void) { return marker_selected_id(&g_landmarks); }
+int dot_add(point_t* p, color_t* c) { return marker_add(&g_landmarks, p, c); }
+int dot_move(point_t* p) { return marker_move(&g_landmarks, p); }
+int dot_color(color_t* c) { return marker_color(&g_landmarks, c); }
+int dot_del(point_t* p) { return marker_del(&g_landmarks, p); }
+int dot_del_selected(void) { return marker_del_selected(&g_landmarks); }
+dot_t* dot_get(int id) { return marker_get(&g_landmarks, id); }
+dot_t* dot_get_dot(int id, int pid) { return marker_get_with_pid(&g_landmarks, id, pid); }
+dot_t* dotGetPointerToTheSelectedDot(void) { return marker_get_selected(&g_landmarks); }
+dot_t* dot_get_selected(void) { return marker_get_selected(&g_landmarks); }
+int dotGetArraySize(void) { return marker_get_slice_amount(&g_landmarks); }
+int dotAllocateList(int listLength) { return marker_allocate_list(&g_landmarks, listLength); }
+int dotReleaseList(void) { return marker_release_list(&g_landmarks); }
+int set_dot_slice_amount(int amount) { return marker_set_slice_amount(&g_landmarks, amount); }
+int dots_free(void) { return marker_free(&g_landmarks); }
+int dotSetArrayIndex(int whichIndex) { return marker_slice_index(&g_landmarks, whichIndex); }
+int dot_slice_index(int id) { return marker_slice_index(&g_landmarks, id); }
+int dot_getListLengthAtCurrentSlice(void) { return marker_list_length_at_current_slice(&g_landmarks); }
+dot_t* get_dot_at_index_current_slice(int index) { return marker_get_at_index_current_slice(&g_landmarks, index); }
+int get_dot_size_for_slice_index(int index) { return marker_size_for_slice_index(&g_landmarks, index); }
+
+/* ============================================================================
+ * anchor_* wrappers (forward to g_anchors — D-03 fix)
+ * ============================================================================ */
+
+int anchorAllocateList(int listLength) { return marker_allocate_list(&g_anchors, listLength); }
+int anchorReleaseList(void) { return marker_release_list(&g_anchors); }
+int anchor_size(void) { return marker_size(&g_anchors); }
+int anchors_selected_id(void) { return marker_selected_id(&g_anchors); }
+int anchorGetSelectedIndex(void) { return anchors_selected_id(); }
+int anchor_del(point_t* p) { return marker_del(&g_anchors, p); }
+int anchor_del_selected(void) { return marker_del_selected(&g_anchors); }
+dot_t* anchor_get_anchor(int id, int pid) { return marker_get_with_pid(&g_anchors, id, pid); }
+int set_anchors_slice_amount(int amount) { return marker_set_slice_amount(&g_anchors, amount); }
+int anchors_free(void) { return marker_free(&g_anchors); }
+int anchor_slice_index(int id) { return marker_slice_index(&g_anchors, id); }
+int anchor_select(point_t* p, float dotRadius) { return marker_select(&g_anchors, p, dotRadius); }
+int anchor_move(point_t* p) { return marker_move(&g_anchors, p); }
+int anchor_color(color_t* c) { return marker_color(&g_anchors, c); }
+dot_t* anchor_get(int id) { return marker_get(&g_anchors, id); }
+int anchorGetArraySize(void) { return marker_get_slice_amount(&g_anchors); }
+int anchor_add(point_t* p, color_t* c) { return marker_add(&g_anchors, p, c); }
+dot_t* anchorGetPointerToTheSelectedDot(void) { return marker_get_selected(&g_anchors); }
+dot_t* anchor_get_selected(void) { return marker_get_selected(&g_anchors); }
+int anchorSetArrayIndex(int whichIndex) { return marker_slice_index(&g_anchors, whichIndex); }
+int anchor_getListLengthAtCurrentSlice(void) { return marker_list_length_at_current_slice(&g_anchors); }
+int get_anchor_size_for_slice_index(int index) { return marker_size_for_slice_index(&g_anchors, index); }
