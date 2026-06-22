@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Phase 8 plan 08-01 — MSVC checkpoint
-last_updated: "2026-06-22"
-last_activity: 2026-06-22 — Phase 8 execution started; 08-01 tasks 1-2 committed; awaiting MSVC gate
+status: verifying
+stopped_at: Phase 8 context gathered
+last_updated: "2026-06-22T16:20:41.417Z"
+last_activity: 2026-06-22 — marker.h + tkogl2.dll.pre-phase8.bak landed; MSVC gate pending
 progress:
-  total_phases: 9
-  completed_phases: 7
+  total_phases: 11
+  completed_phases: 4
   total_plans: 14
-  completed_plans: 14
-  percent: 78
+  completed_plans: 13
+  percent: 36
 ---
 
 # Project State
@@ -55,6 +55,9 @@ Progress: [███████░░░] ~78%
 - **PLY all-zero vertex colors** use lighting fallback; true scan coloration deferred (2026-06-21)
 - **Canvas HWND realization** required before WGL bind — `tcl("update","idletasks")` in `ui.main` (2026-06-21)
 - **Phase 7 modularization:** five `tcl_*` modules replace god file; `tcl_if_ZARF_9.c` deleted from build (2026-06-21)
+- [Phase ?]: marker_del_selected
+- [Phase ?]: marker_del_selected NULL-guards s->selected before deref (D-03 BUG-4)
+- [Phase ?]: def_ZARF_9.h unchanged; wrappers satisfy existing dot_*/anchor_* prototypes
 
 ### Blockers/Concerns
 
@@ -64,6 +67,12 @@ Progress: [███████░░░] ~78%
 
 ## Session Continuity
 
-Last session: 2026-06-21
+Last session: 2026-06-22T16:20:11.980Z
 Stopped at: Phase 8 context gathered
 Resume file: `.planning/phases/08-c-engine-deduplication/08-CONTEXT.md` — then `/gsd-plan-phase 8`
+
+## Performance Metrics
+
+| Phase | Plan | Duration | Notes |
+|-------|------|----------|-------|
+| Phase 08-c-engine-deduplication P02 | 45min | 3 tasks | - files |

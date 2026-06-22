@@ -42,7 +42,7 @@
 ### C Engine Rehabilitation (Option A)
 
 - [x] **CENG-01**: `tcl_if_ZARF_9.c` split into separate modules (dispatch, window/WGL, state, log, init) with no behavior change — validated 2026-06-21 (Phase 7 final smoke)
-- [ ] **CENG-02**: Dot and anchor implementations unified into shared marker code
+- [x] **CENG-02**: Dot and anchor implementations unified into shared marker code
 - [ ] **CENG-03**: Numbered globals (`GBL_PTR_*_1..N`) replaced with arrays; capacity limits documented
 - [ ] **CENG-04**: Debug cruft removed (`MAKE_INERT`, `if(0)` toggles, pervasive `printf` tracing)
 - [ ] **CENG-05**: Post-rehabilitation DLL passes full digitize smoke test (no regression vs Phase 4 baseline)
@@ -92,12 +92,13 @@ Deferred until v1 milestone ships.
 | DEV-02 | Phase 6 | Pending |
 | DEV-03 | Phase 6 | Pending |
 | CENG-01 | Phase 7 | ✓ Validated 2026-06-21 — five-module layout; digitize round-trip smoke passed |
-| CENG-02 | Phase 8 | Pending |
+| CENG-02 | Phase 8 | Complete |
 | CENG-03 | Phase 9 | Pending |
 | CENG-04 | Phase 9 | Pending |
 | CENG-05 | Phase 9 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 22 total
 - Mapped to phases: 22
 - Unmapped: 0 ✓
