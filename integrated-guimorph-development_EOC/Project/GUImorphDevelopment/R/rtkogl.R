@@ -112,16 +112,16 @@ add <- function(shape, arg1, arg2, arg3)
 
     if (2 == arg1)
     {
-      landmarksAlready <- as.integer(result)
-      print (paste ("landmarks already in C code", landmarksAlready))
-      e$landmarksPresentInMemory <- as.integer (landmarksAlready)
+      landmarksAlready <- suppressWarnings(as.integer(result))
+      if (is.na(landmarksAlready)) landmarksAlready <- 0L
+      print(paste("landmarks already in C code", landmarksAlready))
     }
 
     if (4 == arg1)
     {
-      anchorsAlready <- as.integer(result)
-      print (paste ("anchors already in C code", anchorsAlready))
-      e$anchorsPresentInMemory <-  as.integer(anchorsAlready)
+      anchorsAlready <- suppressWarnings(as.integer(result))
+      if (is.na(anchorsAlready)) anchorsAlready <- 0L
+      print(paste("anchors already in C code", anchorsAlready))
     }
 
 
@@ -335,12 +335,20 @@ add <- function(shape, arg1, arg2, arg3)
 
 
 #calls tkogl2 del function / removes specified shape object
-del <- function(shape, arg1, arg2, arg3)
+del <- function(shape, arg1 = -1, arg2 = -1, arg3 = -1)
 {
 
   # design decision June 2020
   # the function calls to tcl_if MUST provide three arguments
   # for unused arguments in tcl_if pass negative integers
+  #
+  # The remove-dot / remove-anchor GUI flow deletes the *selected* marker, so it
+  # calls del("dot") / del("anchor") with no coordinates. The C `del` command
+  # uses objc==2 to mean "delete selected" (dot_del_selected / anchor_del_selected)
+  # and objc>2 to mean "delete at coordinate". Passing placeholder negatives would
+  # wrongly route to the coordinate path, so the selected-marker calls below omit
+  # the extra arguments. arg1..arg3 default to -1 so the diagnostic prints and any
+  # coordinate-aware callers still work without an "argument missing" error.
 
 
   print("function del")
@@ -351,7 +359,7 @@ del <- function(shape, arg1, arg2, arg3)
 
   if (shape == "dot")
   {
-    result <- tcl("del", "dot", arg1, arg2, arg3)
+    result <- tcl("del", "dot")
 
   }
   else if (shape == "dots")
@@ -361,7 +369,7 @@ del <- function(shape, arg1, arg2, arg3)
   }
   else if (shape == "anchor")
   {
-    result <- tcl("del", "anchor" ,arg1, arg2, arg3)
+    result <- tcl("del", "anchor")
 
   }
   else if (shape == "anchors")
