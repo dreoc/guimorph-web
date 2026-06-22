@@ -8,28 +8,27 @@ extern const char COMPILE_INFORMATION[];
 extern const char TCL_IF_VERSION_INFORMATION[];
 extern const char* tcl_ifVersionPtr;
 
-extern float GBL_LANDMARK_SET[25][3];
+/* Fixed-capacity global storage limits (CENG-03, D-01) */
+#define GBL_LANDMARK_SET_CAPACITY 25   /* rows in GBL_LANDMARK_SET[25][3] */
+#define GBL_CURVE_SET_CAPACITY 10      /* logical max curves; array dim stays 25 */
+#define GBL_MODEL_SLOTS 5              /* model pointer mirror slots */
+#define GBL_CONTEXT_SLOTS 5            /* context pointer mirror slots */
+#define GBL_CURVE_SLOTS 6              /* curve pointer table slots */
+#define GBL_DELTAS_CAPACITY 1000       /* rows in deltas[1000][4] */
+
+extern float GBL_LANDMARK_SET[GBL_LANDMARK_SET_CAPACITY][3];
 extern const float* pointerTO_GBL_LANDMARK_SET;
 extern int GBL_LANDMARK_SET_MAX_ROWS;
 extern int GBL_LANDMARK_SET_NUMBER_OF_ROWS;
 
-extern float GBL_CURVE_SET[25][3];
+extern float GBL_CURVE_SET[GBL_LANDMARK_SET_CAPACITY][3]; /* physical dim 25, logical max GBL_CURVE_SET_CAPACITY */
 extern const float* pointerTO_GBL_CURVE_SET;
 extern int GBL_CURVE_SET_MAX_ROWS;
 extern int GBL_CURVE_SET_NUMBER_OF_ROWS;
 
 extern model_t* GBL_PTR_TO_A_MODEL;
-extern model_t* GBL_PTR_MODEL_1;
-extern model_t* GBL_PTR_MODEL_2;
-extern model_t* GBL_PTR_MODEL_3;
-extern model_t* GBL_PTR_MODEL_4;
-extern model_t* GBL_PTR_MODEL_5;
-
-extern context_t* GBL_PTR_CONTEXT_1;
-extern context_t* GBL_PTR_CONTEXT_2;
-extern context_t* GBL_PTR_CONTEXT_3;
-extern context_t* GBL_PTR_CONTEXT_4;
-extern context_t* GBL_PTR_CONTEXT_5;
+extern model_t* GBL_PTR_MODEL[GBL_MODEL_SLOTS];
+extern context_t* GBL_PTR_CONTEXT[GBL_CONTEXT_SLOTS];
 
 extern int GBL_LANDMARKS_ROWS;
 extern int GBL_LANDMARKS_COLS;
@@ -54,17 +53,12 @@ extern float GBL_ROTATION_ANGLE_Y;
 
 extern int GBL_ENABLE_TCL_OBJECT_LOGGING;
 
-extern curve_t* GBL_PTR_CURVE_1;
-extern curve_t* GBL_PTR_CURVE_2;
-extern curve_t* GBL_PTR_CURVE_3;
-extern curve_t* GBL_PTR_CURVE_4;
-extern curve_t* GBL_PTR_CURVE_5;
-extern curve_t* GBL_PTR_CURVE_6;
+extern curve_t* GBL_PTR_CURVE[GBL_CURVE_SLOTS];
 
 extern model_t* models;
 extern context_t* context;
 
-extern float deltas[1000][4];
+extern float deltas[GBL_DELTAS_CAPACITY][4];
 
 extern int model_index;
 extern int model_amount;

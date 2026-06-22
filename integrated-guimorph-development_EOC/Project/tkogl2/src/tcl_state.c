@@ -29,32 +29,21 @@ const char TCL_IF_VERSION_INFORMATION[] = "File tcl_if : edit date is 15 AUGUST 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-float GBL_LANDMARK_SET[25][3];
-#define CONST_25  25
+float GBL_LANDMARK_SET[GBL_LANDMARK_SET_CAPACITY][3];
 const float* pointerTO_GBL_LANDMARK_SET = &GBL_LANDMARK_SET[0][0];
-int GBL_LANDMARK_SET_MAX_ROWS = CONST_25;
+int GBL_LANDMARK_SET_MAX_ROWS = GBL_LANDMARK_SET_CAPACITY;
 int GBL_LANDMARK_SET_NUMBER_OF_ROWS = 0;
 
 const char* tcl_ifVersionPtr = TCL_IF_VERSION_INFORMATION;
-float GBL_CURVE_SET[25][3];
-#define CONST_10  10
+float GBL_CURVE_SET[GBL_LANDMARK_SET_CAPACITY][3];
 const float* pointerTO_GBL_CURVE_SET = &GBL_CURVE_SET[0][0];
-int GBL_CURVE_SET_MAX_ROWS = CONST_10;
+int GBL_CURVE_SET_MAX_ROWS = GBL_CURVE_SET_CAPACITY;
 int GBL_CURVE_SET_NUMBER_OF_ROWS = 0;
 
 model_t* GBL_PTR_TO_A_MODEL;
 
-model_t* GBL_PTR_MODEL_1 = NULL;
-model_t* GBL_PTR_MODEL_2 = NULL;
-model_t* GBL_PTR_MODEL_3 = NULL;
-model_t* GBL_PTR_MODEL_4 = NULL;
-model_t* GBL_PTR_MODEL_5 = NULL;
-
-context_t* GBL_PTR_CONTEXT_1 = NULL;
-context_t* GBL_PTR_CONTEXT_2 = NULL;
-context_t* GBL_PTR_CONTEXT_3 = NULL;
-context_t* GBL_PTR_CONTEXT_4 = NULL;
-context_t* GBL_PTR_CONTEXT_5 = NULL;
+model_t* GBL_PTR_MODEL[GBL_MODEL_SLOTS] = { NULL };
+context_t* GBL_PTR_CONTEXT[GBL_CONTEXT_SLOTS] = { NULL };
 
 int GBL_LANDMARKS_ROWS = -1;
 int GBL_LANDMARKS_COLS = -1;
@@ -81,12 +70,7 @@ float GBL_ROTATION_ANGLE_Y = 0;    // units degrees from R
 int GBL_ENABLE_TCL_OBJECT_LOGGING = 0;   // turn off when 0 ; turn on when 1
 
 
-curve_t* GBL_PTR_CURVE_1 = NULL;
-curve_t* GBL_PTR_CURVE_2 = NULL;
-curve_t* GBL_PTR_CURVE_3 = NULL;
-curve_t* GBL_PTR_CURVE_4 = NULL;
-curve_t* GBL_PTR_CURVE_5 = NULL;
-curve_t* GBL_PTR_CURVE_6 = NULL;
+curve_t* GBL_PTR_CURVE[GBL_CURVE_SLOTS] = { NULL };
 
 void* ALLOCATE_WRAPPER(unsigned int howMuch)
 {
@@ -128,7 +112,7 @@ void FREE_WRAPPER(void* pointer)
 model_t* models = NULL;
 context_t* context = NULL;
 
-float deltas[1000][4];
+float deltas[GBL_DELTAS_CAPACITY][4];
 
 int model_index = 0;
 int model_amount = 0;
@@ -240,27 +224,6 @@ int initialize_state(int selector, int option)
 		FREE_WRAPPER((void*)context);
 		context = NULL;
 	}
-
-	/*
-		GBL_PTR_MODEL_1 = NULL;
-		GBL_PTR_MODEL_2 = NULL;
-		GBL_PTR_MODEL_3 = NULL;
-		GBL_PTR_MODEL_4 = NULL;
-		GBL_PTR_MODEL_5 = NULL;
-
-		GBL_PTR_CONTEXT_1 = NULL;
-		GBL_PTR_CONTEXT_2 = NULL;
-		GBL_PTR_CONTEXT_3 = NULL;
-		GBL_PTR_CONTEXT_4 = NULL;
-		GBL_PTR_CONTEXT_5 = NULL;
-
-		GBL_PTR_CURVE_1 = NULL;
-		GBL_PTR_CURVE_2 = NULL;
-		GBL_PTR_CURVE_3 = NULL;
-		GBL_PTR_CURVE_4 = NULL;
-		GBL_PTR_CURVE_5 = NULL;
-		GBL_PTR_CURVE_6 = NULL;
-	*/
 
 	model_index = 0;
 	model_amount = 0;
@@ -427,44 +390,7 @@ int snapshot()
 	simpleLogWriteAnchorsToFile();
 	simpleLogBlankLine();
 
-	simpleLogWriteModelToFile(GBL_PTR_MODEL_1);
-
-	/*
-
-		simpleLogWriteModelToFile(GBL_PTR_MODEL_2);
-		simpleLogWriteModelToFile(GBL_PTR_MODEL_3);
-		//simpleLogWriteModelToFile(GBL_PTR_MODEL_4);
-		//simpleLogWriteModelToFile(GBL_PTR_MODEL_5);
-
-		simpleLogWriteContextToFile(GBL_PTR_CONTEXT_1);
-		simpleLogWriteContextToFile(GBL_PTR_CONTEXT_2);
-		simpleLogWriteContextToFile(GBL_PTR_CONTEXT_3);
-		//simpleLogWriteContextToFile(GBL_PTR_CONTEXT_4);
-		//simpleLogWriteContextToFile(GBL_PTR_CONTEXT_5);
-
-
-		simpleLogWriteCurveToFile(GBL_PTR_CURVE_1);
-		simpleLogWriteCurveToFile(GBL_PTR_CURVE_2);
-		//simpleLogWriteCurveToFile(GBL_PTR_CURVE_3);
-		//simpleLogWriteCurveToFile(GBL_PTR_CURVE_4);
-		//simpleLogWriteCurveToFile(GBL_PTR_CURVE_5);
-
-
-
-		sprintf(buffer, "Landmarks  rows [%d] numSpecimens [%d]",
-			GBL_SET_NUMBER_OF_LANDMARKS,  GBL_LANDMARKS_NUM_SPECIMENS);
-		simpleLog(buffer);
-
-		sprintf(buffer, "Anchors  rows [%d]  numSpecimens [%d]",
-			GBL_SET_NUMBER_OF_ANCHORS,  GBL_LANDMARKS_NUM_SPECIMENS);
-		simpleLog(buffer);
-	*/
-
-	/*
-		sprintf(buffer, "Curves  number [%d] length [%d] numSpecimens [%d]",
-			GBL_CURVES_NUMBER_OF_CURVES, GBL_CURVES_LENGTH, GBL_CURVES_NUM_SPECIMENS);
-		simpleLog(buffer);
-	*/
+	simpleLogWriteModelToFile(GBL_PTR_MODEL[0]);
 
 	simpleLog("----- snapshot ------ end");
 	simpleLogBlankLine();

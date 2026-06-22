@@ -2169,36 +2169,38 @@ TCL_CMD(add)
 					// this is retained for development. There could certainly be more 
 					// than 3 curves. If this is so and the need to expand this arises
 					// this code is easily extended
+					// Preserved pre-existing index bug (D-02): whichCurve==1 and whichCurve==3
+					// both assign GBL_PTR_CURVE[1]; GBL_PTR_CURVE[2] is read but never assigned here.
 					if (0 == whichCurve)
 					{
-						GBL_PTR_CURVE_1 = get_curveAtIndex(0);
-						simpleLogWriteCurveToFile(GBL_PTR_CURVE_1);
+						GBL_PTR_CURVE[0] = get_curveAtIndex(0);
+						simpleLogWriteCurveToFile(GBL_PTR_CURVE[0]);
 					}
 					if (1 == whichCurve)
 					{
-						GBL_PTR_CURVE_2 = get_curveAtIndex(1);
-						simpleLogWriteCurveToFile(GBL_PTR_CURVE_2);
+						GBL_PTR_CURVE[1] = get_curveAtIndex(1);
+						simpleLogWriteCurveToFile(GBL_PTR_CURVE[1]);
 					}
 					if (3 == whichCurve)
 					{
-						GBL_PTR_CURVE_2 = get_curveAtIndex(2);
-						simpleLogWriteCurveToFile(GBL_PTR_CURVE_3);
+						GBL_PTR_CURVE[1] = get_curveAtIndex(2);
+						simpleLogWriteCurveToFile(GBL_PTR_CURVE[2]);
 					}
 				}
 			}
 		}
 
-		if (NULL != GBL_PTR_CURVE_1)
+		if (NULL != GBL_PTR_CURVE[0])
 		{
-			simpleLogWriteCurveToFile(GBL_PTR_CURVE_1);
+			simpleLogWriteCurveToFile(GBL_PTR_CURVE[0]);
 		}
-		if (NULL != GBL_PTR_CURVE_2)
+		if (NULL != GBL_PTR_CURVE[1])
 		{
-			simpleLogWriteCurveToFile(GBL_PTR_CURVE_2);
+			simpleLogWriteCurveToFile(GBL_PTR_CURVE[1]);
 		}
-		if (NULL != GBL_PTR_CURVE_3)
+		if (NULL != GBL_PTR_CURVE[2])
 		{
-			simpleLogWriteCurveToFile(GBL_PTR_CURVE_3);
+			simpleLogWriteCurveToFile(GBL_PTR_CURVE[2]);
 		}
 		simpleLog((const char*)"function add curve");
 	}
@@ -2792,77 +2794,6 @@ TCL_CMD(setSpecimen)
 			{
 				memset(context, 0, howMuchContext);
 			}
-			/*
-						switch (amount)
-						{
-						case 1:
-							GBL_PTR_MODEL_1 = models;
-							GBL_PTR_TO_A_MODEL = &models[0];
-							break;
-						case 2:
-							GBL_PTR_MODEL_1 = &models[0];
-							GBL_PTR_MODEL_2 = &models[1];
-							GBL_PTR_TO_A_MODEL = &models[0];
-							break;
-
-						case 3:
-							GBL_PTR_MODEL_1 = &models[0];
-							GBL_PTR_MODEL_2 = &models[1];
-							GBL_PTR_MODEL_3 = &models[2];
-							break;
-						case 4:
-							GBL_PTR_MODEL_1 = &models[0];
-							GBL_PTR_MODEL_2 = &models[1];
-							GBL_PTR_MODEL_3 = &models[2];
-							GBL_PTR_MODEL_4 = &models[3];
-							break;
-						case 5:
-							GBL_PTR_MODEL_1 = &models[0];
-							GBL_PTR_MODEL_2 = &models[1];
-							GBL_PTR_MODEL_3 = &models[2];
-							GBL_PTR_MODEL_4 = &models[3];
-							GBL_PTR_MODEL_5 = &models[4];
-							break;
-						default:
-							simpleLog("ERROR : too many models allocated");
-							UT_MY_INTEGER_VALUE = GBL_RTN_ERROR;
-							break;
-						}
-			*/
-			/*
-						switch (amount)
-						{
-						case 1:
-							GBL_PTR_CONTEXT_1 = &context[0];
-							break;
-						case 2:
-							GBL_PTR_CONTEXT_1 = &context[0];
-							GBL_PTR_CONTEXT_2 = &context[1];
-							break;
-						case 3:
-							GBL_PTR_CONTEXT_1 = &context[0];
-							GBL_PTR_CONTEXT_2 = &context[1];
-							GBL_PTR_CONTEXT_3 = &context[2];
-							break;
-						case 4:
-							GBL_PTR_CONTEXT_1 = &context[0];
-							GBL_PTR_CONTEXT_2 = &context[1];
-							GBL_PTR_CONTEXT_3 = &context[2];
-							GBL_PTR_CONTEXT_4 = &context[3];
-							break;
-						case 5:
-							GBL_PTR_CONTEXT_1 = &context[0];
-							GBL_PTR_CONTEXT_2 = &context[1];
-							GBL_PTR_CONTEXT_3 = &context[2];
-							GBL_PTR_CONTEXT_4 = &context[3];
-							GBL_PTR_CONTEXT_5 = &context[4];
-							break;
-						default:
-							simpleLog("ERROR : too many contexts allocated");
-							UT_MY_INTEGER_VALUE = GBL_RTN_ERROR;
-							break;
-						}
-			*/
 
 			model_index = 0;
 			model_amount = amount;
