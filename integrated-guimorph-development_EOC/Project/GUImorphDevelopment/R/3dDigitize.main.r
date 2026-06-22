@@ -958,7 +958,7 @@ onNext <- function(e)
 
      if (nCurrA != 0)
      {
-      draw.anchors(e$currImgId, e$activeDataList[[e$currImgId]][[11]])
+      draw.anchors(e, e$currImgId, e$activeDataList[[e$currImgId]][[11]])
      }
   }
   else
@@ -1520,7 +1520,7 @@ if(0)
       anchor <- anchors[, , id]
       print (paste ("anchor id  index",id))
       print ( anchor)
-      draw.anchors(id, anchor)
+      draw.anchors(e, id, anchor)
     }
     else
     {

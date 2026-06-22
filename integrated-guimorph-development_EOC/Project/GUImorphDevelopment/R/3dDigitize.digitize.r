@@ -1302,7 +1302,7 @@ draw.digitize <- function(e, id, specimen, landmarks)
 
 # This function still in work ??
 #
-draw.anchors <- function(id, anchors)
+draw.anchors <- function(e, id, anchors)
 {
   if (!anyNA(anchors))
   {
