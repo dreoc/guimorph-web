@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Phase 8 context gathered
-last_updated: "2026-06-22T16:20:41.417Z"
-last_activity: 2026-06-22 — marker.h + tkogl2.dll.pre-phase8.bak landed; MSVC gate pending
+status: executing
+stopped_at: Completed 08-02-PLAN.md
+last_updated: "2026-06-22"
+last_activity: 2026-06-22 — 08-02 marker.c unified; dot_ZARF_9.c deleted; MSVC Release build green
 progress:
-  total_phases: 11
-  completed_phases: 4
+  total_phases: 9
+  completed_phases: 7
   total_plans: 14
   completed_plans: 13
-  percent: 36
+  percent: 93
 ---
 
 # Project State
@@ -26,19 +26,20 @@ See: .planning/PROJECT.md (updated 2026-06-15)
 ## Current Position
 
 Phase: 08 (c-engine-deduplication) — **EXECUTING**
-Plan: 08-01 (1/3) — interface contract + rollback baseline
-Status: Tasks 1-2 committed; Task 3 MSVC human-verify checkpoint
-Last activity: 2026-06-22 — marker.h + tkogl2.dll.pre-phase8.bak landed; MSVC gate pending
+Plan: 08-03 (3/3) — deploy DLL + landmark/anchor GUI UAT
+Status: 08-02 complete — marker.c replaces dot_ZARF_9.c; MSVC Release build succeeded
+Last activity: 2026-06-22 — unified marker_* core + wrappers committed; ready for 08-03 deploy/UAT
 
-Progress: [███████░░░] ~78%
+Progress: [█████████░] 93%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 14
+- Total plans completed: 13
 - Average duration: —
 - Total execution time: —
+- 08-c-engine-deduplication / 02: 45min (3 tasks, 3 files)
 
 ## Accumulated Context
 
@@ -55,9 +56,8 @@ Progress: [███████░░░] ~78%
 - **PLY all-zero vertex colors** use lighting fallback; true scan coloration deferred (2026-06-21)
 - **Canvas HWND realization** required before WGL bind — `tcl("update","idletasks")` in `ui.main` (2026-06-21)
 - **Phase 7 modularization:** five `tcl_*` modules replace god file; `tcl_if_ZARF_9.c` deleted from build (2026-06-21)
-- [Phase ?]: marker_del_selected
-- [Phase ?]: marker_del_selected NULL-guards s->selected before deref (D-03 BUG-4)
-- [Phase ?]: def_ZARF_9.h unchanged; wrappers satisfy existing dot_*/anchor_* prototypes
+- **Phase 8 marker unification:** `marker.c` replaces `dot_ZARF_9.c`; anchor wrappers route `&g_anchors` (D-03); `marker_del_selected` NULL guard (2026-06-22)
+- **def_ZARF_9.h unchanged** — existing `dot_*`/`anchor_*` prototypes satisfied by wrappers in `marker.c` (2026-06-22)
 
 ### Blockers/Concerns
 
@@ -67,12 +67,6 @@ Progress: [███████░░░] ~78%
 
 ## Session Continuity
 
-Last session: 2026-06-22T16:20:11.980Z
-Stopped at: Phase 8 context gathered
-Resume file: `.planning/phases/08-c-engine-deduplication/08-CONTEXT.md` — then `/gsd-plan-phase 8`
-
-## Performance Metrics
-
-| Phase | Plan | Duration | Notes |
-|-------|------|----------|-------|
-| Phase 08-c-engine-deduplication P02 | 45min | 3 tasks | - files |
+Last session: 2026-06-22
+Stopped at: Completed 08-02-PLAN.md
+Resume file: None — proceed with 08-03 deploy + UAT
