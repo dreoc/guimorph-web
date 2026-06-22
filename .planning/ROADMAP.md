@@ -187,12 +187,25 @@ Plans:
   1. Shared marker struct/functions replace parallel dot/anchor code paths
   2. Landmark and anchor placement both work in GUI
   3. Existing `.dgt` files from Phase 4 baseline reload correctly
-**Plans**: TBD
+**Plans**: 3 plans (1 executable build plan + prep + UAT)
 
 Plans:
-- [ ] 08-01: Characterize dot vs anchor behavioral differences
-- [ ] 08-02: Implement unified `marker.c` with type discriminator
-- [ ] 08-03: Remove duplicated functions; verify digitize round-trip
+
+**Wave 1**
+- [ ] 08-01-PLAN.md — Backup pre-Phase-8 DLL (D-13); define `marker.h` contract (`marker_set_t` + `marker_*` core); confirm MSVC toolchain (CENG-02)
+
+**Wave 2**
+- [ ] 08-02-PLAN.md — Implement unified `marker.c` (shared `marker_*` core + `g_landmarks`/`g_anchors` + all `dot_*`/`anchor_*` wrappers; fix anchor asymmetry D-03; trim select logging D-05); swap CMake + delete `dot_ZARF_9.c`; MSVC build green (CENG-02)
+
+**Wave 3**
+- [ ] 08-03-PLAN.md — Deploy DLL; manual Windows R GUI UAT (landmark parity D-04, anchor place/select/move/delete D-03/D-10, `.dgt` round-trip incl. anchor D-11); document in smoke-test-findings.md D-12 (CENG-02)
+
+**Cross-cutting constraints:**
+- `tcl_dispatch.c` NOT modified — all call sites work through wrappers (D-01)
+- `dot_t`/enum stay in `def_ZARF_9.h`; layout frozen for `curve_addDot` (D-08)
+- Anchor asymmetry deliberately FIXED via each set's own state (D-03); landmark behavior preserved exactly (D-04)
+- MSVC-only build (MinGW renders black mesh); manual Windows R GUI UAT — no automated harness
+- Keep pre-Phase-8 DLL backup for rollback (D-13)
 
 ### Phase 9: C Engine Cleanup & Validation
 **Goal**: Replace numbered globals, remove debug cruft, and prove no regression across full workflow.
