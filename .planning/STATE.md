@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: All UAT passed — landmarks, anchors, .dgt round-trip with anchor
-stopped_at: Phase 9 context gathered — ready for planning
-last_updated: "2026-06-22T21:21:07.841Z"
-last_activity: 2026-06-22 — Phase 8 closed; CENG-02 validated end-to-end
+status: complete
+stopped_at: Phase 9 planned — ready to execute
+last_updated: "2026-06-22"
+last_activity: 2026-06-22 — Phase 9 planned (4 plans, verification passed); ready to execute
 progress:
   total_phases: 9
   completed_phases: 8
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-15)
 
 **Core value:** Researcher can digitize a 3D specimen in the GUI, run `geomorph` analysis end-to-end, and maintain a modular C engine on Windows R.
-**Current focus:** Phase 08 — c-engine-deduplication
+**Current focus:** Phase 09 — c-engine-cleanup-validation
 
 ## Current Position
 
-Phase: 08 (c-engine-deduplication) — **COMPLETE**
-Plan: 08-03 (3/3) — deploy + UAT
-Status: All UAT passed — landmarks, anchors, .dgt round-trip with anchor
-Last activity: 2026-06-22 — Phase 8 closed; CENG-02 validated end-to-end
+Phase: 09 (c-engine-cleanup-validation) — **PLANNED, ready to execute**
+Plans: 09-01..09-04 (0/4) across 4 waves — globals→arrays (CENG-03) → debug-cruft removal (CENG-04, ×2) → full regression UAT + BUILD.md (CENG-05)
+Status: Planning complete; plan-checker VERIFICATION PASSED (0 blockers); requirements + decision coverage gates green
+Last activity: 2026-06-22 — Phase 9 planned; next: /gsd-execute-phase 9
 
 Progress: [████████░░] 89%
 
@@ -68,5 +68,5 @@ Progress: [████████░░] 89%
 ## Session Continuity
 
 Last session: 2026-06-22
-Stopped at: Phase 9 context gathered — ready for planning
-Resume file: .planning/phases/09-c-engine-cleanup-validation/09-CONTEXT.md
+Stopped at: Phase 9 planned (4 plans) — ready to execute
+Resume file: .planning/phases/09-c-engine-cleanup-validation/09-01-PLAN.md
