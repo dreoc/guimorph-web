@@ -619,3 +619,52 @@ User confirmed all blocking symptoms resolved after MSVC rebuild + deploy:
 **Status:** ✅ **Phase 8 UAT PASSED.** C engine deduplication complete. Proceed to Phase 9 (numbered globals / debug cleanup).
 
 ---
+
+## Phase 9 — Cleanup & Validation (09-04 UAT)
+
+**Date:** 2026-06-22  
+**Environment:** Windows R 4.6, MSVC `tkogl2.dll` (Phase 9 cleaned build)  
+**DLL freshness banner:** `FRESH BUILD Jun 22 2026` (compile-time `COMPILE_INFORMATION` in `tcl_state.c`)  
+**Rollback:** `inst/libs/x64/tkogl2.dll.pre-phase9.bak` (D-15)
+
+### Fixture A — Full round-trip (`test_fresh.dgt`) ✅
+
+**Fixture:** `zips/Folsom 3D models/test_fresh.dgt` (2 specimens; 3 landmarks; curve on specimen 1)  
+**GPA CSV artifact:** `zips/Folsom 3D models/gpa_verify.csv.csv` (Csize + aligned coords, non-empty)
+
+| Step | Result | Notes |
+|------|--------|-------|
+| `load_all` + `GUImorph()` | ✅ | Window opens; no doubled nav buttons |
+| Load PLY (`C13.1.ply`) | ✅ | Shaded mesh visible |
+| Double-click landmark placement | ✅ | Dots appear |
+| 3-landmark curve bind (specimen 1) | ✅ | Chord segments draw; no R error |
+| Save `.dgt` | ✅ | `Curve=1`, `LM3=3`, `Surface=0` sections present |
+| Same-session `openDgt` reload | ✅ | Both specimens + landmarks + curve restore; **`Surface=0` does not abort** (D-05) |
+| GPA Compute (sliding OFF) | ✅ | Converges (3 LM × 2 specimens) |
+| Save Result CSV | ✅ | Non-empty (`gpa_verify.csv.csv`) |
+
+**Status:** ✅ **Fixture A PASSED** — user approved 2026-06-22. Matches Phase 4-5 baseline (D-09).
+
+### Fixture B — Anchors + curves (`test_dgt_anchors_curves.dgt`) ✅
+
+**Fixture:** `zips/Folsom 3D models/test_dgt_anchors_curves.dgt` (landmarks + curve + anchor)
+
+| Step | Result | Notes |
+|------|--------|-------|
+| Load `.dgt` — mesh + markers restore | ✅ | Specimen renders; landmarks + curve + anchor restore (dedup'd marker path) |
+| Anchor place / select / move / delete | ✅ | Selected anchor moves/deletes; landmark unaffected (Phase 8 parity, D-10) |
+| Landmark place / select / move / delete | ✅ | Parity with Phase 8 baseline |
+| Re-save → reload round-trip | ✅ | Anchor + curve survive reload |
+
+**Status:** ✅ **Fixture B PASSED** — user approved 2026-06-22. Matches Phase 8 baseline (D-10).
+
+### CENG-05 validation
+
+- CENG-03: numbered globals → documented fixed-capacity arrays (09-01)
+- CENG-04: debug cruft removed; `simpleLog` sole diagnostic channel (09-02 + 09-03)
+- CENG-05: full digitize + analysis workflow matches Phase 4-5 / Phase 8 baselines (D-09/D-10/D-12)
+- `BUILD.md` updated with final module-layout table (D-14); MSVC-only
+
+**Status:** ✅ **Phase 9 UAT PASSED.** C engine cleanup & validation complete.
+
+---
