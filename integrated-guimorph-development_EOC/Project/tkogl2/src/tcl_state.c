@@ -142,7 +142,7 @@ char buffer[1024];
 int clear_deltas()
 {
 	// 17 July 2020 How do we know that there are only need for 1000 deltas ?
-	for (int ii = 0; ii < 1000; ii++)
+	for (int ii = 0; ii < GBL_DELTAS_CAPACITY; ii++)
 	{
 		for (int jj = 0; jj < 4; jj++)
 		{
