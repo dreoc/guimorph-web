@@ -276,6 +276,37 @@ plotspecs <- function(e) {
     return()
   }
   aligned <- .gm_aligned_coords(gm.res)
-  geomorph::plotAllSpecimens(aligned, mean = TRUE, links = NULL,
-                             label = FALSE, plot_param=list(pt.bg="blue", pt.cex=as.numeric(tclvalue(e$ptcex)), mean.bg="red", mean.cex=as.numeric(tclvalue(e$meancex))))
+  plot_param <- list(
+    pt.bg = "blue",
+    pt.cex = as.numeric(tclvalue(e$ptcex)),
+    mean.bg = "red",
+    mean.cex = as.numeric(tclvalue(e$meancex))
+  )
+  tryCatch({
+    if (requireNamespace("rgl", quietly = TRUE)) {
+      rgl::open3d()
+    }
+    geomorph::plotAllSpecimens(
+      aligned,
+      mean = TRUE,
+      links = NULL,
+      label = FALSE,
+      plot_param = plot_param
+    )
+    if (requireNamespace("rgl", quietly = TRUE)) {
+      rgl::rgl.bringtotop(stay = TRUE)
+    }
+  }, error = function(err) {
+    tkmessageBox(
+      title = "Plot error",
+      message = paste0(
+        "Plot Aligned Specimens failed:\n",
+        conditionMessage(err),
+        "\n\n3D plots need the rgl package. In Windows R run:\n",
+        "install.packages(\"rgl\")"
+      ),
+      icon = "error",
+      type = "ok"
+    )
+  })
 }

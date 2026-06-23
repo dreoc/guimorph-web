@@ -115,6 +115,12 @@ updateWidgets.surface <- function(e)
 	e$tmplVar <- tclVar(paste("Based on ", e$templOrig))
 	tkconfigure(e$tmplEntry , textvariable=e$tmplVar)
 
+	if (length(e$activeDataList) == 0) {
+		e$downsmplVar <- tclVar("NA")
+		tkconfigure(e$downsmplEntry , textvariable=e$downsmplVar)
+		return()
+	}
+
 	templ <- e$activeDataList[[e$currImgId]][[5]]
 	if(length(templ) == 0) {
 		e$downsmplVar <- tclVar("NA")
@@ -587,9 +593,11 @@ read.surface <- function(content)
     print ( surfaces)
   }
 
-  if (all(is.na(surfaces)) == TRUE)
+  # Surface=0 yields 0-row array; all(is.na()) is vacuously TRUE on empty — not missing data
+  if (!is.null(surfaces) && length(surfaces) > 0 && nrow(surfaces) > 0 &&
+      all(is.na(surfaces)))
   {
-    printf("read.surface : ALL surfaces NA returning NULL")
+    print("read.surface : ALL surfaces NA returning NULL")
     return(NULL)
   }
   else
