@@ -2,7 +2,6 @@
 #pragma warning( disable : 4244)
 #include <math.h>
 #include "def_ZARF_9.h"
-#include <time.h>
 
 #include <string.h>   // c language functions : NOT c++
 
@@ -321,37 +320,6 @@ int ogl_loadDownSampleModel(double* flattenedVertices, unsigned int totalSize, m
 	simpleLog("DEBUG : Second iteration complete ds vertex data is transferred to the model");
 	simpleLogBlankLine();
 
-	if (0)
-	{
-		simpleLog("DEBUG : Third iteration (write to flat file) ... started");
-		FILE* dsFile;
-		time_t NOW;
-		time(&NOW);
-		//sprintf(buffer, "a1_1_dsv_MODEL_%u.txt", (unsigned int)NOW);
-		sprintf(ogl_buffer, "C:/home/0_GuiMorph_IO_FILES/OUTPUT_FILES/a1_1_dsv_MODEL_%u.txt", (unsigned int)NOW);
-		dsFile = fopen(ogl_buffer, "w");
-		if (NULL == dsFile)
-		{
-			simpleLog("FAIL : did not open temp file for downsamples in ogl model ply");
-		}
-		else
-		{
-			simpleLogBlankLine();
-			simpleLog("DEBUG : OGL MODEL PLY vertices from model");
-			simpleLog("DEBUG : Iteration over the model dsVertices");
-			for (int i = 0; i < model->dsCount; i += 3)
-			{
-				sprintf(ogl_buffer, "DEBUG :  [%4d]  %10.6f  %10.6f  %10.6f", i, model->dsVertex[i + 0], model->dsVertex[i + 1], model->dsVertex[i + 2]);
-				fprintf(dsFile, "%s\n", ogl_buffer);
-			}
-			fprintf(dsFile, "DATA_COMPLETE\n");
-			fclose(dsFile);
-		}
-
-		simpleLog("DEBUG : Third iteration (write to flat file) ... complete");
-	}
-
-
 	struct statistics  xStats;
 	struct statistics  yStats;
 	struct statistics  zStats;
@@ -375,13 +343,6 @@ int ogl_loadDownSampleModel(double* flattenedVertices, unsigned int totalSize, m
 		accumulateStatistic(xStatPointer, model->dsVertex[i + 0]);
 		accumulateStatistic(yStatPointer, model->dsVertex[i + 1]);
 		accumulateStatistic(zStatPointer, model->dsVertex[i + 2]);
-
-		if (0)   // turned off 10 July 2020 
-		{
-			sprintf(ogl_buffer, "DEBUG :  [%4d]  %10.6f  %10.6f  %10.6f", i, model->dsVertex[i + 0], model->dsVertex[i + 1], model->dsVertex[i + 2]);
-			simpleLog(ogl_buffer);
-		}
-
 	}
 	simpleLog("DEBUG : Fourth iteration (statistics assign) complete");
 
@@ -538,7 +499,6 @@ void ogl_loadLandmark(FILE* file, float** deltas, int model_size)
 		point_t p;
 		fgets(buffer, 300, file);
 		sscanf(buffer, "%lf %lf %lf", &p.x, &p.y, &p.z);/*read x,y,z coords of point*/
-		//D3("raw dot is %f, %f, %f", p.x, p.y, p.z); /*prints info*/
 
 		for (int j = 0; j < model_size; j++)
 		{
@@ -553,7 +513,6 @@ void ogl_loadLandmark(FILE* file, float** deltas, int model_size)
 			}
 
 			/*assign color and draw*/
-			//D3("add dot %f, %f, %f", p.x, p.y, p.z);
 			color_t c = defaultDotColor;
 			dot_slice_index(j);
 			dot_add(&p, &c);
@@ -940,7 +899,6 @@ int unit_test_ogl_loadLandmark(const char* filename)
 	int lmkNum = 0;
 	BEG_LING("LM3="); /*start at LM3*/
 	PLY_ATTR_GET_INT("LM3=", buffer, &lmkNum);
-	printf("Load landmark: number=%d\n", lmkNum);
 
 	if (lmkNum <= 0)
 	{
@@ -962,7 +920,6 @@ int unit_test_ogl_loadLandmark(const char* filename)
 		point_t p;
 		fgets(buffer, 300, file);
 		sscanf(buffer, "%lf %lf %lf", &p.x, &p.y, &p.z); // read x,y,z coords of point*/
-		printf("landmark [%2d] : <%10.6f ... %10.6f ... %10.6f>\n", ii, p.x, p.y, p.z);
 
 		*pointerIntoLandmarkArray = p.x; pointerIntoLandmarkArray++;
 		*pointerIntoLandmarkArray = p.y; pointerIntoLandmarkArray++;
@@ -1014,7 +971,6 @@ int unit_test_ogl_loadCurve(const char* filename)
 	int curveNum = 0;
 	BEG_LING("CURVES="); /*start at LM3*/
 	PLY_ATTR_GET_INT("CURVES=", buffer, &curveNum);
-	printf("Load curve k: number=%d\n", curveNum);
 
 	if (curveNum <= 0)
 	{
@@ -1039,7 +995,6 @@ int unit_test_ogl_loadCurve(const char* filename)
 
 		fgets(buffer, 300, file);
 		sscanf(buffer, "%d %d %d", &start, &middle, &end);
-		printf("landmarks [%2d] : [%2d ... %2d ... %2d]\n", ii, start, middle, end);
 
 		*pointerIntoCurveArray = start; pointerIntoCurveArray++;
 		*pointerIntoCurveArray = middle; pointerIntoCurveArray++;
@@ -1066,10 +1021,6 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 		simpleLog("ERROR : ogl_loadDgtModel ... null pointer for file name");
 		return -1;
 	}
-
-
-	printf("Current model index is ...  [%d]\n", model_index);
-	printf("Current model allocation is [%d]\n", model_amount);
 
 
 
@@ -1144,19 +1095,14 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 		// search for specific string data in the file
 		if (NULL != strstr(buffer, TAG_PLY_LC))
 		{
-			printf("found PLY_LC\n");
-			printf("PLY FILE NAME <%s>", buffer);
 			count_PLY++;
 		}
 		if (NULL != strstr(buffer, TAG_PLY_UC))
 		{
-			printf("found PLY_UC\n");
-			printf("PLY FILE NAME <%s>", buffer);
 			count_PLY++;
 		}
 		if (0 == strncmp(TAG_ID, buffer, strlen(TAG_ID)))
 		{
-			printf("found ID\n");
 			count_ID++;
 		}
 		if (0 == strncmp(TAG_LM, buffer, strlen(TAG_LM)))
@@ -1178,8 +1124,7 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 			else
 			{
 				FLAG_READ_LANDMARKS = 0;
-				printf("ERROR : why did we not find TAG_LM again ??");
-				printf("ERROR : why did we not find TAG_LM again ??");
+				simpleLog("ERROR : why did we not find TAG_LM again ??");
 			}
 
 
@@ -1188,24 +1133,19 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 		}
 		if (0 == strncmp(TAG_ANCH, buffer, strlen(TAG_ANCH)))
 		{
-			printf("found AC\n");
 			count_ANCHORS++;
 			if (NULL != strstr(buffer, TAG_ANCH))
 			{
 				char* acDigits;
 				acDigits = strstr(buffer, TAG_EQUALS);
-				printf("anchor digits <%s>", &acDigits[1]);
 				nAnchors = 0;
 				sscanf(++acDigits, "%d", &nAnchors);
-				printf("nAnchors [%d]\n", nAnchors);
-				printf("\n");
 				FLAG_READ_ANCHORS = 1;
 			}
 			else
 			{
 				FLAG_READ_ANCHORS = 0;
-				printf("ERROR : why did we not find TAG_ANCH again ??");
-				printf("ERROR : why did we not find TAG_ANCH again ??");
+				simpleLog("ERROR : why did we not find TAG_ANCH again ??");
 			}
 
 
@@ -1214,18 +1154,14 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 		if (0 == strncmp(TAG_SURF, buffer, strlen(TAG_SURF)))
 		{
 			count_SURFACES++;
-			printf("found SURF\n");
 			if (NULL != strstr(buffer, TAG_SURF))
 			{
 				char* surfDigits;
 				surfDigits = strstr(buffer, TAG_EQUALS);
-				printf("surf digits <%s>", &surfDigits[1]);
 				nSurfaces = 0;
 				sscanf(++surfDigits, "%d", &nSurfaces);
-				printf("nSurfaces [%d]\n", nSurfaces);
-				printf("\n");
 				sprintf(ogl_buffer, "LOAD DGT : nSurfaces[% d]", nSurfaces);
-				simpleLog(buffer);
+				simpleLog(ogl_buffer);
 				if (nSurfaces <= 0) {
 					FLAG_READ_SURFACES = 0;
 				}
@@ -1237,22 +1173,18 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 			else
 			{
 				FLAG_READ_SURFACES = 0;
-				printf("ERROR : why did we not find TAG_SURF again ??");
-				printf("ERROR : why did we not find TAG_SURF again ??");
+				simpleLog("ERROR : why did we not find TAG_SURF again ??");
 			}
 
 
 		}
 		if (0 == strncmp(TAG_TEMPLATE, buffer, strlen(TAG_TEMPLATE)))
 		{
-			printf("found Template\n");
-			printf("Template line <%s>", buffer);
 			count_TEMPLATE++;
 
 		}
 		if (0 == strncmp(TAG_TEMPLATE_NUMBER, buffer, strlen(TAG_TEMPLATE_NUMBER)))
 		{
-			printf("found Template Number\n");
 			count_TEMPLATE_NUMBER++;
 		}
 		if (0 == strncmp(TAG_CURVE, buffer, strlen(TAG_CURVE)))
@@ -1315,17 +1247,14 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 				if (1 == count_SURFACES)
 				{
 					ptrToArray = surfaces_1;
-					printf("processing surfaces 1a\n");
 				}
 				if (2 == count_SURFACES)
 				{
 					ptrToArray = surfaces_2;
-					printf("processing surfaces 2a\n");
 				}
 				if (3 == count_SURFACES)
 				{
 					ptrToArray = surfaces_3;
-					printf("processing surfaces 3a\n");
 				}
 
 				for (int ii = 0; ii < nSurfaces; ii++)
@@ -1345,22 +1274,17 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 
 				// reset for next iteration loop
 
-
-
 				if (1 == count_SURFACES)
 				{
 					ptrToArray = surfaces_1;
-					printf("processing surfaces 1b\n");
 				}
 				if (2 == count_SURFACES)
 				{
 					ptrToArray = surfaces_2;
-					printf("processing surfaces 2b\n");
 				}
 				if (3 == count_SURFACES)
 				{
 					ptrToArray = surfaces_3;
-					printf("processing surfaces 3b\n");
 				}
 				// code to show the vertex data copied into the malloced arrat
 				for (int ii = 0; ii < nSurfaces; ii++)
@@ -1378,7 +1302,6 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 					if (0 == model_index)
 					{
 						ptrToArray = surfaces_1;
-						printf("processing surfaces 1c\n");
 					}
 					else
 					{
@@ -1390,7 +1313,6 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 					if (1 == model_index)
 					{
 						ptrToArray = surfaces_2;
-						printf("processing surfaces 2c\n");
 					}
 					else
 					{
@@ -1403,7 +1325,6 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 					if (2 == model_index)
 					{
 						ptrToArray = surfaces_3;
-						printf("processing surfaces 3c\n");
 					}
 					else
 					{
@@ -1411,10 +1332,6 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 					}
 				}
 
-
-
-				printf("test count_Surfaces is [%d]\n", count_SURFACES);
-				printf("test model_index is .. [%d]\n", model_index);
 				if (NULL != ptrToArray)
 				{
 
@@ -1429,10 +1346,6 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 							simpleLog(buffer);
 							free(ptrToV); ptrToV = NULL;
 							return -1;
-						}
-						else
-						{
-							printf("-OK- : Zero return from ogl_loadDownSampleModel\n");
 						}
 					}
 				}
@@ -1516,67 +1429,53 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 				if (1 == count_LANDMARKS)
 				{
 					ptrToArray = landmarks_1;
-					printf("processing landmarks 1a\n");
 				}
 				if (2 == count_LANDMARKS)
 				{
 					ptrToArray = landmarks_2;
-					printf("processing landmarks 2a\n");
 				}
 				if (3 == count_LANDMARKS)
 				{
 					ptrToArray = landmarks_3;
-					printf("processing landmarks 3a\n");
 				}
 
 				for (int ii = 0; ii < nlandmarks; ii++)
 				{
 					p = fgets(buffer, 300, file);
 					sscanf(p, "%f %f %f", &v1, &v2, &v3);
-					printf("Landmark [%4d]  <%10.6f %10.6f %10.6f>\n", ii, v1, v2, v3);
 					ptrToArray[0] = (double)v1;
 					ptrToArray[1] = (double)v2;
 					ptrToArray[2] = (double)v3;
-					printf("Landmark [%4d]  <%10.6f %10.6f %10.6f>\n", ii, ptrToArray[0], ptrToArray[1], ptrToArray[2]);
 					ptrToArray++;
 					ptrToArray++;
 					ptrToArray++;
 				}
-				printf("end landmarks\n");
-
 
 				if (1 == count_LANDMARKS)
 				{
 					ptrToArray = landmarks_1;
-					printf("processing landmarks 1b\n");
 				}
 				if (2 == count_LANDMARKS)
 				{
 					ptrToArray = landmarks_2;
-					printf("processing landmarks 2b\n");
 				}
 				if (3 == count_LANDMARKS)
 				{
 					ptrToArray = landmarks_3;
-					printf("processing landmarks 3b\n");
 				}
 				// code to show the vertex data copied into the malloced array
 				for (int ii = 0; ii < nlandmarks; ii++)
 				{
-					printf(" [%4d] <%10.6f %10.6f %10.6f>\n", ii, ptrToArray[0], ptrToArray[1], ptrToArray[2]);
 					ptrToArray++;
 					ptrToArray++;
 					ptrToArray++;
 				}
-				printf("Show landmark complete\n");
-
 
 				if (1 == count_LANDMARKS)
 				{
 					if (0 == model_index)
 					{
 						ptrToArray = landmarks_1;
-						printf("processing landmarks 1c\n");
 					}
 					else
 					{
@@ -1588,7 +1487,6 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 					if (1 == model_index)
 					{
 						ptrToArray = landmarks_2;
-						printf("processing landmarks 2c\n");
 					}
 					else
 					{
@@ -1601,15 +1499,12 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 					if (2 == model_index)
 					{
 						ptrToArray = landmarks_3;
-						printf("processing landmarks 3c\n");
 					}
 					else
 					{
 						ptrToArray = NULL;
 					}
 				}
-				printf("test count_LANDMARKS is [%d]\n", count_LANDMARKS);
-				printf("test model_index is ... [%d]\n", model_index);
 				if (NULL != ptrToArray)
 				{
 					sprintf(buffer, "DEBUG : Processing of landmark data for current specimen [%d] [%d] of [%d] [%d]",
@@ -1631,7 +1526,6 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 						anchorSetArrayIndex(model_index);
 						for (int ii = 0; ii < nlandmarks; ii++)
 						{
-							printf(" [%4d] <%10.6f %10.6f %10.6f>\n", ii, ptrToArray[0], ptrToArray[1], ptrToArray[2]);
 							addDot_NO_TCL(&ptrToArray[0], &ptrToArray[1], &ptrToArray[2]);
 							ptrToArray++;
 							ptrToArray++;
@@ -1706,66 +1600,53 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 				if (1 == count_ANCHORS)
 				{
 					ptrToArray = anchors_1;
-					printf("processing ANCHORS 1a\n");
 				}
 				if (2 == count_ANCHORS)
 				{
 					ptrToArray = anchors_2;
-					printf("processing ANCHORS 2a\n");
 				}
 				if (3 == count_ANCHORS)
 				{
 					ptrToArray = anchors_3;
-					printf("processing ANCHORS 3a\n");
 				}
 
 				for (int ii = 0; ii < nAnchors; ii++)
 				{
 					p = fgets(buffer, 300, file);
 					sscanf(p, "%f %f %f", &v1, &v2, &v3);
-					printf("Anchor [%4d]  <%10.6f %10.6f %10.6f>\n", ii, v1, v2, v3);
 					ptrToArray[0] = (double)v1;
 					ptrToArray[1] = (double)v2;
 					ptrToArray[2] = (double)v3;
-					printf("Anchor [%4d]  <%10.6f %10.6f %10.6f>\n", ii, ptrToArray[0], ptrToArray[1], ptrToArray[2]);
 					ptrToArray++;
 					ptrToArray++;
 					ptrToArray++;
 				}
-				printf("end ANCHORS\n");
 
 				if (1 == count_ANCHORS)
 				{
 					ptrToArray = anchors_1;
-					printf("processing ANCHORS 1b\n");
 				}
 				if (2 == count_ANCHORS)
 				{
 					ptrToArray = anchors_2;
-					printf("processing ANCHORS 2b\n");
 				}
 				if (3 == count_ANCHORS)
 				{
 					ptrToArray = anchors_3;
-					printf("processing ANCHORS 3b\n");
 				}
 				// code to show the vertex data copied into the malloced array
 				for (int ii = 0; ii < nAnchors; ii++)
 				{
-					printf(" [%4d] <%10.6f %10.6f %10.6f>\n", ii, ptrToArray[0], ptrToArray[1], ptrToArray[2]);
 					ptrToArray++;
 					ptrToArray++;
 					ptrToArray++;
 				}
-				printf("Show anchor complete\n");
-
 
 				if (1 == count_ANCHORS)
 				{
 					if (0 == model_index)
 					{
 						ptrToArray = anchors_1;
-						printf("processing ANCHORS 1c\n");
 					}
 					else
 					{
@@ -1777,7 +1658,6 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 					if (1 == model_index)
 					{
 						ptrToArray = anchors_2;
-						printf("processing ANCHORS 2c\n");
 					}
 					else
 					{
@@ -1789,7 +1669,6 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 					if (2 == model_index)
 					{
 						ptrToArray = anchors_3;
-						printf("processing ANCHORS 3c\n");
 					}
 					else
 					{
@@ -1797,8 +1676,6 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 					}
 				}
 
-				printf("test count_ANCHORS is [%d]\n", count_ANCHORS);
-				printf("test model_index is .. [%d]\n", model_index);
 				if (NULL != ptrToArray)
 				{
 
@@ -1821,7 +1698,6 @@ int ogl_loadDgtModel(const char* filename, model_t* model)
 
 						for (int ii = 0; ii < nAnchors; ii++)
 						{
-							printf(" [%4d] <%10.6f %10.6f %10.6f>\n", ii, ptrToArray[0], ptrToArray[1], ptrToArray[2]);
 							addAnchor_NO_TCL(&ptrToArray[0], &ptrToArray[1], &ptrToArray[2]);
 							ptrToArray++;
 							ptrToArray++;
