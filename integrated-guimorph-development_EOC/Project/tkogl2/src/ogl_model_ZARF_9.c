@@ -289,7 +289,6 @@ int ogl_drawDownSampleModel(model_t* model, GLdouble radius, point_t* downSample
 	dy = (double)model->dsMax[Y] - (double)model->max[Y];
 	dz = (double)model->dsMax[Z] - (double)model->max[Z];
 
-	//D3("%f, %f, %f", model->delta[0], model->delta[1], model->delta[2]);
 	sprintf(oglBuffer, "INFO : delta items : %10.6f, %10.6f, %10.6f", model->delta[0], model->delta[1], model->delta[2]);
 	simpleLog(oglBuffer);
 
@@ -483,15 +482,6 @@ int ogl_drawLine(point_t* line, int size)
 
 	for (int i = 0; i < size; i++)
 	{
-		//D3("%f,%f,%f", line[i].x, line[i].y, line[i].z);
-
-		if (0)  // when enabled this provides a lot of output - only neded for really detailed debugging. 
-		{
-			sprintf(oglBuffer, "INFO: ogl_drawLine : [%4d]   %10.6f, %10.6f, %10.6f", i, line[i].x, line[i].y, line[i].z);
-			simpleLog(oglBuffer);
-		}
-
-
 		if ( (1.0 == GBL_INWORK_CURVE_SCALEFACTOR_MPY) && (0 == GBL_INWORK_CURVE_SCALEFACTOR_ADD))
 		{
 			// original code ... .do not mutate z compomponent

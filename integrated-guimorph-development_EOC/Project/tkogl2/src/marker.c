@@ -466,18 +466,6 @@ int marker_slice_index(marker_set_t* s, int id)
 
 	s->slice_id = id;
 
-	if (0)
-	{
-		simpleLog("ERROR >>> ERROR >>> ERROR In DOTS (anchors_slice_index)  SHOULD NOT BE HERE");
-		int rv = -1;
-		rv = set_curve_slice_index(id);
-		if (rv != 0)
-		{
-			simpleLog("ERROR : fail return from curve_slice_index()");
-			return -1;
-		}
-	}
-
 	return 0;
 }
 

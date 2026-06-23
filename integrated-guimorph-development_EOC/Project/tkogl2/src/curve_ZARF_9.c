@@ -566,27 +566,12 @@ int curve_buildLine(point_t* p1, point_t* p2, point_t** line)
 		
 			// context 
 			{
-				double was = (*line)[i].z;
 				(*line)[i].z *= GBL_INWORK_CURVE_SCALEFACTOR_MPY;
-				double is_now = (*line)[i].z;
-				if (0)  // only needed for very detailed debugging
-				{
-					sprintf(curveBuffer, "z component MPY <%10.6f> ... <%10.6f>", was, is_now);
-					simpleLog(curveBuffer);
-				}
 			}
 
 			// another context 
 			{
-
-				double was = (*line)[i].z;
 				(*line)[i].z += GBL_INWORK_CURVE_SCALEFACTOR_ADD;
-				double is_now = (*line)[i].z;
-				if (0)  // only needed for very detailed debugging
-				{
-					sprintf(curveBuffer, "z component ADD <%10.6f> ... <%10.6f>", was, is_now);
-					simpleLog(curveBuffer);
-				}
 			}
 
 
