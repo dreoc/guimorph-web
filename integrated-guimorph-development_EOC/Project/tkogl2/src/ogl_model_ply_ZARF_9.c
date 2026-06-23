@@ -7,6 +7,8 @@
 
 #include "RunTime_Defines_ZARF_9.h"
 #include "StatisticsFunction_ZARF_9.h"
+#include "tcl_state.h"
+#include "tcl_state.h"
 
 
 const char OGL_MODEL_PLY_VERSION_INFORMATION[] = "File olg_model_ply Edit revision date is 15 August 2020 4:22 PM";
@@ -295,7 +297,7 @@ int ogl_loadDownSampleModel(double* flattenedVertices, unsigned int totalSize, m
 	}
 
 
-	if (1)
+	if (GBL_ENABLE_TCL_OBJECT_LOGGING)
 	{
 		simpleLog("DEBUG : First iteration");
 		simpleLog("DEBUG : Iterating over flattented vertices");
@@ -391,9 +393,11 @@ int ogl_loadDownSampleModel(double* flattenedVertices, unsigned int totalSize, m
 	/*Read Vertices*/
 	// This needs some better documentation of what is going on
 
-	if (1)
 	{
-		simpleLog("DEBUG : Iterating over flattented vertices assigning to model dsVertices");
+		if (GBL_ENABLE_TCL_OBJECT_LOGGING)
+		{
+			simpleLog("DEBUG : Iterating over flattented vertices assigning to model dsVertices");
+		}
 
 		for (int i = 0; i < model->dsCount; i += 3)
 		{
@@ -978,7 +982,7 @@ int unit_test_ogl_loadCurve(const char* filename)
 		return -1;
 	}
 
-	if (curveNum >= GBL_LANDMARK_SET_MAX_ROWS)
+	if (curveNum >= GBL_CURVE_SET_CAPACITY)
 	{
 		simpleLog("ERROR : unit_test_ogl_loadCurve ... too many landpark points  ... file NOT loaded");
 		return -1;
