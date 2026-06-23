@@ -35,17 +35,17 @@
 
 ### Developer Environment
 
-- [ ] **DEV-01**: `renv` lockfile pins R package versions with documented restore instructions
-- [ ] **DEV-02**: `BUILD.md` documents full build-deploy-test cycle (WSL build → copy DLL → Windows R test)
-- [ ] **DEV-03**: Workflow documented for swapping new `build/tkogl2.dll` into `inst/libs/x64/`
+- [x] **DEV-01**: `renv` lockfile pins R package versions with documented restore instructions — ✅ 2026-06-19 (`renv.lock`, `.Rprofile`, `renv/` committed; `scripts/init-renv.R`)
+- [x] **DEV-02**: `BUILD.md` documents full build-deploy-test cycle (MSVC build → deploy DLL → Windows R test) — ✅ 2026-06-19 (Phase 6 UAT)
+- [x] **DEV-03**: Workflow documented for swapping new `tkogl2.dll` into `inst/libs/x64/` — ✅ 2026-06-19 (`scripts/deploy-dll.ps1`; MSVC primary as of 2026-06-23)
 
 ### C Engine Rehabilitation (Option A)
 
 - [x] **CENG-01**: `tcl_if_ZARF_9.c` split into separate modules (dispatch, window/WGL, state, log, init) with no behavior change — validated 2026-06-21 (Phase 7 final smoke)
-- [x] **CENG-02**: Dot and anchor implementations unified into shared marker code
-- [ ] **CENG-03**: Numbered globals (`GBL_PTR_*_1..N`) replaced with arrays; capacity limits documented
-- [ ] **CENG-04**: Debug cruft removed (`MAKE_INERT`, `if(0)` toggles, pervasive `printf` tracing)
-- [ ] **CENG-05**: Post-rehabilitation DLL passes full digitize smoke test (no regression vs Phase 4 baseline)
+- [x] **CENG-02**: Dot and anchor implementations unified into shared marker code — ✅ 2026-06-22 (marker.c UAT; anchor .dgt round-trip)
+- [x] **CENG-03**: Numbered globals (`GBL_PTR_*_1..N`) replaced with arrays; capacity limits documented — ✅ 2026-06-22 (Phase 9 plan 09-01)
+- [x] **CENG-04**: Debug cruft removed (`MAKE_INERT`, `if(0)` toggles, pervasive `printf` tracing) — ✅ 2026-06-22 (Phase 9 plans 09-02/09-03)
+- [x] **CENG-05**: Post-rehabilitation DLL passes full digitize smoke test (no regression vs Phase 4 baseline) — ✅ 2026-06-22 (Fixtures A+B UAT)
 
 ## v2 Requirements
 
@@ -88,21 +88,20 @@ Deferred until v1 milestone ships.
 | ANAL-01 | Phase 5 | ✓ Validated 2026-06-19 — gpagen + CSV save on test_fresh.dgt |
 | ANAL-02 | Phase 5 | ✓ Validated 2026-06-19 — inventory + HOT-path migration closure (05-03) |
 | ANAL-03 | Phase 5 | ✓ Validated 2026-06-19 — hot-path CRAN APIs; vendored procD deferred (D-10) |
-| DEV-01 | Phase 6 | Pending |
-| DEV-02 | Phase 6 | Pending |
-| DEV-03 | Phase 6 | Pending |
+| DEV-01 | Phase 6 | ✓ Validated 2026-06-19 — renv.lock committed; restore verified |
+| DEV-02 | Phase 6 | ✓ Validated 2026-06-19 — BUILD.md contributor guide UAT |
+| DEV-03 | Phase 6 | ✓ Validated 2026-06-23 — deploy-dll.ps1 MSVC primary + -Source param |
 | CENG-01 | Phase 7 | ✓ Validated 2026-06-21 — five-module layout; digitize round-trip smoke passed |
-| CENG-02 | Phase 8 | Complete |
-| CENG-03 | Phase 9 | Pending |
-| CENG-04 | Phase 9 | Pending |
-| CENG-05 | Phase 9 | Pending |
+| CENG-02 | Phase 8 | ✓ Validated 2026-06-22 — marker.c unified; anchor .dgt round-trip |
+| CENG-03 | Phase 9 | ✓ Validated 2026-06-22 — GBL_PTR arrays with capacity #defines |
+| CENG-04 | Phase 9 | ✓ Validated 2026-06-22 — debug cruft removed; simpleLog only |
+| CENG-05 | Phase 9 | ✓ Validated 2026-06-22 — Fixtures A+B full regression UAT |
 
 **Coverage:**
-
 - v1 requirements: 22 total
 - Mapped to phases: 22
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-06-13*
-*Last updated: 2026-06-19 — ANAL-02/ANAL-03 validated (Phase 5 migration closure)*
+*Last updated: 2026-06-23 — all v1 requirements validated (milestone audit tech-debt sync)*

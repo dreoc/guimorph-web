@@ -23,17 +23,16 @@ A researcher can open the GUI on Windows R, load a 3D specimen, digitize anatomi
 - ✓ Specimen mesh renders in 3D viewer — 2026-06-13: `C13.1.ply` artifact **visible** after load (user confirmed)
 - ✓ PLY load pipeline — 2026-06-13: file found, `add specimen` invoked
 - ✓ Landmark placement on specimen — 2026-06-15: landmarks **visible** after placement; requires **double-click** on canvas (single-click is pick/select only, not placement)
+- ✓ Digitize workflow — v1.0: landmarks, curves, multi-specimen `.dgt` save/reload (Phases 4–5)
+- ✓ Analysis round-trip — v1.0: landmarks-only GPA (`gpagen`) + CSV on geomorph 4.x APIs (Phase 5)
+- ✓ Reproducible R environment — v1.0: `renv.lock` committed; `BUILD.md` + `deploy-dll.ps1` (Phase 6)
+- ✓ C engine modularization — v1.0: five `tcl_*` modules; god file removed from build (Phase 7)
+- ✓ Dot/anchor unification — v1.0: unified `marker.c`; anchor `.dgt` round-trip (Phase 8)
+- ✓ C engine cleanup — v1.0: array globals, debug removal, Fixtures A+B regression UAT (Phase 9)
 
 ### Active
 
-- [ ] Reproducible R environment (`renv`) with documented dependency versions
-- [ ] Digitize workflow: load PLY → place landmarks/curves → export `.dgt`
-- [ ] Analysis round-trip: exported data runs at least one `geomorph` analysis call
-- [ ] Migrate breaking `geomorph`/`Morpho` API calls to current CRAN versions
-- [ ] Split `tcl_if_ZARF_9.c` god file into focused modules (dispatch, window, state)
-- [ ] Unify duplicated dot/anchor C implementations
-- [ ] Replace numbered globals (`GBL_PTR_*_1..N`) with arrays; document capacity limits
-- [ ] Remove debug cruft (`MAKE_INERT`, pervasive `printf`/`if(0)` toggles)
+(None — v1.0 milestone complete; define next milestone via `/gsd-new-milestone`)
 
 ### Out of Scope
 
@@ -53,14 +52,16 @@ A researcher can open the GUI on Windows R, load a 3D specimen, digitize anatomi
 2. **Tcl/Tk** — stringly-typed `tcl("add", shape, ...)` protocol in `rtkogl.R`
 3. **C/OpenGL** — `tkogl2` DLL: WGL context on Tk widget HWND, fixed-function OpenGL
 
-**Milestone strategy:** Phases 1–6 restore and de-risk (runtime → GUI → digitize → analyze → renv). Phases 7–9 rehabilitate the C engine behind the same DLL interface. Option A chosen over rgl/Shiny for lowest cost while keeping the custom renderer.
+**Current state (v1.0 shipped 2026-06-22):** Windows R 4.6+ GUI restored; MSVC-built `tkogl2.dll` with modular C engine (`tcl_init`, `tcl_dispatch`, `tcl_window`, `tcl_state`, `tcl_log`, `marker.c`). Contributor docs in `BUILD.md`; `renv.lock` pins R deps. Known backlog: GPA plot blank (999.1), openDgt specimen order (999.2).
+
+**Milestone strategy:** v1.0 Phases 1–9 complete. Option A C rehabilitation delivered. Next milestone TBD via `/gsd-new-milestone`.
 
 **Prior work:** See `.planning/guimorph-modernization-plan.md`, `modernization-session-handoff.md`, `r-guimorph-setup-findings.md`, `.planning/research/`.
 
 ## Constraints
 
 - **Platform**: Windows-only for runtime — must use Windows R, not WSL/Linux R
-- **Build**: MinGW-w64 cross-compile from WSL (no Visual Studio IDE dependency)
+- **Build**: MSVC primary for distribution (`build-msvc/Release/`); MinGW cross-compile from WSL for link checks only (renders incorrectly)
 - **Graphics**: Fixed-function OpenGL + WGL — legacy but retained under Option A
 - **Dependencies**: `geomorph` 4.x breaking changes — migrate incrementally with call-site inventory
 - **C refactor**: Must preserve `Tkogl2_Init` export and R↔Tcl shape string protocol
@@ -71,10 +72,11 @@ A researcher can open the GUI on Windows R, load a 3D specimen, digitize anatomi
 |----------|-----------|---------|
 | Flatten embedded git repo | Single outer repo (`dreoc/GUImorph`) instead of nested history | ✓ Good — Plan 0 |
 | MinGW + CMake over Visual Studio | User works in Cursor/WSL; VS project was broken anyway | ✓ Good — DLL builds |
-| **Option A — rehabilitate C in place** | User chose cheapest path; accepts Windows-only + legacy GL | — Pending |
+| **Option A — rehabilitate C in place** | User chose cheapest path; accepts Windows-only + legacy GL | ✓ Good — v1.0 |
 | Skip formal codebase map | Detailed architecture review already in `.planning/` | ✓ Good |
-| Full modernization milestone | Includes C rehab (Phases 7–9), not just "get it running" | — Pending |
-| Reject rgl/Shiny swap (Options B/C) | Explicit user choice of Option A | — Pending |
+| Full modernization milestone | Includes C rehab (Phases 7–9), not just "get it running" | ✓ Good — v1.0 |
+| Reject rgl/Shiny swap (Options B/C) | Explicit user choice of Option A | ✓ Good — v1.0 |
+| MSVC primary over MinGW for distribution | MinGW builds render black/blank mesh | ✓ Good — 2026-06-21 |
 | **Double-click to place landmarks** | Single-click runs pick/select (`set dot selected`); placement is `<Double-Button-1>` → `addDot` | ✓ Good — documented 2026-06-15 |
 
 ## Evolution
@@ -95,4 +97,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-15 after landmark placement validated (double-click UX)*
+*Last updated: 2026-06-23 after v1.0 milestone audit tech-debt cleanup*

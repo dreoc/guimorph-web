@@ -79,18 +79,19 @@ powershell -ExecutionPolicy Bypass -File scripts/deploy-dll.ps1
 
 The script:
 
-- Validates `integrated-guimorph-development_EOC/Project/tkogl2/build/tkogl2.dll` exists
+- Defaults to MSVC `build-msvc/Release/tkogl2.dll`, then falls back to MinGW `build/tkogl2.dll`
+- Accepts an explicit path: `powershell -ExecutionPolicy Bypass -File scripts/deploy-dll.ps1 -Source "path\to\tkogl2.dll"`
 - Backs up the current DLL to `inst/libs/x64/tkogl2.dll.bak` before overwrite
 - Copies the build artifact to `GUImorphDevelopment/inst/libs/x64/tkogl2.dll`
 
 > **Rollback:** If the viewer is blank after deploy, restore the backup:
 > `Copy-Item inst/libs/x64/tkogl2.dll.bak inst/libs/x64/tkogl2.dll -Force`
-> Only deploy from `build/` after UAT confirms mesh + `.dgt` render on your machine.
+> Only deploy after UAT confirms mesh + `.dgt` render on your machine.
 
 ### Manual fallback
 
 ```powershell
-# MSVC build output (primary). For a MinGW build use .../tkogl2/build/tkogl2.dll instead.
+# MSVC build output (primary)
 $Src = "integrated-guimorph-development_EOC/Project/tkogl2/build-msvc/Release/tkogl2.dll"
 $Dest = "integrated-guimorph-development_EOC/Project/GUImorphDevelopment/inst/libs/x64/tkogl2.dll"
 Copy-Item $Dest "$Dest.bak" -ErrorAction SilentlyContinue
@@ -98,10 +99,6 @@ Copy-Item $Src $Dest -Force
 ```
 
 To roll back: copy `tkogl2.dll.bak` back to `tkogl2.dll`.
-
-> The `scripts/deploy-dll.ps1` helper currently validates the MinGW output path
-> (`.../tkogl2/build/tkogl2.dll`). When deploying an MSVC build, use the manual copy above
-> (or pass the MSVC path to the script if it accepts one).
 
 ---
 
@@ -187,18 +184,29 @@ For maintainer UAT history and warning triage, see `.planning/smoke-test-finding
 
 ---
 
-## C source layout (Phase 7)
+## C source layout (Phase 9)
 
-Incremental modularization of `tcl_if_ZARF_9.c` (Option A). Plan 07-03 completed the split; the god file is removed from the CMake build.
+Modular `tkogl2` layout after Phase 7 split, Phase 8 marker unification, and Phase 9
+globals/debug cleanup. The god file `tcl_if_ZARF_9.c` is **removed from the CMake build**
+(not a source file). An orphan `tcl_if_ZARF_9.c.bak` may remain under `src/` and can be
+deleted. The reference-only `.vcxproj` is not used for builds — **CMake + MSVC only**.
 
 | File | Responsibility |
 |------|----------------|
-| `tcl_init.c` | `Tkogl2_Init` — registers 8 Tcl commands (`add`, `show`, `setWindow`, `setSpecimen`, `setDownSample`, `setDot`, `del`, `loadDgt`) |
-| `tcl_dispatch.c` | Tcl handlers, draw pass (`drawDots`, `onDisplay`), `Wrapper_Get*` helpers, `GBL_RTN_*` constants |
-| `tcl_window.c` | `setWindowId`, HWND/WGL setup, window dimensions (`dc`, `width`, `height`), `setWindow` handler |
-| `tcl_state.c` | Globals (`GBL_*`, `models`, `context`, `deltas`), `initialize_state`, `resetContext`, `ALLOCATE_WRAPPER` |
-| `tcl_log.c` | `simpleLog*`, command stream recording, debug snapshot writers |
-| `dot_ZARF_9.c`, `curve_ZARF_9.c`, `ogl_*.c` | Unchanged logic |
+| `tcl_init.c` | `Tkogl2_Init`; registers 8 Tcl commands (`add`, `show`, `setWindow`, `setSpecimen`, `setDownSample`, `setDot`, `del`, `loadDgt`) |
+| `tcl_dispatch.c` | Tcl handlers, draw pass (`drawDots`/`onDisplay`), `Wrapper_Get*` helpers |
+| `tcl_window.c` | `setWindowId`, HWND/WGL setup, `dc`/`width`/`height`, `setWindow` |
+| `tcl_state.c` | Globals (capacity-`#define`d `GBL_PTR_*` arrays), `initialize_state`, `resetContext`, alloc wrappers |
+| `tcl_log.c` | `simpleLog*`, command stream, file writers (the surviving diagnostic channel) |
+| `marker.c` | Unified `marker_*` core + `g_landmarks`/`g_anchors` + `dot_*`/`anchor_*` wrappers (Phase 8) |
+| `curve_ZARF_9.c` | Curve geometry/state |
+| `ogl_ZARF9.c`, `ogl_model_ZARF_9.c`, `ogl_model_ply_ZARF_9.c` | OpenGL init/draw + PLY/`.dgt` model loading |
+| `StatisticsFunction_ZARF_9.c` | Vertex statistics |
+
+**Removed from build:** `tcl_if_ZARF_9.c` (god file), `dot_ZARF_9.c` (replaced by `marker.c` in Phase 8).
+
+**Rollback DLL convention:** before Phase 9 refactors, copy deployed DLL to
+`inst/libs/x64/tkogl2.dll.pre-phase9.bak` (see Phase 9 plan 09-01).
 
 ---
 
@@ -212,4 +220,4 @@ See **Advanced: WSL Cross-Compile** in
 
 ---
 
-*Phase 6 — reproducible dev environment. Last updated: 2026-06-19.*
+*Phase 9 — C engine cleanup & validation. Last updated: 2026-06-22.*

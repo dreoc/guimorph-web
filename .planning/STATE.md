@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: Phase 9 planned — ready to execute
-last_updated: "2026-06-22"
-last_activity: 2026-06-22 — Phase 9 planned (4 plans, verification passed); ready to execute
+stopped_at: Milestone v1.0 complete — all 9 phases done
+last_updated: "2026-06-23"
+last_activity: 2026-06-23 — Quick task: milestone audit tech-debt cleanup
 progress:
   total_phases: 9
-  completed_phases: 8
-  total_plans: 17
-  completed_plans: 17
-  percent: 89
+  completed_phases: 9
+  total_plans: 21
+  completed_plans: 21
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-15)
 
 **Core value:** Researcher can digitize a 3D specimen in the GUI, run `geomorph` analysis end-to-end, and maintain a modular C engine on Windows R.
-**Current focus:** Phase 09 — c-engine-cleanup-validation
+**Current focus:** Milestone v1.0 ready to archive — audit tech debt cleared (2026-06-23)
 
 ## Current Position
 
-Phase: 09 (c-engine-cleanup-validation) — **PLANNED, ready to execute**
-Plans: 09-01..09-04 (0/4) across 4 waves — globals→arrays (CENG-03) → debug-cruft removal (CENG-04, ×2) → full regression UAT + BUILD.md (CENG-05)
-Status: Planning complete; plan-checker VERIFICATION PASSED (0 blockers); requirements + decision coverage gates green
-Last activity: 2026-06-22 — Phase 9 planned; next: /gsd-execute-phase 9
+Phase: **MILESTONE COMPLETE** (Phases 1–9)
+Plans: 21/21 complete across all phases
+Status: Phase 9 verified passed (12/12 must-haves); Fixture A + B UAT approved 2026-06-22
+Last activity: 2026-06-22 — Phase 9 execution complete; CENG-03/04/05 satisfied
 
-Progress: [████████░░] 89%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -57,7 +57,8 @@ Progress: [████████░░] 89%
 - **Canvas HWND realization** required before WGL bind — `tcl("update","idletasks")` in `ui.main` (2026-06-21)
 - **Phase 7 modularization:** five `tcl_*` modules replace god file; `tcl_if_ZARF_9.c` deleted from build (2026-06-21)
 - **Phase 8 marker unification:** `marker.c` replaces `dot_ZARF_9.c`; anchor wrappers route `&g_anchors` (D-03); `marker_del_selected` NULL guard (2026-06-22)
-- **def_ZARF_9.h unchanged** — existing `dot_*`/`anchor_*` prototypes satisfied by wrappers in `marker.c` (2026-06-22)
+- **Phase 9 cleanup:** numbered `GBL_PTR_*` → fixed-capacity arrays with `#define` limits; debug cruft removed; `simpleLog` sole diagnostic channel; full UAT passed both fixtures (2026-06-22)
+- **def_ZARF_9.h type layout frozen** — only D* debug macros removed in Phase 9; dot_t/enum unchanged (2026-06-22)
 
 ### Blockers/Concerns
 
@@ -65,8 +66,25 @@ Progress: [████████░░] 89%
 - Per-specimen curve bind / C curve state on specimen switch — future work (Phase 8+)
 - PLY vertex coloration for geometry-only scans (all-zero RGB) — deferred; lighting fallback in place
 
+### Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-06-23:
+
+| Category | Item | Status |
+|----------|------|--------|
+| debug | 07-01-dispatch-extraction | diagnosed — MinGW render regression, not dispatch logic |
+| backlog | 999.1 GPA plot blank | deferred — promote via /gsd-review-backlog |
+| backlog | 999.2 openDgt wrong specimen first | deferred — promote via /gsd-review-backlog |
+| process | per-phase VERIFICATION.md missing | deferred — UAT evidence in smoke-test-findings.md |
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 250623-001 | Milestone v1.0 audit tech-debt cleanup | 2026-06-23 | pending | [250623-001-milestone-tech-debt](./quick/250623-001-milestone-tech-debt/) |
+
 ## Session Continuity
 
-Last session: 2026-06-22
-Stopped at: Phase 9 planned (4 plans) — ready to execute
-Resume file: .planning/phases/09-c-engine-cleanup-validation/09-01-PLAN.md
+Last session: 2026-06-23
+Stopped at: Milestone v1.0 audit tech-debt cleanup complete — ready for /gsd-complete-milestone v1.0
+Resume file: none (milestone complete)

@@ -13,10 +13,10 @@ Full modernization of GUImorph on modern Windows R: validate the MinGW-built nat
 - [x] **Phase 3: 3D Viewer Smoke Test** — Load PLY specimen and confirm mesh renders
 - [x] **Phase 4: Digitize Workflow** — Landmarks, curves, `.dgt` save/reload
 - [x] **Phase 5: Analysis Round-Trip** — `geomorph` analysis + API migration
-- [ ] **Phase 6: Reproducible Dev Environment** — `renv`, build docs, DLL deploy workflow
+- [x] **Phase 6: Reproducible Dev Environment** — `renv`, build docs, DLL deploy workflow
 - [x] **Phase 7: C Engine Modularization** — Split `tcl_if` god file into focused modules
-- [ ] **Phase 8: C Engine Deduplication** — Unify dot/anchor implementations
-- [ ] **Phase 9: C Engine Cleanup & Validation** — Globals, debug removal, regression test
+- [x] **Phase 8: C Engine Deduplication** — Unify dot/anchor implementations
+- [x] **Phase 9: C Engine Cleanup & Validation** — Globals, debug removal, regression test
 
 ## Phase Details
 
@@ -106,7 +106,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Inventory geomorph/Morpho call sites; HOT vs DEFERRED classification (ANAL-02)
+- [x] 05-01-PLAN.md — Inventory geomorph/Morpho call sites; HOT vs DEFERRED classification (ANAL-02)
 
 **Wave 1**
 - [x] 05-01-PLAN.md — Grep R sources → `05-INVENTORY.md` (ANAL-02)
@@ -134,16 +134,16 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Initialize renv in GUImorphDevelopment/; snapshot deps; warning baseline + HOT triage (DEV-01)
+- [x] 06-01-PLAN.md — Initialize renv in GUImorphDevelopment/; snapshot deps; warning baseline + HOT triage (DEV-01)
 
 **Wave 1**
-- [ ] 06-01-PLAN.md — renv lockfile, scaffold, restore verification checkpoint (DEV-01)
+- [x] 06-01-PLAN.md — renv lockfile, scaffold, restore verification checkpoint (DEV-01)
 
 **Wave 2**
-- [ ] 06-02-PLAN.md — Root BUILD.md, deploy-dll.ps1, tkogl2/BUILD.md restructure; deploy UAT checkpoint (DEV-02, DEV-03)
+- [x] 06-02-PLAN.md — Root BUILD.md, deploy-dll.ps1, tkogl2/BUILD.md restructure; deploy UAT checkpoint (DEV-02, DEV-03)
 
 **Wave 3**
-- [ ] 06-03-PLAN.md — README quick-start + Known behavior quirks linking to BUILD.md (DEV-02)
+- [x] 06-03-PLAN.md — README quick-start + Known behavior quirks linking to BUILD.md (DEV-02)
 
 **Cross-cutting constraints:**
 - renv restore on Windows R only (D-04); WSL not contributor default (D-09)
@@ -192,13 +192,13 @@ Plans:
 Plans:
 
 **Wave 1**
-- [ ] 08-01-PLAN.md — Backup pre-Phase-8 DLL (D-13); define `marker.h` contract (`marker_set_t` + `marker_*` core); confirm MSVC toolchain (CENG-02)
+- [x] 08-01-PLAN.md — Backup pre-Phase-8 DLL (D-13); define `marker.h` contract (`marker_set_t` + `marker_*` core); confirm MSVC toolchain (CENG-02)
 
 **Wave 2**
-- [ ] 08-02-PLAN.md — Implement unified `marker.c` (shared `marker_*` core + `g_landmarks`/`g_anchors` + all `dot_*`/`anchor_*` wrappers; fix anchor asymmetry D-03; trim select logging D-05); swap CMake + delete `dot_ZARF_9.c`; MSVC build green (CENG-02)
+- [x] 08-02-PLAN.md — Implement unified `marker.c` (shared `marker_*` core + `g_landmarks`/`g_anchors` + all `dot_*`/`anchor_*` wrappers; fix anchor asymmetry D-03; trim select logging D-05); swap CMake + delete `dot_ZARF_9.c`; MSVC build green (CENG-02)
 
 **Wave 3**
-- [ ] 08-03-PLAN.md — Deploy DLL; manual Windows R GUI UAT (landmark parity D-04, anchor place/select/move/delete D-03/D-10, `.dgt` round-trip incl. anchor D-11); document in smoke-test-findings.md D-12 (CENG-02)
+- [x] 08-03-PLAN.md — Deploy DLL; manual Windows R GUI UAT (landmark parity D-04, anchor place/select/move/delete D-03/D-10, `.dgt` round-trip incl. anchor D-11); document in smoke-test-findings.md D-12 (CENG-02)
 
 **Cross-cutting constraints:**
 - `tcl_dispatch.c` NOT modified — all call sites work through wrappers (D-01)
@@ -220,16 +220,16 @@ Plans:
 Plans:
 
 **Wave 1**
-- [ ] 09-01-PLAN.md — D-15 DLL backup; array-ify GBL_PTR_MODEL/CONTEXT/CURVE (5/5/6) with capacity `#define`s in tcl_state.h; preserve curve-index bug verbatim (CENG-03)
+- [x] 09-01-PLAN.md — D-15 DLL backup; array-ify GBL_PTR_MODEL/CONTEXT/CURVE (5/5/6) with capacity `#define`s in tcl_state.h; preserve curve-index bug verbatim (CENG-03)
 
 **Wave 2**
-- [ ] 09-02-PLAN.md — Remove loader/geometry trace printf + if(0); port TAG_* errors to simpleLog; D-05 reload smoke both fixtures (CENG-04)
+- [x] 09-02-PLAN.md — Remove loader/geometry trace printf + if(0); port TAG_* errors to simpleLog; D-05 reload smoke both fixtures (CENG-04)
 
 **Wave 3**
-- [ ] 09-03-PLAN.md — Remove tcl_state/statistics/dispatch trace + made-inert blocks + D/D1/D2/D3 macros + MAKE_INERT docs (CENG-04)
+- [x] 09-03-PLAN.md — Remove tcl_state/statistics/dispatch trace + made-inert blocks + D/D1/D2/D3 macros + MAKE_INERT docs (CENG-04)
 
 **Wave 4**
-- [ ] 09-04-PLAN.md — Full regression UAT × 2 fixtures (load→digitize→save→reload→GPA→CSV); update BUILD.md module layout (CENG-05)
+- [x] 09-04-PLAN.md — Full regression UAT × 2 fixtures (load→digitize→save→reload→GPA→CSV); update BUILD.md module layout (CENG-05)
 
 **Cross-cutting constraints:**
 - D-15 DLL backup (`.pre-phase9.bak`) is the first executable task; rollback-able
@@ -249,11 +249,11 @@ Phases execute in numeric order: 1 → 2 → … → 9
 | 2. Package Load & GUI Launch | 3/3 | Complete | 2026-06-15 |
 | 3. 3D Viewer Smoke Test | 3/3 | Complete | 2026-06-15 |
 | 4. Digitize Workflow | 3/3 | Complete | 2026-06-15 |
-| 5. Analysis Round-Trip | 0/3 | Not started | - |
-| 6. Reproducible Dev Environment | 0/3 | Not started | - |
-| 7. C Engine Modularization | 0/3 | Not started | - |
-| 8. C Engine Deduplication | 0/3 | Not started | - |
-| 9. C Engine Cleanup & Validation | 0/4 | Not started | - |
+| 5. Analysis Round-Trip | 3/3 | Complete | 2026-06-19 |
+| 6. Reproducible Dev Environment | 3/3 | Complete | 2026-06-19 |
+| 7. C Engine Modularization | 3/3 | Complete | 2026-06-21 |
+| 8. C Engine Deduplication | 3/3 | Complete | 2026-06-22 |
+| 9. C Engine Cleanup & Validation | 4/4 | Complete | 2026-06-22 |
 
 **Prior work (outside GSD phases):**
 - Plan 0 repo cleanup: Complete (2026-06-12)
@@ -262,6 +262,11 @@ Phases execute in numeric order: 1 → 2 → … → 9
 - GSD Phase 2 (package/GUI): **Complete** — `load_all`, MinGW DLL wired, startup OOB fixed (`activeDataList` guards) — 2026-06-15
 - GSD Phase 3 (viewer): **Complete** — mesh visible (`C13.1.ply`); landmark placement confirmed during viewer use (2026-06-15)
 - GSD Phase 4 (digitize): **Complete** — DGT-01–04 validated; openDgt reload fixes for Surface=0 + queryFromR (2026-06-15)
+- GSD Phase 5 (analysis): **Complete** — GPA hot-path migration; ANAL-01–03 validated (2026-06-19)
+- GSD Phase 6 (dev env): **Complete** — renv lockfile, BUILD.md, deploy-dll.ps1 (2026-06-19)
+- GSD Phase 7 (modularization): **Complete** — five `tcl_*` modules; god file removed (2026-06-21)
+- GSD Phase 8 (deduplication): **Complete** — unified `marker.c`; anchor UAT passed (2026-06-22)
+- GSD Phase 9 (cleanup): **Complete** — globals/debug cleanup; Fixtures A+B UAT (2026-06-22)
 - **Open:** capture 26 warnings (D-10); multi-specimen curve overlay documented for future work
 
 **Strategic decision (locked):** Option A — rehabilitate C engine in place (Windows-only, legacy GL). Options B (rgl) and C (Shiny/WebGL) out of scope.
