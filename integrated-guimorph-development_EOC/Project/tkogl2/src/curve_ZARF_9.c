@@ -408,7 +408,7 @@ int curve_buildLine(point_t* p1, point_t* p2, point_t** line)
 		simpleLog("ERROR : curve_buildLine ... NULL pointer for p1");
 		return -1;
 	}
-	if (NULL == p1)
+	if (NULL == p2)
 	{
 		simpleLog("ERROR : curve_buildLine ... NULL pointer for p2");
 		return -1;
