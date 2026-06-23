@@ -197,6 +197,7 @@ int initialize_state(int selector, int option)
 	if (0 != selector)
 	{
 		sprintf(buffer, "DEBUG : initialize state ... unknown selection [%d]", selector);
+		simpleLog(buffer);
 		return -1;
 	}
 
