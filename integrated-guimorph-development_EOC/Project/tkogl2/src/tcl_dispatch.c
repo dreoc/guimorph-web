@@ -2809,6 +2809,14 @@ TCL_CMD(setSpecimen)
 		{
 			Wrapper_GetIntFromObj(interp, objv[2], &index);
 			index = index - 1;   // adjust from 1 based in R to zero based in C
+			if (index < 0 || index >= model_amount)
+			{
+				sprintf(buffer, "ERROR : setSpecimen id [%d] out of range [0, %d)", index, model_amount);
+				simpleLog(buffer);
+				UT_MY_INTEGER_VALUE = GBL_RTN_IGNORE;
+			}
+			else
+			{
 
 			sprintf(buffer, "INFO : current model index is [%d] ... setting to ... (0 based) {%d}", model_index, index);
 			simpleLog(buffer);
@@ -2886,6 +2894,7 @@ TCL_CMD(setSpecimen)
 					sprintf(buffer, "ERROR : anchors not (yet) placed : failed to set anchor slice index to [%d]", index);
 					simpleLog(buffer);
 				}
+			}
 			}
 		}
 
