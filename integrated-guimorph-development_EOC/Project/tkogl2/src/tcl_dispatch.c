@@ -3785,7 +3785,11 @@ void changeDotColorToSlider(int dotIndex)
 	sprintf(buffer, "DEBUG : changing color of dot index [%d] for slice [%d] to blue", dotIndex, get_dot_slice_index());
 	simpleLog(buffer);
 	dot_t* sliderDot = get_dot_at_index_current_slice(dotIndex);
-
+	if (NULL == sliderDot)
+	{
+		simpleLog("ERROR : changeDotColorToSlider ... no dot at requested index");
+		return;
+	}
 
 	sliderDot->c.r = 0;
 	sliderDot->c.g = 0;
