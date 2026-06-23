@@ -89,10 +89,11 @@ Thumbs.db
 desktop.ini
 
 # ===========================================================================
-# Editor / agent local files
+# Editor / agent local files (Cursor + GSD planning)
 # ===========================================================================
 .cursorrules
 .cursor/
+.planning/
 
 # ===========================================================================
 # MSVC CMake build tree (build/ is ignored above; this is the VS generator path)
@@ -130,6 +131,3 @@ scripts/.phase*
 # Scratch / local test files
 # ===========================================================================
 _load_test.R
-
-.planning/
-.cursor/
