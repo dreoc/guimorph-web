@@ -130,3 +130,6 @@ scripts/.phase*
 # Scratch / local test files
 # ===========================================================================
 _load_test.R
+
+.planning/
+.cursor/
