@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include "def_ZARF_9.h"
+#include "RunTime_Defines_ZARF_9.h"
 static char  oglBuffer[128];
 const char OGL_MODEL_VERSION_INFORMATION[] = "File ogl_model Edit revision date is 15 August 2020 4:22 PM";
 
@@ -322,6 +323,7 @@ int ogl_drawDownSampleModel(model_t* model, GLdouble radius, point_t* downSample
 		return -1;
 	}
 	int howMany = 0;
+#ifdef STAND_ALONE_TOOL
 	for (int ii = 0; ii < (int)model->dsCount; ii++)
 	{
 		if (NULL == pToFloat)
@@ -338,6 +340,7 @@ int ogl_drawDownSampleModel(model_t* model, GLdouble radius, point_t* downSample
 	}
 	sprintf(oglBuffer, "DEBUG : Have iterated over [%d] dsVertices ... -OK-", howMany);
 	simpleLog(oglBuffer);
+#endif
 
 
 
