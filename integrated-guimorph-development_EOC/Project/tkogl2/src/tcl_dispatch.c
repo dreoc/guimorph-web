@@ -1070,7 +1070,13 @@ TCL_CMD(add)
 		int id = -1;
 		Wrapper_GetIntFromObj(interp, objv[3], &id);
 		id = id - 1; // convert 1 based in R to 0 based in C
-		if (NULL == models)
+		if (id < 0 || id >= model_amount)
+		{
+			sprintf(buffer, "ERROR : specimen id [%d] out of range [0, %d)", id, model_amount);
+			simpleLog(buffer);
+			UT_MY_INTEGER_VALUE = GBL_RTN_ERROR;
+		}
+		else if (NULL == models)
 		{
 			UT_MY_INTEGER_VALUE = GBL_RTN_ERROR;
 			simpleLog("NULL value for global item  'models' ");
