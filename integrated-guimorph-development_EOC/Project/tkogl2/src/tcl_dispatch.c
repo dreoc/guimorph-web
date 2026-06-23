@@ -92,14 +92,6 @@ const int GBL_RTN_ERROR = -1;
 const int GBL_RTN_IGNORE = -2;
 const int GBL_RTN_UNDER_CONSTRUCTION = -3;
 
-// defines as in the original code ... 
-#define D1(info, arg1) printf(info"\n", arg1)
-#define D(info) printf(info"\n")
-#define D1(info, arg1) printf(info"\n", arg1)
-#define D2(info, arg1, arg2) printf("%s: "info"\n", __FUNCTION__, arg1, arg2)
-#define D3(info, arg1, arg2, arg3) printf("%s: "info"\n", __FUNCTION__, arg1, arg2, arg3)
-
-
 #ifdef STAND_ALONE_TOOL
 char msg[512];
 
@@ -452,22 +444,6 @@ void drawGrid()
 		return;
 	}
 
-	if (0)
-	{
-		sprintf(buffer, "DEBUG : models->min[Z]  : %10.6f", models->min[Z]); simpleLog(buffer);
-		sprintf(buffer, "DEBUG : models->max[Z]  : %10.6f", models->max[Z]); simpleLog(buffer);
-		sprintf(buffer, "DEBUG : increment value : %10.6f", (models->max[Z] - models->min[Z]) / 10); simpleLog(buffer);
-
-		sprintf(buffer, "models->max[0] %10.6f models->max[1] %10.6f", models->max[0], models->max[1]); simpleLog(buffer);
-		sprintf(buffer, "models->max[0] %10.6f models->min[1] %10.6f", models->max[0], models->min[1]); simpleLog(buffer);
-		sprintf(buffer, "models->min[0] %10.6f models->max[1] %10.6f", models->min[0], models->max[1]); simpleLog(buffer);
-		sprintf(buffer, "models->min[0] %10.6f models->min[1] %10.6f", models->min[0], models->min[1]); simpleLog(buffer);
-		sprintf(buffer, "models->max[0] %10.6f models->max[1] %10.6f", models->max[0], models->max[1]); simpleLog(buffer);
-		sprintf(buffer, "models->min[0] %10.6f models->max[1] %10.6f", models->min[0], models->max[1]); simpleLog(buffer);
-		sprintf(buffer, "models->max[0] %10.6f models->min[1] %10.6f", models->max[0], models->min[1]); simpleLog(buffer);
-		sprintf(buffer, "models->min[0] %10.6f models->min[1] %10.6f", models->min[0], models->min[1]); simpleLog(buffer);
-	}
-
 	for (float i = models->min[Z]; i <= models->max[Z]; i += (models->max[Z] - models->min[Z]) / 10)
 	{
 		glVertex3f(models->max[0], models->max[1], i);
@@ -577,13 +553,6 @@ int validateDot(point_t* p)
 	{
 		simpleLog("ERROR : validatDot ... point_t  argument is NULL");
 		return -1;
-	}
-
-	if (1)
-	{
-		printf(" X :   min %10.6f  X %10.6f  max %10.6f\n", models->min[X], p->x, models->max[X]);
-		printf(" Y :   min %10.6f  Y %10.6f  max %10.6f\n", models->min[Y], p->y, models->max[Y]);
-		printf(" Z :   min %10.6f  Z %10.6f  max %10.6f\n", models->min[Z], p->z, models->max[Z]);
 	}
 
 	if (p->x < models->min[X]) { fail = 1; }
@@ -1069,49 +1038,6 @@ TCL_CMD(add)
 			}
 			else
 			{
-				if (0)   // /made inert ... chose to not delete the code. it is NOT used
-				{
-					temp_index = id;
-					memcpy(&deltas[temp_index], &(models->delta), sizeof(models->delta)); // lose deltas when switching specimens, so they are copied and saved
-
-					maxXY = models->max[0] > models->max[1] ? models->max[0] : models->max[1];
-					if (maxXY > 0.8)
-					{
-						dotRadius = 0.01f;
-						anchorRadius = 0.01f;
-					}
-					else if (maxXY > 0.6)
-					{
-						dotRadius = 0.008f;
-						anchorRadius = 0.008f;
-					}
-					else if (maxXY > 0.4)
-					{
-						dotRadius = 0.006f;
-						anchorRadius = 0.006f;
-					}
-					else if (maxXY > 0.2)   // duplicate clause 23 May 2020  fixed
-					{
-						dotRadius = 0.004f;
-						anchorRadius = 0.004f;
-					}
-					else if (maxXY > 0.1)
-					{
-						dotRadius = 0.002f;
-						anchorRadius = 0.002f;
-					}
-					else if (maxXY > 0.08)
-					{
-						dotRadius = 0.001f;
-						anchorRadius = 0.001f;
-					}
-					else if (maxXY <= 0.08)
-					{
-						dotRadius = 0.001f;
-						anchorRadius = 0.001f;
-					}
-
-				}
 				if (0 != resetContext(id, maxXY))
 				{
 					UT_MY_INTEGER_VALUE = GBL_RTN_ERROR;
@@ -2445,8 +2371,6 @@ TCL_CMD(show)
 					simpleLog(buffer);
 					lmCount++;
 
-					D1("msg=%s", msg);
-
 				}
 			}
 			simpleLog((const char*)"function show landmark xyz ... end");
@@ -2522,7 +2446,6 @@ TCL_CMD(show)
 					strcat(msg, pStr);
 				}
 				n = n->next;
-				D1("msg=%s", msg);
 			}
 			sprintf(buffer, "INFO : (anchors) return string is <%s>", msg);
 			simpleLog(buffer);
@@ -2862,10 +2785,6 @@ TCL_CMD(setSpecimen)
 		{
 			models[ii].thisModelIntegerCount = ii;
 			strncpy(models[ii].fileName, "DUMMY", 20);
-		}
-		for (int ii = 0; ii < amount; ii++)
-		{
-			printf("Models index [%d] : file name is <%s>\n", models[ii].thisModelIntegerCount, models[ii].fileName);
 		}
 		simpleLog((const char*)"setSpecimen allocate ... end");
 	}
@@ -3365,26 +3284,6 @@ TCL_CMD(del)
 	simpleLog((const char*)"TCL_CMD_DEL");
 	TclIf_LogCommands(objc, objv);
 	int UT_MY_INTEGER_VALUE = GBL_RTN_SUCCESS;
-
-	if (0)  // 14 July 2020 made inert by dave 
-	{
-		// Design decision require five arguments 
-		// Talk to Erik about this ..... 
-		// If we delete the speciment, below, what should happen to the dots, the anchors and the 
-		// curve data if anything ?
-
-		simpleLog("ATTENTION : There is an architecture issue here (tcl_if / del function ... read code comments");
-		if (5 != objc)  // require that 3 arguments in addition function name and shape
-		{
-			simpleLog((const char*)"ERROR : Incorrect argument count : need 5 arguments from R");
-			UT_MY_INTEGER_VALUE = GBL_RTN_ERROR;
-			simpleLog((const char*)"END TCL_CMD_SET_DEL");
-			onDisplay();
-			return TCL_OK;
-		}
-	}
-
-
 
 	const char* shape = Wrapper_GetStringFromObj(objv[1], NULL);
 

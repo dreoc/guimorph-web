@@ -108,10 +108,6 @@ void FREE_WRAPPER(void* pointer);
 
 
 #define FREE(p) if (p != NULL) {free(p); p = NULL;}
-#define D(info) printf(info"\n")
-#define D1(info, arg1) printf(info"\n", arg1)
-#define D2(info, arg1, arg2) printf("%s: "info"\n", __FUNCTION__, arg1, arg2)
-#define D3(info, arg1, arg2, arg3) printf("%s: "info"\n", __FUNCTION__, arg1, arg2, arg3)
 
 extern HDC dc;
 

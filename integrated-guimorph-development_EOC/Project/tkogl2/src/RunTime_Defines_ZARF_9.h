@@ -7,7 +7,6 @@
 //
 #undef STAND_ALONE_TOOL
 #undef CODE_FOR_LIBRARY 
-#undef MAKE_INERT
 #undef __linux__
 #undef NO_GRAPHICS
 #undef STAND_ALONE_OPEN_GL
@@ -20,19 +19,6 @@
 
 // Deine the STAND_ALONE_TOOL when the source code will be compiled and executed by
 // the main program main_10 in a desk top testing environment.  This is for developers only.
-
-// The directive  MAKE_INERT is for temporary use.
-// it is intended to make broken code inert.
-// For a formal code release the offending code should be removed from the source file
-// To exclude offending code - wrap the code in the preprocessor directive 
-// #ifdef MAKE_INERT
-//     offending code here
-// #endif
-
-
-
-
-
 
 
 // Next, as desired define the directives suitable for your current test desires 
