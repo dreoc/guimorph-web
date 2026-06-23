@@ -8,7 +8,28 @@ GUImorph is an R package for **3D geometric morphometrics** — researchers load
 
 ## Core Value
 
-A researcher can open the GUI on Windows R, load a 3D specimen, digitize anatomical landmarks/curves, run a `geomorph` analysis end-to-end, and maintain the tool via a clean, modular C codebase — all on current toolchains without Visual Studio.
+A researcher can open the GUI on Windows R, load a 3D specimen, digitize anatomical landmarks/curves/anchors, run a `geomorph` analysis end-to-end, and maintain the tool via a clean, modular C codebase — all on current toolchains (MSVC build, no Visual Studio IDE required).
+
+## Current State (v1.0 — shipped 2026-06-23)
+
+GUImorph v1.0 delivers the full modernization milestone:
+
+- Windows R 4.6+ GUI operational with MSVC-built `tkogl2.dll`
+- Digitize workflow: landmarks, curves, anchors, `.dgt` save/reload
+- Analysis: landmarks-only GPA + CSV export on geomorph 4.x
+- Contributor docs: `BUILD.md`, `renv.lock`, `deploy-dll.ps1`
+- C engine: `tcl_init`, `tcl_dispatch`, `tcl_window`, `tcl_state`, `tcl_log`, `marker.c`
+
+**Archives:** [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) · [milestones/v1.0-REQUIREMENTS.md](milestones/v1.0-REQUIREMENTS.md) · [MILESTONES.md](MILESTONES.md)
+
+## Next Milestone Goals
+
+Define via `/gsd-new-milestone`. Likely candidates from v1 backlog:
+
+- Fix GPA plot rendering (999.1)
+- Fix openDgt first-specimen display (999.2)
+- Automated smoke test / CI (QA-01, QA-02 from v1 seeds)
+- Remaining geomorph vendored procD migration (D-10)
 
 ## Requirements
 
