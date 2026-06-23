@@ -7,7 +7,6 @@
 
 #include "RunTime_Defines_ZARF_9.h"
 #include "StatisticsFunction_ZARF_9.h"
-#include "tcl_state.h"
 
 
 const char OGL_MODEL_PLY_VERSION_INFORMATION[] = "File olg_model_ply Edit revision date is 15 August 2020 4:22 PM";
@@ -979,7 +978,7 @@ int unit_test_ogl_loadCurve(const char* filename)
 		return -1;
 	}
 
-	if (curveNum >= GBL_CURVE_SET_CAPACITY)
+	if (curveNum >= GBL_LANDMARK_SET_MAX_ROWS)
 	{
 		simpleLog("ERROR : unit_test_ogl_loadCurve ... too many landpark points  ... file NOT loaded");
 		return -1;
