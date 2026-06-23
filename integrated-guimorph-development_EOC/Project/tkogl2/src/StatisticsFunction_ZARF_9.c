@@ -148,18 +148,6 @@ void recalculate(struct statistics* ptr)
 
 }
 
-void showStatistics(struct statistics* ptr)
-{
-	printf("is valid [%d]\n", isValidStatistic(ptr));
-	printf("N        [%u]\n", getNStatistic(ptr));
-	printf("Mean     <%10.6f>\n", getMeanStatistic(ptr));
-	printf("Sum      <%10.6f>\n", ptr->mySum);
-	printf("SumSqrs  <%10.6f>\n", ptr->mySumSqs);
-	printf("Variance <%10.6f>\n", getVarianceStatistic(ptr));
-	printf("Maximum  <%10.6f>\n", getMaximumStatistic(ptr));
-	printf("Minimum  <%10.6f>\n", getMinimumStatistic(ptr));
-	printf("\n");
-}
 void simpleLogStatistics(struct statistics* ptr)
 {
 	char buffer[128];

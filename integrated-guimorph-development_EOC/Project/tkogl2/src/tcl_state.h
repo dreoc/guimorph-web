@@ -83,9 +83,7 @@ extern char messageBuffer[128];
 extern char buffer[1024];
 
 void clear_GBL_LANDMARK_SET(void);
-void show_GBL_LANDMARK_SET(void);
 void clear_GBL_CURVE_SET(void);
-void show_GBL_CURVE_SET(void);
 
 int clear_model(model_t* m);
 int clear_context(context_t* c);
@@ -93,8 +91,6 @@ int clearCurve(curve_t* c);
 int development_function(int selector);
 int snapshot(void);
 int drawTest(void);
-int showPoint(point_t* p);
-int ut_show_Model(model_t* m);
 int ut_test_ogl_loadModel(const char* filename, model_t* model);
 
 int resetContext(int id, float maxXY);

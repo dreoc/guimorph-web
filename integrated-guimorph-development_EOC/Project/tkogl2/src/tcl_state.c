@@ -412,93 +412,6 @@ int clearCurve(curve_t* c)
 	return 0;
 }
 
-int showPoint(point_t* p)
-{
-	if (NULL == p)
-	{
-		return -1;
-	}
-	printf(" x : <%f>\n", p->x);
-	printf(" y : <%f>\n", p->y);
-	printf(" z : <%f>\n", p->z);
-	return 0;
-}
-
-int ut_show_Model(model_t* m)
-{
-	char buffer[128];
-	buffer[0] = '\0';
-	if (NULL == m)
-	{
-		return -1;
-	}
-	if (NULL == m->fileName)
-	{
-	}
-	else
-	{
-		//m->fileName[255] = '\0';   // force a finite length if it is not done already
-	}
-	sprintf(buffer, "\nSHOW MODEL ...");
-	printf("%s\n", buffer);
-	sprintf(buffer, "vertex is   <%s> ", (NULL == m->vertex) ? "NULL" : "not null");
-	printf("%s\n", buffer);
-	sprintf(buffer, "color  is   <%s> ", (NULL == m->color) ? "NULL" : "not null");
-	printf("%s\n", buffer);
-	sprintf(buffer, "normal is   <%s> ", (NULL == m->normal) ? "NULL" : "not null");
-	printf("%s\n", buffer);
-	sprintf(buffer, "dsVertex is <%s> ", (NULL == m->dsVertex) ? "NULL" : "not null");
-	printf("%s\n", buffer);
-	sprintf(buffer, "count   [%d]", m->count);
-	printf("%s\n", buffer);
-
-	sprintf(buffer, "vertex count actual   [%d] <---------", m->vertexCountActual);
-	printf("%s\n", buffer);
-
-	sprintf(buffer, "dsCount [%d]", m->dsCount);
-	printf("%s\n", buffer);
-
-	sprintf(buffer, "max  < %10.6f ... %10.6f ... %10.6f>", m->max[0], m->max[1], m->max[2]);
-	printf("%s\n", buffer);
-
-	sprintf(buffer, "min  < %10.6f ... %10.6f ... %10.6f>", m->min[0], m->min[1], m->min[2]);
-	printf("%s\n", buffer);
-
-	sprintf(buffer, "O_MeanVals  < %10.6f ... %10.6f ... %10.6f>",
-		m->originalMeanValues[0], m->originalMeanValues[1], m->originalMeanValues[2]);
-	printf("%s\n", buffer);
-
-
-	sprintf(buffer, "dsMax  <%f ... %f ... %f", m->dsMax[0], m->dsMax[1], m->dsMax[2]);
-	printf("%s\n", buffer);
-	sprintf(buffer, "dsMin  <%f ... %f ... %f", m->dsMin[0], m->dsMin[1], m->dsMin[2]);
-	printf("%s\n", buffer);
-	sprintf(buffer, "vertex size   [%d] (allocated bytes)", m->vertexSize);
-	printf("%s\n", buffer);
-	sprintf(buffer, "color size    [%d] (allocated bytes)", m->colorSize);
-	printf("%s\n", buffer);
-	sprintf(buffer, "normal size   [%d] (allocated bytes)", m->normalSize);
-	printf("%s\n", buffer);
-	sprintf(buffer, "dsVertex size [%d]", m->dsVertexSize);
-	printf("%s\n", buffer);
-
-	sprintf(buffer, "largest scale factor <%f>", m->largestScaleFactor);
-	printf("%s\n", buffer);
-
-
-	if (NULL == m->fileName)
-	{
-	}
-	else
-	{
-		sprintf(buffer, "file name :   <%s>", m->fileName);
-		printf("%s\n", buffer);
-	}
-
-
-	return 0;
-}
-
 int drawTest()
 {
 	model_t* mPointer;
@@ -522,17 +435,6 @@ void clear_GBL_LANDMARK_SET()
 	}
 }
 
-void show_GBL_LANDMARK_SET()
-{
-	printf("show_GBL_LANDMARK_SET() ...\n");
-	for (int ii = 0; ii < GBL_LANDMARK_SET_MAX_ROWS; ii++)
-	{
-		printf("  [%2d] ... <%10.6f ... %10.6f ... %10.6f>\n",
-			ii, GBL_LANDMARK_SET[ii][0], GBL_LANDMARK_SET[ii][1], GBL_LANDMARK_SET[ii][2]);
-	}
-	printf("\n");
-}
-
 void clear_GBL_CURVE_SET()
 {
 	for (int ii = 0; ii < GBL_CURVE_SET_MAX_ROWS; ii++)
@@ -541,17 +443,6 @@ void clear_GBL_CURVE_SET()
 		GBL_CURVE_SET[ii][1] = 0;
 		GBL_CURVE_SET[ii][2] = 0;
 	}
-}
-
-void show_GBL_CURVE_SET()
-{
-	printf("show_GBL_CURVE_SET() ...\n");
-	for (int ii = 0; ii < GBL_CURVE_SET_MAX_ROWS; ii++)
-	{
-		printf("  [%2d] ... <%10.6f ... %10.6f ... %10.6f>\n",
-			ii, GBL_CURVE_SET[ii][0], GBL_CURVE_SET[ii][1], GBL_CURVE_SET[ii][2]);
-	}
-	printf("\n");
 }
 
 int ut_test_ogl_loadModel(const char* filename, model_t* model)
