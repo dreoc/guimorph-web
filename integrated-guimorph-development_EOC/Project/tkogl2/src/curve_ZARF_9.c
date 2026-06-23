@@ -454,10 +454,10 @@ int curve_buildLine(point_t* p1, point_t* p2, point_t** line)
 		simpleLog(curveBuffer);
 
 		(*line)[0].x = p1->x;
-		(*line)[0].y = p1->x;
+		(*line)[0].y = p1->y;
 		(*line)[0].z = getRealZ(p1->x, p1->y, p1->z);
 		(*line)[1].x = p2->x;
-		(*line)[1].y = p2->x;
+		(*line)[1].y = p2->y;
 		(*line)[1].z = getRealZ(p2->x, p2->y, p2->z);
 		return 0;
 	}
