@@ -289,6 +289,13 @@ int curve_addDot(int id, dot_t* d)
 		return -1;
 	}
 
+	if (id >= curve_slice_amount)
+	{
+		sprintf(curveBuffer, "ERROR : curve_addDot : id [%d] >= curve_slice_amount [%d]", id, curve_slice_amount);
+		simpleLog(curveBuffer);
+		return -1;
+	}
+
 	point_t* p = &d->p;    /*get the dot point*/
 	if (NULL == p)
 	{
