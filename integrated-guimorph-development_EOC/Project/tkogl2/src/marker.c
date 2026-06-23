@@ -233,6 +233,12 @@ int marker_del(marker_set_t* s, point_t* p)
 		return -1;
 	}
 
+	if (s->slices[s->slice_id] == NULL)
+	{
+		simpleLog("ERROR : marker_del ... empty list at current slice");
+		return -1;
+	}
+
 	if (DOT_EQUAL(s->slices[s->slice_id]->p, p))
 	{
 		dot_t* tempPtr;
