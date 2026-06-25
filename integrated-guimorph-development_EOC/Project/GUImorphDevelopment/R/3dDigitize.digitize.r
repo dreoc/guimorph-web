@@ -659,6 +659,122 @@ onPlaceAnchor <- function(e)
 
 
 
+#Pop up window for setting number of landmarks
+setLandmarkNum <- function(e)
+{
+  win <- tktoplevel()
+  tkwm.title(win, "Set Landmark Number")
+
+  entryFrame <- ttkframe(win)
+  tkpack(
+    entryFrame,
+    expand = TRUE,
+    fill = "both",
+    padx = 5,
+    pady = 5
+  )
+  label = tklabel(entryFrame, text = 'Set landmark Number: ')
+
+  e$landmarkEntry = tkentry(entryFrame, textvariable = tclVar(e$landmarkNum))
+  sapply(list(label, e$landmarkEntry),
+         tkpack,
+         side = "left",
+         padx = 6)
+
+  btnFrame <- ttkframe(win)
+  tkpack(btnFrame,
+         fill = "x",
+         padx = 5,
+         pady = 5)
+  cancelBtn <-
+    ttkbutton(
+      btnFrame,
+      text = "cancel",
+      command = function()
+        tkdestroy(win)
+    )
+  okBtn <-
+    ttkbutton(
+      btnFrame,
+      text = "ok",
+      command = function()
+        onlandmarkNumOk(e, win)
+    )
+
+  tkpack(
+    ttklabel(btnFrame, text = " "),
+    expand = TRUE,
+    fill = "y",
+    side = "left"
+  )
+  sapply(list(cancelBtn, okBtn),
+         tkpack,
+         side = "left",
+         padx = 6)
+
+  tkfocus(win)
+}
+
+
+
+
+
+
+#Pop up window for setting number of anchors
+setAnchorNum <- function(e)
+{
+  win <- tktoplevel()
+  tkwm.title(win, "Set Anchor Number")
+
+  entryFrame <- ttkframe(win)
+  tkpack(
+    entryFrame,
+    expand = TRUE,
+    fill = "both",
+    padx = 5,
+    pady = 5
+  )
+  label = tklabel(entryFrame, text = 'Set anchor Number: ')
+
+  e$anchorEntry = tkentry(entryFrame, textvariable = tclVar(e$anchorNum))
+  sapply(list(label, e$anchorEntry),
+         tkpack,
+         side = "left",
+         padx = 6)
+
+  btnFrame <- ttkframe(win)
+  tkpack(btnFrame,
+         fill = "x",
+         padx = 5,
+         pady = 5)
+  cancelBtn <-
+    ttkbutton(
+      btnFrame,
+      text = "cancel",
+      command = function()
+        tkdestroy(win)
+    )
+  okBtn <-
+    ttkbutton(
+      btnFrame,
+      text = "ok",
+      command = function()
+        onanchorNumOk(e, win)
+    )
+
+  tkpack(
+    ttklabel(btnFrame, text = " "),
+    expand = TRUE,
+    fill = "y",
+    side = "left"
+  )
+  sapply(list(cancelBtn, okBtn),
+         tkpack,
+         side = "left",
+         padx = 6)
+
+  tkfocus(win)
+}
 
 
 
@@ -688,21 +804,13 @@ loadLandmark <- function(e)
 #pop up window to remove selected landmark
 deleteLandmark <- function(e, x, y)
 {
-  #print("delete Dot")
-  # turn to the first picture
   if (length(e$activeDataList) == 0) {
     return()
   }
 
-
-  if (set("dot", "selected", x, y))
-  {
-    set("dot",
-        "color",
-        as.double(1 / 255),
-        as.double(164 / 255),
-        as.double(191 / 255))
-    popUpRemoveWindow(e, x, y, 'Do you want to delete this landmark?', "digdot")
+  if (set("dot", "selected", x, y)) {
+    del("dot")
+    updateDotNum(e, -1)
   }
 }
 
@@ -711,64 +819,14 @@ deleteLandmark <- function(e, x, y)
 
 deleteAnchor <- function(e, x, y)
 {
-  #print("delete Dot")
-  # turn to the first picture
-  if (length(e$activeDataList) == 0)
-  {
+  if (length(e$activeDataList) == 0) {
     return()
   }
 
-
-  if (set("dot", "selected", x, y))
-  {
-    set("dot",
-        "anchorColor",
-        as.double(1 / 255),
-        as.double(164 / 255),
-        as.double(191 / 255))
-    popUpRemoveWindow(e, x, y, 'Do you want to delete this anchor?', "anchor")
+  if (set("dot", "selected", x, y)) {
+    del("anchor")
+    updateAnchorNum(e, -1)
   }
-}
-
-
-
-
-
-#starts to delete landmark
-digRemoveDotOk <- function(e, x, y)
-{
-  msg <- del("dot")
-  tkdestroy(e$removeWin)
-  updateDotNum(e,-1)
-}
-
-#starts deletes anchor
-digRemoveAnchorOk <- function(e, x, y)
-{
-  msg <- del("anchor")
-  tkdestroy(e$removeWin)
-  updateAnchorNum(e,-1)
-}
-
-
-
-
-#cancel to delete landmark
-digRemoveDotCancel <- function(e, x, y)
-{
-  #print("digRemoveDotCancel")
-  set("dot", "color", 1, 0, 0)
-  tkdestroy(e$removeWin)
-}
-
-
-
-#cancel to delete anchor
-digRemoveAnchorCancel <- function(e, x, y)
-{
-  #print("digRemoveDotCancel")
-  set("dot", "anchorColor", 0, 1, 0)
-  tkdestroy(e$removeWin)
 }
 
 
