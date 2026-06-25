@@ -41,14 +41,18 @@ Full phase details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 **Plans:** 4 (planned 2026-06-24)
 - [x] [11-01](phases/11-direct-manipulation-controls/11-01-PLAN.md) — Live size slider on Digitize + Anchor tabs (UX-CTL-01)
 - [x] [11-02](phases/11-direct-manipulation-controls/11-02-PLAN.md) — Inline count spinbox with placed-count floor (UX-CTL-02)
-- [ ] [11-03](phases/11-direct-manipulation-controls/11-03-PLAN.md) — Non-modal immediate right-click delete (UX-CTL-03)
+- [x] [11-03](phases/11-direct-manipulation-controls/11-03-PLAN.md) — Non-modal immediate right-click delete (UX-CTL-03)
 - [x] [11-04](phases/11-direct-manipulation-controls/11-04-PLAN.md) — Responsive viewport + panel resize, debounced (UX-CTL-04)
 
 #### Phase 12: In-GUI Feedback & Status
 **Goal:** A status bar + progress feedback; route key console output to the GUI; make validation non-blocking instead of modal nags.
 **Requirements:** UX-FB-01, UX-FB-02, UX-FB-03
 **Depends on:** Phase 10 (shell has a place for the status area).
-**Plans:** TBD via `/gsd-plan-phase 12`
+**Plans:** 4 plans in 3 waves (planned 2026-06-25)
+- [ ] [12-01](phases/12-in-gui-feedback-status/12-01-PLAN.md) — Status API helpers + status bar widgets + env-storage gaps (wave 1) (UX-FB-01/02/03)
+- [ ] [12-02](phases/12-in-gui-feedback-status/12-02-PLAN.md) — Nav-gate modal→inline conversion + proactive disable + showPicture parity (wave 2) (UX-FB-03/01)
+- [ ] [12-03](phases/12-in-gui-feedback-status/12-03-PLAN.md) — Compute-gate inline conversion + GPA busy feedback (wave 2) (UX-FB-03/02/01)
+- [ ] [12-04](phases/12-in-gui-feedback-status/12-04-PLAN.md) — PLY load determinate progress + load failure status (wave 3) (UX-FB-02/01)
 
 #### Phase 13: Guided Workflow & Discoverability
 **Goal:** Make the digitize order and placement model obvious — placement hints, transparent/streamlined tab-gating, "specimen N of M" with jump-to.
@@ -74,8 +78,8 @@ Full phase details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 |-------|-----------|-------|--------|-----------|
 | 1–9 | v1.0 | 28/28 | Shipped | 2026-06-23 |
 | 10 | v1.1 | 3/3 | Shipped | 2026-06-24 |
-| 11 | v1.1 | 3/4 | In progress | 2026-06-24 |
-| 12 | v1.1 | 0 | Not started | — |
+| 11 | v1.1 | 4/4 | Shipped | 2026-06-24 |
+| 12 | v1.1 | 0/4 | Planned | — |
 | 13 | v1.1 | 0 | Not started | — |
 | 14 | v1.1 | 0 | Not started | — |
 | 15 | v1.1 | 0 | Not started | — |

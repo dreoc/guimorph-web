@@ -38,7 +38,15 @@ created: 2026-06-25
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| {to be filled by planner} | — | — | UX-FB-0X | — | N/A (local desktop GUI) | source-assertion | `grep` / `load_all` | — | ⬜ pending |
+| 12-01-T1 helpers + status bar | 12-01 | 1 | UX-FB-01, UX-FB-02 | T-12-01 | N/A (local desktop GUI; program-generated strings) | source-assertion + load | `grep -nE 'setStatus <- function\|busyStart <- function\|busyStop <- function\|e\$statusLabel <- ttklabel\|warning = "#b35900"' R/3dDigitize.main.r` + `load_all` | main.r | ⬜ pending |
+| 12-01-T2 env-storage gaps | 12-01 | 1 | UX-FB-03 | T-12-01 | N/A | source-assertion + load | `grep -nE 'e\$nextBtn <- nextBtn\|e\$prevBtn <- prevBtn' R/3dDigitize.main.r` + `grep 'e\$gpaStatusLabel <- ttklabel' R/3dDigitize.geomorph.r` | main.r, geomorph.r | ⬜ pending |
+| 12-02-T1 nav modal removal | 12-02 | 2 | UX-FB-03 | T-12-02 | N/A | static grep + load | `test "$(grep -c tkmessageBox R/3dDigitize.main.r)" -le 4` + exact-copy greps | main.r | ⬜ pending |
+| 12-02-T2 proactive nav hooks | 12-02 | 2 | UX-FB-03 | T-12-02 | N/A | source-assertion + load | `grep -nF 'if (!is.null(e$nextBtn) && !is.null(e$prevBtn))' R/3dDigitize.digitize.r` | digitize.r | ⬜ pending |
+| 12-02-T3 showPicture parity | 12-02 | 2 | UX-FB-01 | T-12-02 | N/A | source-assertion + load | `grep -nF 'setStatus(e, paste0("Specimen ' R/3dDigitize.main.r` | main.r | ⬜ pending |
+| 12-03-T1 compute gate modals | 12-03 | 2 | UX-FB-03 | T-12-03 | N/A | static grep + load | `test "$(grep -c tkmessageBox R/3dDigitize.geomorph.r)" -eq 1` + exact-copy greps | geomorph.r | ⬜ pending |
+| 12-03-T2 gpagen busy wrap | 12-03 | 2 | UX-FB-02, UX-FB-01 | T-12-03-RE | re-entrancy via `update idletasks` | source-assertion + load | `grep -nF 'Computing GPA alignment for ' R/3dDigitize.geomorph.r` | geomorph.r | ⬜ pending |
+| 12-04-T1 PLY determinate loop | 12-04 | 3 | UX-FB-02, UX-FB-01 | T-12-04-RE | re-entrancy via `update idletasks` | source-assertion + load | `grep -nF 'for (i in seq_len(nSpecimens))' R/3dDigitize.main.r` | main.r | ⬜ pending |
+| 12-04-T2 PLY load failure | 12-04 | 3 | UX-FB-02 | T-12-04, T-12-04-DoS | inline error + cursor restore | source-assertion + load | `grep -nF 'check the file and try again.' R/3dDigitize.main.r` | main.r | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
