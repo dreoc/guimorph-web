@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.1
-milestone_name: GUImorph UI Modernization
-status: executing
-stopped_at: Completed 11-02-PLAN.md
-last_updated: "2026-06-24"
-last_activity: 2026-06-24 — Phase 11 Plan 02 complete (UX-CTL-02 inline count spinboxes)
+milestone_name: UI Modernization
+status: Ready to execute
+stopped_at: Phase 12 context gathered
+last_updated: "2026-06-25T22:11:31.776Z"
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 5
-  percent: 36
+  completed_plans: 6
+  percent: 50
 ---
 
 # Project State
@@ -21,16 +20,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-24)
 
 **Core value:** A researcher runs the full digitize → analyze workflow in a GUI that feels modern, gives clear in-app feedback, and doesn't interrupt with modal nags — without changing the C/OpenGL renderer or breaking `.dgt` files.
-**Current focus:** v1.1 Phase 11 — Direct-Manipulation Controls. Plans 01, 02, and 04 complete; continue 11-03.
+**Current focus:** v1.1 Phase 11 complete (all 4 plans shipped); ready for Phase 12 — In-GUI Feedback & Status.
 
 ## Current Position
 
 Milestone: **v1.1 UI Modernization** — executing  
-Phases: 1/6 complete (10 shipped 2026-06-24)  
-Requirements: 3/18 validated (+ 3 constraints)  
+Phases: 2/6 complete (10, 11 shipped 2026-06-24)  
+Requirements: 7/18 validated (+ 3 constraints)  
 Previous: **v1.0 ARCHIVED** (2026-06-23) — 9/9 phases, 22/22 reqs, tag `v1.0`
 
-Progress: [████░░░░░░] 36%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -50,6 +49,7 @@ Progress: [████░░░░░░] 36%
 - Debounced 150ms `<Configure>` handler with `e$glBound` gate re-pushes live GL viewport size via existing `set("window","size")` protocol (2026-06-24)
 - **ttkscale size sliders (0.001–0.050, 0.001 grain)** replace +/- steppers on Digitize and Anchor tabs; `onLmSizeSlide` reads linked `tclVar`, quantizes, calls `set("dot",attr,v)`, persists `[[2]]` (2026-06-24)
 - **ttkspinbox count controls (1–100, placed-count floor)** replace modal setLandmarkNum/setAnchorNum on Digitize and Anchor tabs; clamp on Return/FocusOut (2026-06-24)
+- **Immediate right-click delete** via inline `del()` + `updateDotNum`/`updateAnchorNum`; `popUpRemoveWindow` and `digRemove*` handlers removed (2026-06-24)
 
 ### Blockers/Concerns
 
@@ -91,6 +91,6 @@ Identified from GUI source + README "Known quirks":
 
 ## Session Continuity
 
-Last session: 2026-06-24
-Stopped at: Completed 11-02-PLAN.md
-Resume file: none
+Last session: 2026-06-25
+Stopped at: Phase 12 context gathered
+Resume file: .planning/phases/12-in-gui-feedback-status/12-CONTEXT.md
