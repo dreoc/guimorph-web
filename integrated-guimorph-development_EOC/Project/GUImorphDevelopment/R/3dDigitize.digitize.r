@@ -69,7 +69,7 @@ ui.digitize <- function(e, parent)
       command = function()
         setScale(e)
     )
-  e$scaleLabel = tklabel(digCtlFrame, text = 'Scale Factor: not set')
+  e$scaleLabel <- ttklabel(digCtlFrame, text = "Scale Factor: not set")
 
   setLandmarkNumBtn <-
     ttkbutton(
@@ -121,19 +121,15 @@ ui.digitize <- function(e, parent)
 
 
   #####################################
-  lmSizeAdd <-
-    ttkbutton(
+  e$lmSizeVar <- tclVar("0.01")
+  e$lmSizeScale <-
+    ttkscale(
       digCtlFrame,
-      text = "Landmark Size +",
-      command = function()
-        onLmSizeAdd(e)
-    )
-  lmSizeDec <-
-    ttkbutton(
-      digCtlFrame,
-      text = "Landmark Size -",
-      command = function()
-        onLmSizeDec(e)
+      from = 0.001,
+      to = 0.050,
+      variable = e$lmSizeVar,
+      command = function(...)
+        onLmSizeSlide(e, "radius")
     )
 
   lmColorFrame <- ttkframe(digCtlFrame)
@@ -173,8 +169,7 @@ ui.digitize <- function(e, parent)
       setLandmarkNumBtn,
       loadLandmarkBtn,
       fitBtn,
-      lmSizeAdd,
-      lmSizeDec,
+      e$lmSizeScale,
       lmColorFrame,
       labelLandmark,
       placeAnchors,
@@ -225,21 +220,17 @@ ui.anchor <- function(e, parent)
   e$anchorNumLabel <-
     ttklabel(anchorCtlFrame, text = "Number of Anchors: 0")
   e$specimenNumLabel2 <-
-    ttklabel(anchorCtlFrame, text = "Number of Specimen: 0")
+    ttklabel(anchorCtlFrame, text = "Number of Specimens: 0")
 
-  anchorSizeAdd <-
-    ttkbutton(
+  e$anchorSizeVar <- tclVar("0.01")
+  e$anchorSizeScale <-
+    ttkscale(
       anchorCtlFrame,
-      text = "Anchor Size +",
-      command = function()
-        onLmSizeAdd(e)
-    )
-  anchorSizeDec <-
-    ttkbutton(
-      anchorCtlFrame,
-      text = "Anchor Size -",
-      command = function()
-        onLmSizeDec(e)
+      from = 0.001,
+      to = 0.050,
+      variable = e$anchorSizeVar,
+      command = function(...)
+        onLmSizeSlide(e, "anchorRadius")
     )
 
   anchorColorFrame <- ttkframe(anchorCtlFrame)
@@ -269,8 +260,7 @@ ui.anchor <- function(e, parent)
     list(
       setAnchorNumBtn,
       fitBtn,
-      anchorSizeAdd,
-      anchorSizeDec,
+      e$anchorSizeScale,
       anchorColorFrame,
       labelAnchor,
       e$specimenNumLabel2,
@@ -520,6 +510,19 @@ onLeftBtnRelease <- function(e, x, y)
 
 
 
+# Live size slider: quantize to 0.001 grain, push to renderer, persist in [[2]]
+onLmSizeSlide <- function(e, attr)
+{
+  if (length(e$activeDataList) == 0) {
+    return()
+  }
+
+  raw <- as.numeric(tclvalue(if (attr == "radius") e$lmSizeVar else e$anchorSizeVar))
+  v <- round(raw / 0.001) * 0.001
+  set("dot", attr, v)
+  e$activeDataList[[e$currImgId]][[2]] <- v
+}
+
 #Increase landmark or anchor point size
 onLmSizeAdd <- function(e)
 {
@@ -560,6 +563,8 @@ onLmSizeDec <- function(e)
   shows("all")   # 10 JUne 2020 ... this is NOT implemented in the  C code of TCL_If
   e$activeDataList[[e$currImgId]][[2]] <- font - 0.001
 }
+
+
 
 
 
@@ -1055,6 +1060,8 @@ updateWidgets.digitize <- function(e)
   }
 
   dotNum <- e$activeDataList[[e$currImgId]][[3]]
+  sz <- e$activeDataList[[e$currImgId]][[2]]
+  tclvalue(e$lmSizeVar) <- as.character(sz)
   tkconfigure(e$landMarkNumLabel, text = paste("Number of Landmarks: ", dotNum))
   tkconfigure(e$imgPath, text = paste("Specimen Id: ", e$activeDataList[[e$currImgId]][[1]]))
 }
@@ -1069,6 +1076,8 @@ updateWidgets.anchor <- function(e)
   }
 
   anchorNum <- e$activeDataList[[e$currImgId]][[9]]
+  sz <- e$activeDataList[[e$currImgId]][[2]]
+  tclvalue(e$anchorSizeVar) <- as.character(sz)
   tkconfigure(e$anchorNumLabel, text = paste("Number of Anchors: ", anchorNum))
   tkconfigure(e$imgPath, text = paste("Specimen Id: ", e$activeDataList[[e$currImgId]][[1]]))
 }
