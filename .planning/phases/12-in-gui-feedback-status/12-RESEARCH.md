@@ -633,9 +633,9 @@ to `paste0` — no injection surface. No user-typed free text is interpolated in
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **`add("specimen",…)` idempotency for pre-load loop**
+1. **`add("specimen",…)` idempotency for pre-load loop** — **RESOLVED (planning, 2026-06-25)**
    - What we know: C allocates `N` slots via `set("specimen","allocate",N)`. Currently only slot 1 is
      populated at load time.
    - What's unclear: Whether calling `add("specimen", file, i)` for `i = 2..N` at load time conflicts
@@ -644,16 +644,24 @@ to `paste0` — no injection surface. No user-typed free text is interpolated in
      guard logic before finalizing the loop approach. If not idempotent, remove the `add` call from nav
      handlers once pre-loaded, or keep lazy-load with an indeterminate bar (documenting the UI-SPEC
      tension in a decision comment).
+   - **Resolution:** Deferred to the executor as runtime-resolvable conditional logic in **Plan 12-04
+     Task 1** — the executor greps `rtkogl.R` for an "already-loaded" guard: if `add` is idempotent,
+     proceed with the determinate pre-load loop; if not, keep the lazy `add()` calls in the nav handlers
+     and record the finding in SUMMARY.md. This is a known runtime branch, not an open design question;
+     it does not block planning or execution.
 
-2. **`e$prevBtn` / `e$nextBtn` enable/disable scope for the "tab != 0" gate**
-   - What we know: The "Please open digitizing tab…" gate (main.r:~958) fires when `e$tab != 0`.
-     D-03 says: "Status hint; do not block silently."
+2. **`e$prevBtn` / `e$nextBtn` enable/disable scope for the "tab != 0" gate** — **RESOLVED (UI-SPEC, 2026-06-25)**
+   - What we know: The "Please open digitizing tab…" gate (main.r:~958/1111) fires when `e$tab != 0`.
+     D-03 groups it with the nav gates; the UI-SPEC specifies its control behavior precisely.
    - What's unclear: Should both nav buttons be disabled (the current `return()` behavior), or only
-     show the warning and allow nav? The UI-SPEC copy says "do not block silently" — this implies
-     the status hint is shown but navigation is NOT blocked (i.e., the gate is removed as a hard block
-     and replaced with a softer warning).
-   - Recommendation: Show warning in status, do NOT disable nav buttons for this specific gate (only
-     disable for landmark/anchor count violations). Confirm with user if ambiguous.
+     show the warning and allow nav?
+   - **Resolution:** The approved **12-UI-SPEC.md** (UX-FB-03 replacement table, row `main.r:960/1111`)
+     specifies control behavior **"Status hint; do not block silently"** for this gate — i.e. show the
+     warning-foreground status (`Switch to the 3D Digitizing tab to change specimen.`) and **do NOT
+     disable** the nav buttons. Button-disable is reserved for the landmark/anchor count gates. The
+     approved UI-SPEC is the later, more-specific contract and supersedes D-03's looser grouping wording
+     on this single point. **Plan 12-02 Task 1** implements hint-only accordingly. Confirmed during
+     plan verification (2026-06-25).
 
 ---
 
