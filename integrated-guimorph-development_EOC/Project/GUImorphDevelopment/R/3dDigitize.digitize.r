@@ -523,49 +523,6 @@ onLmSizeSlide <- function(e, attr)
   e$activeDataList[[e$currImgId]][[2]] <- v
 }
 
-#Increase landmark or anchor point size
-onLmSizeAdd <- function(e)
-{
-  if (length(e$activeDataList) == 0) {
-    return()
-  }
-
-
-  font <- e$activeDataList[[e$currImgId]][[2]]
-
-  if (e$tab == 1)
-    set("dot", "anchorRadius", font + 0.001)
-  else
-    set("dot", "radius", font + 0.001)
-
-
-  e$activeDataList[[e$currImgId]][[2]] <- font + 0.001
-}
-
-
-
-
-#Decrease landmark or anchor point size
-onLmSizeDec <- function(e)
-{
-  if (length(e$activeDataList) == 0) {
-    return()
-  }
-
-  font <- e$activeDataList[[e$currImgId]][[2]]
-
-  if (e$tab == 1)
-    set("dot", "anchorRadius", font - 0.001)
-  else
-    set("dot", "radius", font - 0.001)
-
-
-  shows("all")   # 10 JUne 2020 ... this is NOT implemented in the  C code of TCL_If
-  e$activeDataList[[e$currImgId]][[2]] <- font - 0.001
-}
-
-
-
 
 
 
