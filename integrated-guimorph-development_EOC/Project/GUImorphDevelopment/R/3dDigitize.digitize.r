@@ -71,13 +71,24 @@ ui.digitize <- function(e, parent)
     )
   e$scaleLabel <- ttklabel(digCtlFrame, text = "Scale Factor: not set")
 
-  setLandmarkNumBtn <-
-    ttkbutton(
+  e$lmCountVar <- tclVar(as.character(e$landmarkNum))
+  e$lmCountSpin <-
+    ttkspinbox(
       digCtlFrame,
-      text = "Set number of landmarks",
+      from = 1,
+      to = 100,
+      increment = 1,
+      textvariable = e$lmCountVar,
+      width = 5,
       command = function()
-        setLandmarkNum(e)
+        onLmCountChange(e)
     )
+  tkbind(e$lmCountSpin, "<Return>", function()
+    onLmCountChange(e)
+  })
+  tkbind(e$lmCountSpin, "<FocusOut>", function()
+    onLmCountChange(e)
+  })
   loadLandmarkBtn <-
     ttkbutton(
       digCtlFrame,
@@ -166,7 +177,7 @@ ui.digitize <- function(e, parent)
   tkpack(ttklabel(digCtlFrame, text = " "), pady = 6)
   sapply(
     list(
-      setLandmarkNumBtn,
+      e$lmCountSpin,
       loadLandmarkBtn,
       fitBtn,
       e$lmSizeScale,
@@ -191,13 +202,24 @@ ui.anchor <- function(e, parent)
 {
   anchorCtlFrame <- ttkframe(parent)
 
-  setAnchorNumBtn <-
-    ttkbutton(
+  e$anchorCountVar <- tclVar(as.character(e$anchorNum))
+  e$anchorCountSpin <-
+    ttkspinbox(
       anchorCtlFrame,
-      text = "Set number of anchors",
+      from = 1,
+      to = 100,
+      increment = 1,
+      textvariable = e$anchorCountVar,
+      width = 5,
       command = function()
-        setAnchorNum(e)
+        onAnchorCountChange(e)
     )
+  tkbind(e$anchorCountSpin, "<Return>", function()
+    onAnchorCountChange(e)
+  })
+  tkbind(e$anchorCountSpin, "<FocusOut>", function()
+    onAnchorCountChange(e)
+  })
 
   fitBtn <-
     ttkbutton(
@@ -258,7 +280,7 @@ ui.anchor <- function(e, parent)
   tkpack(ttklabel(anchorCtlFrame, text = " "), pady = 6)
   sapply(
     list(
-      setAnchorNumBtn,
+      e$anchorCountSpin,
       fitBtn,
       e$anchorSizeScale,
       anchorColorFrame,
@@ -524,6 +546,38 @@ onLmSizeSlide <- function(e, attr)
 }
 
 
+onLmCountChange <- function(e)
+{
+  floor <- if (length(e$activeDataList) > 0)
+    max(1L, as.integer(e$activeDataList[[e$currImgId]][[3]]))
+  else
+    1L
+  val <- suppressWarnings(as.integer(tclvalue(e$lmCountVar)))
+  if (is.na(val) || val < floor)
+    val <- floor
+  if (val > 100L)
+    val <- 100L
+  tclvalue(e$lmCountVar) <- as.character(val)
+  e$landmarkNum <- val
+}
+
+
+onAnchorCountChange <- function(e)
+{
+  floor <- if (length(e$activeDataList) > 0)
+    max(1L, as.integer(e$activeDataList[[e$currImgId]][[9]]))
+  else
+    1L
+  val <- suppressWarnings(as.integer(tclvalue(e$anchorCountVar)))
+  if (is.na(val) || val < floor)
+    val <- floor
+  if (val > 100L)
+    val <- 100L
+  tclvalue(e$anchorCountVar) <- as.character(val)
+  e$anchorNum <- val
+}
+
+
 
 
 
@@ -600,169 +654,11 @@ onPlaceAnchor <- function(e)
 
 
 
-##
-##   10 June 2020 ... why are most of these functions commented out ??
-
-#Grabs user input and turns to first picture
-onlandmarkNumOk <- function(e, win)
-{
-  #get user input value
-  e$landmarkNum <- tclvalue(tkget(e$landmarkEntry))
-
-  tkdestroy(win)
-
-  print (paste("line 646 The number of landmarks is set to : ", e$landmarkNum) )
-
-
-  # # turn to the first picture
-  # if(length(e$activeDataList) > 0) {
-  # 	e$currImgId <- 1
-  # 	showPicture(e)
-  # }
-}
-
-
-
-
-onanchorNumOk <- function(e, win)
-{
-  #get user input value
-  e$anchorNum <- tclvalue(tkget(e$anchorEntry))
-
-  tkdestroy(win)
-
-
-  print (paste("line  602 The number of anchors is set to : ",  e$anchorNum) )
-
-
-
-  # # turn to the first picture
-  # if(length(e$activeDataList) > 0) {
-  #     e$currImgId <- 1
-  #     showPicture(e)
-  # }
-}
 
 
 
 
 
-#Pop up window for setting number of landmarks
-setLandmarkNum <- function(e)
-{
-  win <- tktoplevel()
-  tkwm.title(win, "Set Landmark Number")
-
-  entryFrame <- ttkframe(win)
-  tkpack(
-    entryFrame,
-    expand = TRUE,
-    fill = "both",
-    padx = 5,
-    pady = 5
-  )
-  label = tklabel(entryFrame, text = 'Set landmark Number: ')
-
-  e$landmarkEntry = tkentry(entryFrame, textvariable = tclVar(e$landmarkNum))
-  sapply(list(label, e$landmarkEntry),
-         tkpack,
-         side = "left",
-         padx = 6)
-
-  btnFrame <- ttkframe(win)
-  tkpack(btnFrame,
-         fill = "x",
-         padx = 5,
-         pady = 5)
-  cancelBtn <-
-    ttkbutton(
-      btnFrame,
-      text = "cancel",
-      command = function()
-        tkdestroy(win)
-    )
-  okBtn <-
-    ttkbutton(
-      btnFrame,
-      text = "ok",
-      command = function()
-        onlandmarkNumOk(e, win)
-    )
-
-  tkpack(
-    ttklabel(btnFrame, text = " "),
-    expand = TRUE,
-    fill = "y",
-    side = "left"
-  )
-  sapply(list(cancelBtn, okBtn),
-         tkpack,
-         side = "left",
-         padx = 6)
-
-  tkfocus(win)
-}
-
-
-
-
-
-
-#Pop up window for setting number of anchors
-setAnchorNum <- function(e)
-{
-  win <- tktoplevel()
-  tkwm.title(win, "Set Anchor Number")
-
-  entryFrame <- ttkframe(win)
-  tkpack(
-    entryFrame,
-    expand = TRUE,
-    fill = "both",
-    padx = 5,
-    pady = 5
-  )
-  label = tklabel(entryFrame, text = 'Set anchor Number: ')
-
-  e$anchorEntry = tkentry(entryFrame, textvariable = tclVar(e$anchorNum))
-  sapply(list(label, e$anchorEntry),
-         tkpack,
-         side = "left",
-         padx = 6)
-
-  btnFrame <- ttkframe(win)
-  tkpack(btnFrame,
-         fill = "x",
-         padx = 5,
-         pady = 5)
-  cancelBtn <-
-    ttkbutton(
-      btnFrame,
-      text = "cancel",
-      command = function()
-        tkdestroy(win)
-    )
-  okBtn <-
-    ttkbutton(
-      btnFrame,
-      text = "ok",
-      command = function()
-        onanchorNumOk(e, win)
-    )
-
-  tkpack(
-    ttklabel(btnFrame, text = " "),
-    expand = TRUE,
-    fill = "y",
-    side = "left"
-  )
-  sapply(list(cancelBtn, okBtn),
-         tkpack,
-         side = "left",
-         padx = 6)
-
-  tkfocus(win)
-}
 
 
 
@@ -968,6 +864,10 @@ updateDotNum <- function(e, delt)
   e$activeDataList[[e$currImgId]][[3]] <- nDots
   print (paste("Updated number of (landmarks) dots", nDots))
 
+  if (!is.null(e$lmCountSpin)) {
+    tkconfigure(e$lmCountSpin, from = max(1L, as.integer(nDots)))
+  }
+
 
   if (nDots == e$landmarkNum && tclvalue(e$placeAnchorsVar) == "1")
   {
@@ -995,6 +895,10 @@ updateAnchorNum <- function(e, delt)
   e$activeDataList[[e$currImgId]][[9]] <- nAnchors
   print (paste("Updated number of (anchors) dots", nAnchors))
 
+  if (!is.null(e$anchorCountSpin)) {
+    tkconfigure(e$anchorCountSpin, from = max(1L, as.integer(nAnchors)))
+  }
+
 
   if (nAnchors == e$anchorNum)
   {
@@ -1019,6 +923,10 @@ updateWidgets.digitize <- function(e)
   dotNum <- e$activeDataList[[e$currImgId]][[3]]
   sz <- e$activeDataList[[e$currImgId]][[2]]
   tclvalue(e$lmSizeVar) <- as.character(sz)
+  tclvalue(e$lmCountVar) <- as.character(as.integer(e$landmarkNum))
+  if (!is.null(e$lmCountSpin)) {
+    tkconfigure(e$lmCountSpin, from = max(1L, as.integer(dotNum)))
+  }
   tkconfigure(e$landMarkNumLabel, text = paste("Number of Landmarks: ", dotNum))
   tkconfigure(e$imgPath, text = paste("Specimen Id: ", e$activeDataList[[e$currImgId]][[1]]))
 }
@@ -1035,6 +943,10 @@ updateWidgets.anchor <- function(e)
   anchorNum <- e$activeDataList[[e$currImgId]][[9]]
   sz <- e$activeDataList[[e$currImgId]][[2]]
   tclvalue(e$anchorSizeVar) <- as.character(sz)
+  tclvalue(e$anchorCountVar) <- as.character(as.integer(e$anchorNum))
+  if (!is.null(e$anchorCountSpin)) {
+    tkconfigure(e$anchorCountSpin, from = max(1L, as.integer(anchorNum)))
+  }
   tkconfigure(e$anchorNumLabel, text = paste("Number of Anchors: ", anchorNum))
   tkconfigure(e$imgPath, text = paste("Specimen Id: ", e$activeDataList[[e$currImgId]][[1]]))
 }
