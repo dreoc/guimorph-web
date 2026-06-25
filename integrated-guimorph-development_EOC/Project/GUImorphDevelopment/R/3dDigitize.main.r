@@ -35,6 +35,30 @@ NULL
 #' @import vegan
 NULL
 
+# Active ttk theme (clam is themeable on Windows; vista/xpnative/winnative also valid)
+GUIMORPH_THEME <- "clam"
+
+# Developer/diagnostic UI is hidden by default. Opt in with
+#   options(guimorph.dev = TRUE)  -or-  set env GUIMORPH_DEV=1
+.guimorph_dev_mode <- function() {
+  isTRUE(getOption("guimorph.dev", FALSE)) || nzchar(Sys.getenv("GUIMORPH_DEV"))
+}
+
+.center_toplevel <- function(wnd) {
+  tryCatch({
+    tcl("update", "idletasks")
+    sw <- as.integer(tkwinfo("screenwidth", wnd))
+    sh <- as.integer(tkwinfo("screenheight", wnd))
+    ww <- as.integer(tkwinfo("reqwidth", wnd))
+    wh <- as.integer(tkwinfo("reqheight", wnd))
+    x <- max(0L, (sw - ww) %/% 2L)
+    y <- max(0L, (sh - wh) %/% 2L)
+    tkwm.geometry(wnd, paste0("+", x, "+", y))
+  }, error = function(err) {
+    message("GUImorph: window centering skipped: ", conditionMessage(err))
+  })
+}
+
 ui <- function(e) {
   UseMethod("ui", e)
 }
@@ -442,7 +466,19 @@ ui.main <- function(e)
 {
   #$nb tab $tab -state disabled
   e$wnd <- tktoplevel(width = 1400, height = 1200)
-  tktitle(e$wnd) <- "3D GUImorph"
+  tktitle(e$wnd) <- "GUImorph - 3D Morphometrics"
+
+  tryCatch(
+    tcl("ttk::style", "theme", "use", GUIMORPH_THEME),
+    error = function(err) {
+      message(
+        "GUImorph: theme '", GUIMORPH_THEME,
+        "' unavailable; using Tk default"
+      )
+    }
+  )
+
+  tkwm.minsize(e$wnd, 900, 700)
   e$nb <- NULL
 
   tn <- ttknotebook(e$wnd, width = 400, height = 670)
@@ -464,7 +500,7 @@ ui.main <- function(e)
       takefocus = 1
     )
   btnFrame <- createNavFrame(e, centerFrame)
-  tkpack(canvasFrame)
+  tkpack(canvasFrame, expand = TRUE, fill = "both")
   tkpack(btnFrame)
   e$canvasFrame <- canvasFrame
 
@@ -490,11 +526,8 @@ ui.main <- function(e)
     e$tabState[i] <- 0 #indicate these tabs are disabled
   }
 
-  #tkpack(tn)
-  sapply(list(centerFrame, tn),
-         tkpack,
-         side = "left",
-         padx = 6)
+  tkpack(centerFrame, side = "left", padx = 6, expand = TRUE, fill = "both")
+  tkpack(tn, side = "left", padx = 6, fill = "y")
 
   print("ui.main ... starting")
 
@@ -523,15 +556,26 @@ ui.main <- function(e)
   set("window", "id", canvasFrame)
   set("window", "size", 600, 600)
   tcl("update", "idletasks")
+  e$glBound <- TRUE
+  e$resizeAfter <- NULL
 
-
-
+  onCanvasConfigure <- function() {
+    if (!isTRUE(e$glBound)) return()
+    if (!is.null(e$resizeAfter)) tcl("after", "cancel", e$resizeAfter)
+    e$resizeAfter <- tcl("after", 150, function() {
+      w <- as.integer(tkwinfo("width", e$canvasFrame))
+      h <- as.integer(tkwinfo("height", e$canvasFrame))
+      if (!is.na(w) && !is.na(h) && w > 1 && h > 1) {
+        set("window", "size", w, h)
+      }
+    })
+  }
+  tkbind(canvasFrame, "<Configure>", onCanvasConfigure)
 
   createMenu(e)
   bind.digitize(e)
 
-
-
+  .center_toplevel(e$wnd)
 }
 
 
@@ -541,12 +585,12 @@ createMenu <- function(e)
   topMenu <- tkmenu(e$wnd)
   tkconfigure(e$wnd, menu = topMenu)
 
-  fileMenu <- tkmenu(topMenu, tearoff = FALSE)  # TOP menu
+  fileMenu <- tkmenu(topMenu, tearoff = FALSE)
 
   tkadd(
     fileMenu,
     "command",
-    label = "Load ply File",
+    label = "Load PLY File\u2026",
     command = function()
       loadPly(e)
   )
@@ -554,93 +598,61 @@ createMenu <- function(e)
   tkadd(
     fileMenu,
     "command",
-    label = "Save to DGT",
-    command = function()
-      saveToDgt(e)
-  )
-
-  tkadd(
-    fileMenu,
-    "command",
-    label = "Load DGT File",
+    label = "Load DGT File\u2026",
     command = function()
       openDgt(e)
   )
 
-
-
-
   tkadd(
     fileMenu,
     "command",
-    label = "  ",
+    label = "Save to DGT\u2026",
     command = function()
-      nullFunction(e)
+      saveToDgt(e)
   )
 
+  tkadd(fileMenu, "separator")
 
-
-
-  tkadd(
-    fileMenu,
-    "command",
-    label = "Execute STARTUP logging commands",
-    command = function()
-      executeStartUpCommandSequence(e)
-  )
-
-  tkadd(
-    fileMenu,
-    "command",
-    label = "Execute SHUTDOWN logging commands",
-    command = function()
-      executeShutDownCommandSequence(e)
-  )
-
-
-  tkadd(
-    fileMenu,
-    "command",
-    label = "  ",
-    command = function()
-      nullFunction(e)
-  )
-
-
-
-
-  tkadd(
-    fileMenu,
-    "command",
-    label = "** Send Signal to Log File",
-    command = function()
-      sendSignalToLogFile(e)
-  )
-
-
-  tkadd(
-    fileMenu,
-    "command",
-    label = "  ",
-    command = function()
-      nullFunction(e)
-  )
-
-  tkadd(
-    fileMenu,
-    "command",
-    label = "Execute predefined commands (DEVELOPER ONLY)",
-    command = function()
-      executePreDefinedCommandSequence(e)
-  )
-
-  tkadd(
-    fileMenu,
-    "command",
-    label = "Take Snapshot (DEVELOPER ONLY)",
-    command = function()
-      execueTakeSnapShot(e)
-  )
+  if (.guimorph_dev_mode()) {
+    devMenu <- tkmenu(fileMenu, tearoff = FALSE)
+    tkadd(
+      devMenu,
+      "command",
+      label = "Execute STARTUP logging commands",
+      command = function()
+        executeStartUpCommandSequence(e)
+    )
+    tkadd(
+      devMenu,
+      "command",
+      label = "Execute SHUTDOWN logging commands",
+      command = function()
+        executeShutDownCommandSequence(e)
+    )
+    tkadd(
+      devMenu,
+      "command",
+      label = "Send Signal to Log File",
+      command = function()
+        sendSignalToLogFile(e)
+    )
+    tkadd(
+      devMenu,
+      "command",
+      label = "Execute predefined commands",
+      command = function()
+        executePreDefinedCommandSequence(e)
+    )
+    tkadd(
+      devMenu,
+      "command",
+      label = "Take Snapshot",
+      command = function()
+        execueTakeSnapShot(e)
+    )
+    tkadd(fileMenu, "cascade", label = "Developer", menu = devMenu)
+    tkadd(fileMenu, "separator")
+  }
 
   tkadd(
     fileMenu,
@@ -1211,7 +1223,7 @@ loadPly <- function(e)
       tkgetOpenFile(
         filetypes = "{{ply file} {.ply}}",
         multiple = TRUE,
-        title = "Select Images to Digitize"
+        title = "Select PLY specimen file(s)"
       )
     )
 
