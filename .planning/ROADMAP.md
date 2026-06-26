@@ -63,7 +63,7 @@ Full phase details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 **Goal:** Make the digitize order and placement model obvious — placement hints, transparent/streamlined tab-gating, "specimen N of M" with jump-to.
 **Requirements:** UX-WF-01, UX-WF-02, UX-WF-03, UX-WF-04
 **Depends on:** Phase 12 (uses the status/feedback surface).
-**Plans:** TBD via `/gsd-plan-phase 13`
+**Plans:** 1/2 plans executed
 
 #### Phase 14: Keyboard Shortcuts & Undo
 
@@ -87,7 +87,7 @@ Full phase details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 | 10 | v1.1 | 3/3 | Shipped | 2026-06-24 |
 | 11 | v1.1 | 4/4 | Shipped | 2026-06-24 |
 | 12 | v1.1 | 0/4 | Planned | — |
-| 13 | v1.1 | 0 | Not started | — |
+| 13 | v1.1 | 1/2 | In Progress|  |
 | 14 | v1.1 | 0 | Not started | — |
 | 15 | v1.1 | 0 | Not started | — |
 
