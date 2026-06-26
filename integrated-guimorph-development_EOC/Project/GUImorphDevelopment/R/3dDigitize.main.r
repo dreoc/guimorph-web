@@ -201,6 +201,27 @@ refreshTabGating <- function(e) {
   e$tabState[4] <- if (gpaOk) 1L else 0L
   invisible()
 }
+updateStepLabel <- function(e) {
+  if (is.null(e$stepLabel)) return(invisible())
+  if (length(e$activeDataList) == 0) {
+    txt <- "Load specimens to begin"
+  } else {
+    nDots <- e$activeDataList[[e$currImgId]][[3]]
+    target <- as.integer(e$landmarkNum)
+    anchorsOn <- tclvalue(e$placeAnchorsVar) == "1"
+    nA <- e$activeDataList[[e$currImgId]][[9]]
+    if (is.null(nA)) nA <- 0
+    if (nDots < target) {
+      txt <- paste0("Step 1 of 3 \u2014 Place ", target, " landmarks")
+    } else if (anchorsOn && nA < as.integer(e$anchorNum)) {
+      txt <- paste0("Step 2 of 3 \u2014 Place ", e$anchorNum, " anchors")
+    } else {
+      txt <- "Step 3 of 3 \u2014 GPA unlocked for this specimen"
+    }
+  }
+  tkconfigure(e$stepLabel, text = txt, foreground = "#505050")
+  invisible()
+}
 
 .STATUS_FG <- c(
   neutral = "#000000",
@@ -527,8 +548,11 @@ ui.main <- function(e)
   tkwm.minsize(e$wnd, 900, 700)
   e$nb <- NULL
 
-  tn <- ttknotebook(e$wnd, width = 400, height = 670)
+  rightPanel <- ttkframe(e$wnd)
+  tn <- ttknotebook(rightPanel, width = 400, height = 670)
   assign("nb", tn, envir = e)
+  e$stepLabel <- ttklabel(rightPanel, text = "Load specimens to begin",
+                          foreground = "#505050")
 
   centerFrame <- tkframe(e$wnd, width = 600, height = 670)
 
@@ -573,7 +597,9 @@ ui.main <- function(e)
   }
 
   tkpack(centerFrame, side = "left", padx = 6, expand = TRUE, fill = "both")
-  tkpack(tn, side = "left", padx = 6, fill = "y")
+  tkpack(e$stepLabel, side = "top", fill = "x", padx = 8, pady = 4)
+  tkpack(tn, side = "top", fill = "both", expand = TRUE)
+  tkpack(rightPanel, side = "left", padx = 6, fill = "y")
 
   print("ui.main ... starting")
 
@@ -794,6 +820,7 @@ showPicture <- function(e)
     zoom = zoom + 1
   }
   updateWidgets(e)
+  updateStepLabel(e)
 }
 
 
@@ -1043,6 +1070,7 @@ onNext <- function(e)
   }
 
   refreshTabGating(e)
+  updateStepLabel(e)
 
 
   if (e$currImgId == length(e$activeDataList))
@@ -1122,6 +1150,7 @@ onPrevious <- function(e)
   add("specimen", e$activeDataList[[e$currImgId]][[1]], e$currImgId)
 
   refreshTabGating(e)
+  updateStepLabel(e)
   showPicture(e)
 }
 
@@ -1271,6 +1300,7 @@ loadPly <- function(e)
       set("specimen", "allocate", length(e$activeDataList))
       add("specimen", e$activeDataList[[1]][[1]], e$currImgId)
       refreshTabGating(e)
+        updateStepLabel(e)
     }
   }
 
@@ -1344,6 +1374,8 @@ if(0)
     tclvalue(e$placeAnchorsVar) <- "0"
     tkconfigure(e$bt, state = "normal")
   }
+  refreshTabGating(e)
+  updateStepLabel(e)
 
 
 

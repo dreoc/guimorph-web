@@ -633,6 +633,7 @@ onPlaceAnchor <- function(e)
   }
 
   refreshTabGating(e)
+  updateStepLabel(e)
 }
 
 
@@ -791,6 +792,7 @@ updateDotNum <- function(e, delt)
 
 
   refreshTabGating(e)
+  updateStepLabel(e)
 
 }
 
@@ -809,6 +811,7 @@ updateAnchorNum <- function(e, delt)
 
 
   refreshTabGating(e)
+  updateStepLabel(e)
 }
 
 
