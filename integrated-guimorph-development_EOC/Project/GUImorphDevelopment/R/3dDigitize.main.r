@@ -51,9 +51,18 @@ GUIMORPH_THEME <- "clam"
     sh <- as.integer(tkwinfo("screenheight", wnd))
     ww <- as.integer(tkwinfo("reqwidth", wnd))
     wh <- as.integer(tkwinfo("reqheight", wnd))
+    # Cap the window to the visible screen so bottom-docked widgets (the status
+    # bar) are never pushed below the screen edge. Setting an explicit WxH also
+    # keeps the window from opening at the oversized 1400x1200 request.
+    maxw <- as.integer(sw * 0.95)
+    maxh <- as.integer(sh * 0.90)
+    if (is.na(ww) || ww < 900) ww <- 900L
+    if (is.na(wh) || wh < 720) wh <- 720L
+    if (ww > maxw) ww <- maxw
+    if (wh > maxh) wh <- maxh
     x <- max(0L, (sw - ww) %/% 2L)
     y <- max(0L, (sh - wh) %/% 2L)
-    tkwm.geometry(wnd, paste0("+", x, "+", y))
+    tkwm.geometry(wnd, paste0(ww, "x", wh, "+", x, "+", y))
   }, error = function(err) {
     message("GUImorph: window centering skipped: ", conditionMessage(err))
   })
@@ -187,6 +196,50 @@ write.vertex.3D <- function(content, key, fileName)
   )
 }
 
+.STATUS_FG <- c(
+  neutral = "#000000",
+  info    = "#1a5fb4",
+  success = "#2e7d32",
+  warning = "#b35900",
+  error   = "#c01c28"
+)
+
+setStatus <- function(e, text, state = "neutral") {
+  tkconfigure(e$statusLabel, text = text,
+              foreground = .STATUS_FG[[state]])
+}
+
+busyStart <- function(e, text, mode = "indeterminate") {
+  setStatus(e, text, "info")
+  tkconfigure(e$wnd, cursor = "watch")
+  if (mode == "indeterminate") {
+    tkconfigure(e$progressBar, mode = "indeterminate")
+    tcl(e$progressBar, "start", 20)
+  }
+  tcl("update", "idletasks")
+}
+
+busyStop <- function(e, text = NULL, state = "neutral") {
+  tcl(e$progressBar, "stop")
+  tkconfigure(e$progressBar, mode = "determinate", value = 0)
+  tkconfigure(e$wnd, cursor = "")
+  if (!is.null(text)) setStatus(e, text, state)
+}
+
+# Single source of truth for Previous/Next availability. Enable/disable is based
+# ONLY on whether a neighbouring specimen exists, never on landmark/anchor
+# completeness — incomplete counts are surfaced as an inline status warning when
+# the user attempts to navigate, so the buttons can never get stuck disabled.
+refreshNavButtons <- function(e) {
+  if (is.null(e$nextBtn) || is.null(e$prevBtn)) return(invisible())
+  n <- length(e$activeDataList)
+  if (n == 0) return(invisible())
+  tkconfigure(e$prevBtn,
+              state = if (e$currImgId > 1) "normal" else "disabled")
+  tkconfigure(e$nextBtn,
+              state = if (e$currImgId < n) "normal" else "disabled")
+}
+
 refreshTabGating <- function(e) {
   if (is.null(e$nb)) return(invisible())
   loaded <- length(e$activeDataList) > 0
@@ -201,6 +254,7 @@ refreshTabGating <- function(e) {
   e$tabState[4] <- if (gpaOk) 1L else 0L
   invisible()
 }
+
 updateStepLabel <- function(e) {
   if (is.null(e$stepLabel)) return(invisible())
   if (length(e$activeDataList) == 0) {
@@ -221,20 +275,6 @@ updateStepLabel <- function(e) {
   }
   tkconfigure(e$stepLabel, text = txt, foreground = "#505050")
   invisible()
-}
-
-.STATUS_FG <- c(
-  neutral = "#000000",
-  info    = "#1a5fb4",
-  success = "#2e7d32",
-  warning = "#b35900",
-  error   = "#c01c28"
-)
-
-setStatus <- function(e, text, state = "neutral") {
-  if (is.null(e$statusLabel)) return(invisible())
-  tkconfigure(e$statusLabel, text = text,
-              foreground = .STATUS_FG[[state]])
 }
 
 #initializes parameters for main component
@@ -277,7 +317,6 @@ switchTab <- function(e, id)
   print (" ")
   print ("3dDigitize.main ... switch tabs line 139")
 
-
   numId <- suppressWarnings(as.integer(id))
   if (!is.na(numId) && numId >= 1 && numId <= 4 && e$tabState[numId] == 0) {
     if (length(e$activeDataList) == 0) {
@@ -293,6 +332,14 @@ switchTab <- function(e, id)
     }
     return(invisible())
   }
+
+  HINT_TEXT <- c(
+    "0" = "Double-click to place landmark \u00b7 Drag to rotate \u00b7 Right-click to delete",
+    "1" = "Double-click to place anchor \u00b7 Drag to rotate \u00b7 Right-click to delete"
+  )
+  hk <- as.character(id)
+  txt <- if (!is.na(HINT_TEXT[hk])) HINT_TEXT[hk] else ""
+  if (!is.null(e$hintLabel)) tkconfigure(e$hintLabel, text = txt)
 
   if (id == 0)
   {
@@ -561,6 +608,11 @@ ui.main <- function(e)
   tkpack(e$imgPath)
   tkpack(titleFrame)
 
+  e$hintLabel <- ttklabel(centerFrame, text = "",
+                          foreground = "#505050",
+                          anchor = "center", justify = "center")
+  tkpack(e$hintLabel, side = "top", fill = "x", padx = 8, pady = c(0, 4))
+
   canvasFrame <-
     tkframe(
       centerFrame,
@@ -596,9 +648,26 @@ ui.main <- function(e)
     e$tabState[i] <- 0 #indicate these tabs are disabled
   }
 
-  tkpack(centerFrame, side = "left", padx = 6, expand = TRUE, fill = "both")
+  statusFrame    <- ttkframe(e$wnd)
+  sepStatus      <- ttkseparator(e$wnd, orient = "horizontal")
+
+  e$statusLabel  <- ttklabel(statusFrame,
+                             text = "Ready \u2014 open a PLY file to begin.",
+                             foreground = "#000000")
+  e$progressBar  <- ttkprogressbar(statusFrame, mode = "determinate",
+                                   length = 160, value = 0)
+  e$statusFrame  <- statusFrame
+
+  tkpack(e$progressBar, side = "right", padx = 8, pady = 4)
+  tkpack(e$statusLabel, side = "left",  padx = 8, pady = 4, anchor = "w")
+
+  tkpack(sepStatus,   side = "bottom", fill = "x")
+  tkpack(statusFrame, side = "bottom", fill = "x")
+
   tkpack(e$stepLabel, side = "top", fill = "x", padx = 8, pady = 4)
   tkpack(tn, side = "top", fill = "both", expand = TRUE)
+
+  tkpack(centerFrame, side = "left", padx = 6, expand = TRUE, fill = "both")
   tkpack(rightPanel, side = "left", padx = 6, fill = "y")
 
   print("ui.main ... starting")
@@ -624,25 +693,44 @@ ui.main <- function(e)
   # before the C engine binds the OpenGL/WGL context to it. Binding to a
   # not-yet-realized window makes GL render to a stale/wrong surface (blank
   # viewport + ghosted sibling widgets).
-  tcl("update", "idletasks")
+  # Full update (not just idletasks) so the resizable, expand/fill canvas reaches
+  # its real on-screen pixel size before the GL context binds. The C engine never
+  # calls glViewport — the pick path (ogl_getObjCoordinate) flips winY = viewport[3] - y
+  # against the viewport frozen at context-creation time. If we bind while the canvas
+  # is still at its requested 600x600, placed landmarks land offset (lower) from the
+  # cursor once the window expands. Measure the true size and push THAT.
+  tcl("update")
   set("window", "id", canvasFrame)
-  set("window", "size", 600, 600)
+  cw <- as.integer(tkwinfo("width", canvasFrame))
+  ch <- as.integer(tkwinfo("height", canvasFrame))
+  if (is.na(cw) || cw <= 1) cw <- 600
+  if (is.na(ch) || ch <= 1) ch <- 600
+  set("window", "size", cw, ch)
   tcl("update", "idletasks")
   e$glBound <- TRUE
   e$resizeAfter <- NULL
 
+  # Push the actual canvas pixel size to the engine so the GL viewport used for
+  # picking matches the on-screen canvas (keeps cursor and placed dot aligned).
+  pushCanvasSize <- function() {
+    w <- as.integer(tkwinfo("width", e$canvasFrame))
+    h <- as.integer(tkwinfo("height", e$canvasFrame))
+    if (!is.na(w) && !is.na(h) && w > 1 && h > 1) {
+      set("window", "size", w, h)
+    }
+  }
+
   onCanvasConfigure <- function() {
     if (!isTRUE(e$glBound)) return()
     if (!is.null(e$resizeAfter)) tcl("after", "cancel", e$resizeAfter)
-    e$resizeAfter <- tcl("after", 150, function() {
-      w <- as.integer(tkwinfo("width", e$canvasFrame))
-      h <- as.integer(tkwinfo("height", e$canvasFrame))
-      if (!is.na(w) && !is.na(h) && w > 1 && h > 1) {
-        set("window", "size", w, h)
-      }
-    })
+    e$resizeAfter <- tcl("after", 150, pushCanvasSize)
   }
   tkbind(canvasFrame, "<Configure>", onCanvasConfigure)
+
+  # Force one size sync after the window is fully mapped/laid out, so the engine
+  # viewport is correct before the first landmark placement — not only after a
+  # manual resize fires <Configure>.
+  tcl("after", "idle", pushCanvasSize)
 
   createMenu(e)
   bind.digitize(e)
@@ -757,6 +845,9 @@ createNavFrame <- function(e, parent) {
         onNext(e)
     )
 
+  e$prevBtn <- prevBtn
+  e$nextBtn <- nextBtn
+
   tkpack(
     ttklabel(btnFrame, text = " "),
     expand = TRUE,
@@ -797,6 +888,13 @@ showPicture <- function(e)
   imgId <- e$currImgId
 
   print(paste("showPicture : calling set 'specimen, id' : ", e$currImgId) )
+  if (!is.null(e$statusLabel)) {
+    setStatus(e,
+      paste0("Specimen ", e$currImgId,
+             " \u2014 ", e$currImgId,
+             " of ", length(e$activeDataList)),
+      "neutral")
+  }
   set("specimen", "id", e$currImgId)
 
 
@@ -820,6 +918,7 @@ showPicture <- function(e)
     zoom = zoom + 1
   }
   updateWidgets(e)
+  refreshNavButtons(e)
   updateStepLabel(e)
 }
 
@@ -948,12 +1047,10 @@ onNext <- function(e)
 
   if (e$currImgId == length(e$activeDataList))
   {
-    tkmessageBox(
-      title = "Information",
-      message = "It's the last specimen",
-      icon = "info",
-      type = "ok"
-    )
+    setStatus(e,
+      paste0("Already at the last specimen (", e$currImgId,
+             " of ", length(e$activeDataList), ")."),
+      "warning")
     return ()
   }
 
@@ -964,12 +1061,11 @@ onNext <- function(e)
     # changing the display state to the next specimen
     if (nCurrLM < as.integer(e$landmarkNum))  ## not enough landmarks placed ?
     {
-      tkmessageBox(
-        title = "Information",
-        message = "Incorrect number of landmarks",
-        icon = "info",
-        type = "ok"
-      )
+      setStatus(e,
+        paste0("Place all ", e$landmarkNum,
+               " landmarks before continuing \u2014 ",
+               nCurrLM, " of ", e$landmarkNum, " placed."),
+        "warning")
       return ()
     }
 
@@ -977,12 +1073,11 @@ onNext <- function(e)
     if (nCurrA < as.integer(e$anchorNum) &&
         tclvalue(e$placeAnchorsVar) == "1")
     {
-      tkmessageBox(
-        title = "Information",
-        message = "Anchors are enabled, place correct number of anchors before proceeding",
-        icon = "info",
-        type = "ok"
-      )
+      setStatus(e,
+        paste0("Place all ", e$anchorNum,
+               " anchors before continuing \u2014 ",
+               nCurrA, " of ", e$anchorNum, " placed."),
+        "warning")
       return()
     }
   }
@@ -993,12 +1088,11 @@ onNext <- function(e)
   {
     nCurrA <- e$activeDataList[[e$currImgId]][[9]]
     if (nCurrA < as.integer(e$anchorNum)) {
-      tkmessageBox(
-        title = "Information",
-        message = "Incorrect number of anchors",
-        icon = "info",
-        type = "ok"
-      )
+      setStatus(e,
+        paste0("Place all ", e$anchorNum,
+               " anchors before continuing \u2014 ",
+               nCurrA, " of ", e$anchorNum, " placed."),
+        "warning")
       return ()
     }
   }
@@ -1009,12 +1103,7 @@ onNext <- function(e)
   # the digitizing tab in preparation for placin the landmarks on the next specimen.
   if (e$tab != 0)  ## again if not on the 3dDigitizing tab
   {
-    tkmessageBox(
-      title = "Information",
-      message = "Please open digitizing tab to switch specimen",
-      icon = "info",
-      type = "ok"
-    )
+    setStatus(e, "Switch to the 3D Digitizing tab to change specimen.", "warning")
     return()
   }
 
@@ -1070,8 +1159,6 @@ onNext <- function(e)
   }
 
   refreshTabGating(e)
-  updateStepLabel(e)
-
 
   if (e$currImgId == length(e$activeDataList))
   {
@@ -1095,24 +1182,21 @@ onPrevious <- function(e)
 
   if (e$currImgId == 1)
   {
-    tkmessageBox(
-      title = "Information",
-      message = "It's the first specimen",
-      icon = "info",
-      type = "ok"
-    )
+    setStatus(e,
+      paste0("Already at the first specimen (1 of ",
+             length(e$activeDataList), ")."),
+      "warning")
     return ()
   }
 
   if (e$tab == 0) {
     nCurrLM <- e$activeDataList[[e$currImgId]][[3]]
     if (nCurrLM < as.integer(e$landmarkNum)) {
-      tkmessageBox(
-        title = "Information",
-        message = "Incorrect number of landmarks",
-        icon = "info",
-        type = "ok"
-      )
+      setStatus(e,
+        paste0("Place all ", e$landmarkNum,
+               " landmarks before continuing \u2014 ",
+               nCurrLM, " of ", e$landmarkNum, " placed."),
+        "warning")
       return()
     }
   }
@@ -1120,23 +1204,17 @@ onPrevious <- function(e)
   if (e$tab == 1) {
     nCurrA <- e$activeDataList[[e$currImgId]][[9]]
     if (nCurrA < as.integer(e$anchorNum)) {
-      tkmessageBox(
-        title = "Information",
-        message = "Incorrect number of anchors",
-        icon = "info",
-        type = "ok"
-      )
+      setStatus(e,
+        paste0("Place all ", e$anchorNum,
+               " anchors before continuing \u2014 ",
+               nCurrA, " of ", e$anchorNum, " placed."),
+        "warning")
       return()
     }
   }
 
   if (e$tab != 0) {
-    tkmessageBox(
-      title = "Information",
-      message = "Please open digitizing tab to switch specimen",
-      icon = "info",
-      type = "ok"
-    )
+    setStatus(e, "Switch to the 3D Digitizing tab to change specimen.", "warning")
     return()
   }
 
@@ -1150,7 +1228,6 @@ onPrevious <- function(e)
   add("specimen", e$activeDataList[[e$currImgId]][[1]], e$currImgId)
 
   refreshTabGating(e)
-  updateStepLabel(e)
   showPicture(e)
 }
 
@@ -1297,10 +1374,44 @@ loadPly <- function(e)
       # As of 06 August 2020 the C code can handle more than one specimen file.
       # we have allocated memory for 'nSpecimens' in the C code
 
-      set("specimen", "allocate", length(e$activeDataList))
-      add("specimen", e$activeDataList[[1]][[1]], e$currImgId)
-      refreshTabGating(e)
+      nSpecimens <- length(e$activeDataList)
+      set("specimen", "allocate", nSpecimens)
+      tkconfigure(e$progressBar, mode = "determinate",
+                  maximum = as.numeric(nSpecimens), value = 0)
+      loadFailed <- FALSE
+      for (i in seq_len(nSpecimens)) {
+        fname <- e$activeDataList[[i]][[1]]
+        setStatus(e, paste0("Loading ", basename(fname),
+                            " (", i, " of ", nSpecimens, ")\u2026"), "info")
+        tkconfigure(e$wnd, cursor = "watch")
+        tcl("update", "idletasks")
+        err <- tryCatch({
+          add("specimen", fname, i)
+          NULL
+        }, error = function(err) {
+          tkconfigure(e$wnd, cursor = "")
+          tkconfigure(e$progressBar, mode = "determinate", value = 0)
+          setStatus(e,
+            paste0("Could not load ", basename(fname),
+                   " \u2014 check the file and try again."),
+            "error")
+          print(err)
+          err
+        })
+        if (!is.null(err)) {
+          loadFailed <- TRUE
+          break
+        }
+        tkconfigure(e$progressBar, value = as.numeric(i))
+      }
+      if (!loadFailed) {
+        tkconfigure(e$wnd, cursor = "")
+        s <- if (nSpecimens == 1) "" else "s"
+        setStatus(e, paste0("Loaded ", nSpecimens, " specimen", s, "."), "success")
+        tkconfigure(e$progressBar, mode = "determinate", value = 0)
+        refreshTabGating(e)
         updateStepLabel(e)
+      }
     }
   }
 
