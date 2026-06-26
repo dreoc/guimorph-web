@@ -293,13 +293,12 @@ onSelectCurve <- function(e, x, y)
 
     if (id %in% e$curveLine)
     {
-      tkmessageBox(
-        title = "Information",
-        message = "Duplicate dot in one curve is not allowed",
-        icon = "info",
-        type = "ok"
+      setStatus(
+        e,
+        "Duplicate landmark in this curve segment \u2014 pick a different landmark.",
+        "warning"
       )
-      return ()
+      return(invisible())
     }
 
 
@@ -338,6 +337,9 @@ onSelectCurve <- function(e, x, y)
       set("window", "mode", "curve")
 
       curves <- e$activeDataList[[1]][[4]]
+      if (is.null(curves)) {
+        curves <- matrix(nrow = 0, ncol = 3)
+      }
       newCurve <- matrix(e$curveLine, nrow = 1, ncol = 3)
       curves <- rbind(curves, newCurve)
       e$activeDataList[[1]][[4]] <- curves
@@ -352,6 +354,7 @@ onSelectCurve <- function(e, x, y)
       messageToC(paste("Curve points from R", e$curveLine[1], e$curveLine[2], e$curveLine[3]))
       print ("Calling add curve ... ")
       add("curve", e$curveLine[1], e$curveLine[2], e$curveLine[3])
+      pushUndo(e, list(action = "curve_place", row = as.integer(newCurve[1, ])))
 
       e$curveDots <- c()
       e$curveDotNum <- 0
@@ -365,174 +368,6 @@ onSelectCurve <- function(e, x, y)
 
   print("file 3dDigitize.curve ... function onSelectCurve ... end")
 }
-
-
-#Pop up window for setting the total number of curves
-# stuff that was undet development
-
-setCurvesNum <- function(e)
-{
-  win <- tktoplevel()
-  tkwm.title(win, "Set Total Number of Curves")
-
-  entryFrame <- ttkframe(win)
-  tkpack(
-    entryFrame,
-    expand = TRUE,
-    fill = "both",
-    padx = 5,
-    pady = 5
-  )
-  label = tklabel(entryFrame, text = 'Set total number of curves : ')
-
-  print("line 296")
-  ##e$anchorEntry = tkentry(entryFrame, textvariable = tclVar(e$anchorNum))
-  ## e$curveEntry  = tkentry(entryFrame, textvariable = tclVar(e$curveNum))
-  e$curveMaxCurves <- 0            # 1 based
-##  e$curveCurrnetCurveNumber <- 0   # 1 based
-  temp  = tkentry(entryFrame, textvariable = tclVar(e$curveMaxCurves))
-  e$curveMaxCurves <- temp
-  sapply(list(label, e$curveMaxCurves),
-         tkpack,
-         side = "left",
-         padx = 6)
-
-  print("line 323")
-  btnFrame <- ttkframe(win)
-
-  tkpack(btnFrame,
-         fill = "x",
-         padx = 5,
-         pady = 5)
-  cancelBtn <-
-    ttkbutton(
-      btnFrame,
-      text = "cancel",
-      command = function()
-        tkdestroy(win)
-    )
-  okBtn <-
-    ttkbutton(
-      btnFrame,
-      text = "ok",
-      command = function()
-        onCurveNumOk(e, win)
-    )
-
-  print("line 345")
-
-  tkpack(
-    ttklabel(btnFrame, text = " "),
-    expand = TRUE,
-    fill = "y",
-    side = "left"
-  )
-  sapply(list(cancelBtn, okBtn),
-         tkpack,
-         side = "left",
-         padx = 6)
-
-  tkfocus(win)
-  print("line 359")
-}
-
-
-#Grabs user input
-onCurveNumOk <- function(e, win)
-{
-
-  temp <-  tclvalue(tkget(e$curveMaxCurves))
-  e$curveMaxCurves <- temp
-  print (paste("Total number of curves : ", temp))
-
-  tkdestroy(win)
-
- print (paste("line 344 The number of curves is set to : ", e$curveMaxCurves) )
-
-
-}
-
-
-
-setCurrentCurvesNum <- function(e)
-{
-  win <- tktoplevel()
-  tkwm.title(win, "Set Current Curve Number")
-
-  entryFrame <- ttkframe(win)
-  tkpack(
-    entryFrame,
-    expand = TRUE,
-    fill = "both",
-    padx = 5,
-    pady = 5
-  )
-  label = tklabel(entryFrame, text = 'Set current curve number 1 ..... : ')
-
-  print("line 398")
-
-
-  temp  = tkentry(entryFrame, textvariable = tclVar(e$curveCurrentCurveNumber))
-  e$curveCurrentCurveNumber <- temp
-  sapply(list(label, temp),
-         tkpack,
-         side = "left",
-         padx = 6)
-
-  print("line 406")
-  btnFrame <- ttkframe(win)
-
-  tkpack(btnFrame,
-         fill = "x",
-         padx = 5,
-         pady = 5)
-  cancelBtn <-
-    ttkbutton(
-      btnFrame,
-      text = "cancel",
-      command = function()
-        tkdestroy(win)
-    )
-  okBtn <-
-    ttkbutton(
-      btnFrame,
-      text = "ok",
-      command = function()
-        onCurrentCurveNumOk(e, win)
-    )
-
-  print("line 428")
-
-  tkpack(
-    ttklabel(btnFrame, text = " "),
-    expand = TRUE,
-    fill = "y",
-    side = "left"
-  )
-  sapply(list(cancelBtn, okBtn),
-         tkpack,
-         side = "left",
-         padx = 6)
-
-  tkfocus(win)
-  print("line 442")
-}
-
-#Grabs user input
-onCurrentCurveNumOk <- function(e, win)
-{
-
-  temp <- tclvalue(tkget(e$curveCurrentCurveNumber))
-  e$curveCurrentCurveNumber <- temp
-  print (paste("Current Curve Number: ", temp))
-
-  tkdestroy(win)
-
-  print (paste("line 461 The current curve number is set to : ",   e$curveCurrentCurveNumber) )
-
-
-}
-
 
 
 .redrawAllCurves <- function(e) {

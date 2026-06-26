@@ -124,6 +124,20 @@ doUndo <- function(e) {
       msg <- if (entry$kind == "anchor") "Undid anchor move" else "Undid landmark move"
       ok <- TRUE
     }
+ else if (entry$action == "curve_place") {
+    curves <- e$activeDataList[[1]][[4]]
+    if (is.null(curves) || nrow(curves) < 1) {
+      setStatus(e, "Nothing to undo", "warning")
+      return(invisible())
+    }
+    if (nrow(curves) == 1) {
+      e$activeDataList[[1]][[4]] <- NULL
+    } else {
+      e$activeDataList[[1]][[4]] <- curves[-nrow(curves), , drop = FALSE]
+    }
+    .redrawAllCurves(e)
+    msg <- "Undid curve segment placement"
+    ok <- TRUE
   }
 
   if (ok) {
