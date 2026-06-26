@@ -64,9 +64,9 @@ Full phase details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 #### Phase 14: Keyboard Shortcuts & Undo ✅
 **Goal:** Accelerators for common actions and an undo for landmark/anchor placement & deletion.
-**Requirements:** UX-KEY-01, UX-KEY-02
+**Requirements:** UX-KEY-01, UX-KEY-02 — validated 2026-06-26
 **Depends on:** Phase 11 (delete/placement paths settled before adding undo).
-**Plans:** 2 plans in 2 waves (planned 2026-06-25) — shipped 2026-06-26
+**Plans:** 2 plans in 2 waves (planned 2026-06-25) — shipped + UAT 2026-06-26
 - [x] [14-01](phases/14-keyboard-shortcuts-undo/14-01-PLAN.md) — Global accelerators + Help shortcuts dialog (wave 1) (UX-KEY-01)
 - [x] [14-02](phases/14-keyboard-shortcuts-undo/14-02-PLAN.md) — Single-level undo helpers + Ctrl+Z + nav/load clears (wave 2) (UX-KEY-02)
 
@@ -85,7 +85,7 @@ Full phase details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 | 11 | v1.1 | 4/4 | Shipped | 2026-06-24 |
 | 12 | v1.1 | 4/4 | Shipped + UAT | 2026-06-25 |
 | 13 | v1.1 | 2/2 | Shipped + UAT | 2026-06-26 |
-| 14 | v1.1 | 2/2 | Shipped | 2026-06-26 |
+| 14 | v1.1 | 2/2 | Shipped + UAT | 2026-06-26 |
 | 15 | v1.1 | 0 | Not started | — |
 
 ## Backlog

@@ -63,10 +63,10 @@ See [REQUIREMENTS.md](REQUIREMENTS.md) (UX-* + CON-*) and [ROADMAP.md](ROADMAP.m
 - ✓ **Direct-manipulation controls** — UX-CTL-01..04 (Phase 11, shipped 2026-06-24)
 - ✓ **In-GUI feedback & status** — UX-FB-01..03 (Phase 12, UAT approved 2026-06-25)
 - ✓ **Guided workflow & discoverability** — UX-WF-01..04 (Phase 13, UAT approved 2026-06-26)
+- ✓ **Keyboard shortcuts & undo** — UX-KEY-01/02 (Phase 14, UAT approved 2026-06-26)
 
 ### Active (v1.1 UI Modernization)
 
-- ◻ **Keyboard shortcuts & undo** — UX-KEY-01/02 (Phase 14)
 - ◻ **Curve tab rehabilitation** — UX-CRV-01/02 (Phase 15)
 - ◻ **Constraints**: no renderer change, `.dgt` round-trip preserved, Windows R 4.6+ only — CON-01/02/03
 

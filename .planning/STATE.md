@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: GUImorph UI Modernization
 status: ready to execute
-stopped_at: Completed 14-02-PLAN.md
+stopped_at: Phase 14 UAT complete — Phase 15 next
 last_updated: "2026-06-26"
-last_activity: 2026-06-26 — Phase 14 Plan 02 executed (single-level undo + Ctrl+Z; UX-KEY-02)
+last_activity: 2026-06-26 — Phase 14 UAT complete (keyboard shortcuts & undo; UX-KEY-01/02 validated)
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 17
-  completed_plans: 14
-  percent: 82
+  completed_plans: 15
+  percent: 88
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-24)
 
 **Core value:** A researcher runs the full digitize → analyze workflow in a GUI that feels modern, gives clear in-app feedback, and doesn't interrupt with modal nags — without changing the C/OpenGL renderer or breaking `.dgt` files.
-**Current focus:** v1.1 Phase 14 — complete (accelerators + undo); Phase 15 Curve tab next.
+**Current focus:** v1.1 Phase 15 — Curve tab rehabilitation (UX-CRV-01/02); plan via `/gsd-discuss-phase 15`.
 
 ## Current Position
 
 Milestone: **v1.1 UI Modernization** — executing  
-Phases: 4/6 complete (10, 11, 12, 13 shipped + UAT)  
-Requirements: 14/18 validated (+ 3 constraints)  
+Phases: 5/6 complete (10–14 shipped + UAT)  
+Requirements: 16/18 validated (+ 3 constraints)  
 Previous: **v1.0 ARCHIVED** (2026-06-23) — 9/9 phases, 22/22 reqs, tag `v1.0`
 
-Progress: [████████░░] 82%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -60,6 +60,8 @@ Progress: [████████░░] 82%
 - **Workflow discoverability** — disabled-tab status explanations, `e$stepLabel` step indicator, `e$hintLabel` placement hints, jump-to specimen combobox, Specimen N of M counter (2026-06-26)
 - **Global keyboard accelerators** — `bind.accelerators(e)` on `e$wnd` for Ctrl+O/S/[/]/F; Help → Keyboard Shortcuts dialog; Ctrl+Z binding deferred to 14-02 (2026-06-25)
 - **Single-level undo** — `pushUndo`/`clearUndo`/`doUndo` on `e$undo`; Ctrl+Z global + spinbox override; clears on specimen nav and PLY/DGT reload; placement/delete/drag-move reversible via add/del/set (2026-06-26)
+
+- **Keyboard shortcuts & undo** — global accelerators, Help dialog, single-level undo for place/delete/drag; drag undo uses release-screen re-selection (2026-06-26 UAT)
 
 ### Blockers/Concerns
 
@@ -102,5 +104,5 @@ Identified from GUI source + README "Known quirks":
 ## Session Continuity
 
 Last session: 2026-06-26
-Stopped at: Completed 14-02-PLAN.md
-Resume file: .planning/phases/15-curve-tab-rehabilitation/ (plan TBD)
+Stopped at: Phase 14 UAT complete — ready for Phase 15 discuss/plan
+Resume file: .planning/ROADMAP.md (Phase 15)
