@@ -41,8 +41,23 @@ init.curve <- function(e)
 	e$curveLine<- c()
 	e$sliders<-c()
 
-	e$curveMaxCurves <- 0            # 1 based
-	e$curveCurrentCurveNumber <- 0   # 1 based
+	e$curveMaxCurves <- 1L            # 1 based
+	e$curveCurrentCurveNumber <- 1L   # 1 based
+}
+
+onCurveMaxChange <- function(e) {
+  val <- .clampCurveMax(tclvalue(e$curveMaxVar))
+  tclvalue(e$curveMaxVar) <- as.character(val)
+  e$curveMaxCurves <- val
+  onCurveCurrentChange(e)
+}
+
+onCurveCurrentChange <- function(e) {
+  maxC <- .clampCurveMax(tclvalue(e$curveMaxVar))
+  val <- .clampCurveCurrent(tclvalue(e$curveCurrentVar), maxC)
+  tclvalue(e$curveCurrentVar) <- as.character(val)
+  e$curveCurrentCurveNumber <- val
+  add("SetCurveIndex", val, -1, -2)
 }
 
 #creates user interface layout for curve component
@@ -50,40 +65,63 @@ ui.curve <- function(e, parent)
 {
   curveCtlFrame <- ttkframe(parent)
 
+  e$curveDescLabel <- ttklabel(
+    curveCtlFrame,
+    text = "Define curves by selecting 3 landmarks per segment"
+  )
+  tkconfigure(e$curveDescLabel, foreground = "#505050")
 
-  # there are additional buttons that were created to test a concept and that
-  # have NOT been made active in this file as of 14 JULY 2020
-  # They are retained for an initial release - they will probably be removed
-  setCurveCountBtn <-
-    ttkbutton(
-      curveCtlFrame,
-      text = "Set curves (total) number",
+  e$curveMaxVar <- tclVar("1")
+  e$curveMaxRow <- ttkframe(curveCtlFrame)
+  tkpack(
+    ttklabel(e$curveMaxRow, text = "Total curves:"),
+    side = "left",
+    padx = c(8, 4)
+  )
+  e$curveMaxSpin <-
+    ttkspinbox(
+      e$curveMaxRow,
+      from = 1,
+      to = 9999,
+      increment = 1,
+      textvariable = e$curveMaxVar,
+      width = 5,
       command = function()
-        setCurvesNum(e)
+        onCurveMaxChange(e)
     )
+  tkpack(e$curveMaxSpin, side = "left", padx = c(0, 8))
+  tkbind(e$curveMaxSpin, "<Return>", function() {
+    onCurveMaxChange(e)
+  })
+  tkbind(e$curveMaxSpin, "<FocusOut>", function() {
+    onCurveMaxChange(e)
+  })
 
-
-
-
-
-  fitBtn <-
-    ttkbutton(
-      curveCtlFrame,
-      text = "Fit",
+  e$curveCurrentVar <- tclVar("1")
+  e$curveCurrentRow <- ttkframe(curveCtlFrame)
+  tkpack(
+    ttklabel(e$curveCurrentRow, text = "Current curve:"),
+    side = "left",
+    padx = c(8, 4)
+  )
+  e$curveCurrentSpin <-
+    ttkspinbox(
+      e$curveCurrentRow,
+      from = 1,
+      to = 9999,
+      increment = 1,
+      textvariable = e$curveCurrentVar,
+      width = 5,
       command = function()
-        onFit(e)
+        onCurveCurrentChange(e)
     )
-
-
-
-  setCurrentCurveCountBtn <-
-    ttkbutton(
-      curveCtlFrame,
-      text = "Set Current curve number",
-      command = function()
-        setCurrentCurvesNum(e)
-    )
-
+  tkpack(e$curveCurrentSpin, side = "left", padx = c(0, 8))
+  tkbind(e$curveCurrentSpin, "<Return>", function() {
+    onCurveCurrentChange(e)
+  })
+  tkbind(e$curveCurrentSpin, "<FocusOut>", function() {
+    onCurveCurrentChange(e)
+  })
 
   computeCurvesBtn <-
     ttkbutton(
@@ -93,13 +131,22 @@ ui.curve <- function(e, parent)
         onComputeCurves(e)
     )
 
-
+  resetViewBtn <-
+    ttkbutton(
+      curveCtlFrame,
+      text = "Reset view",
+      command = function()
+        onFit(e)
+    )
 
   tkpack(ttklabel(curveCtlFrame, text = " "), pady = 6)
- ## tkpack(setCurveCountBtn)
- ## tkpack(setCurrentCurveCountBtn)
-  tkpack(fitBtn)
- ## tkpack(computeCurvesBtn)
+  tkpack(e$curveDescLabel, pady = c(0, 4))
+  tkpack(e$curveMaxRow, pady = 3)
+  tkpack(e$curveCurrentRow, pady = 3)
+  tkpack(computeCurvesBtn, pady = 3)
+  tkpack(resetViewBtn, pady = 3)
+  .overrideCtrlZ(e$curveMaxSpin, e)
+  .overrideCtrlZ(e$curveCurrentSpin, e)
 
   return (curveCtlFrame)
 }
