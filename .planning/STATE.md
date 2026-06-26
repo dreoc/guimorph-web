@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: GUImorph UI Modernization
-status: executing
-stopped_at: Phase 14 context gathered
+status: ready to execute
+stopped_at: Completed 14-01-PLAN.md
 last_updated: "2026-06-25"
-last_activity: 2026-06-25 — Phase 14 discuss-phase complete (keyboard shortcuts & undo decisions captured)
+last_activity: 2026-06-25 — Phase 14 Plan 01 executed (global accelerators + Help dialog; UX-KEY-01)
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 15
-  completed_plans: 12
-  percent: 83
+  total_plans: 17
+  completed_plans: 13
+  percent: 76
 ---
 
 # Project State
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-24)
 
 **Core value:** A researcher runs the full digitize → analyze workflow in a GUI that feels modern, gives clear in-app feedback, and doesn't interrupt with modal nags — without changing the C/OpenGL renderer or breaking `.dgt` files.
-**Current focus:** v1.1 Phase 14 — Keyboard Shortcuts & Undo context gathered; ready to plan.
+**Current focus:** v1.1 Phase 14 — Plan 01 shipped (accelerators + Help dialog); Plan 14-02 undo next.
 
 ## Current Position
 
@@ -30,7 +30,7 @@ Phases: 4/6 complete (10, 11, 12, 13 shipped + UAT)
 Requirements: 14/18 validated (+ 3 constraints)  
 Previous: **v1.0 ARCHIVED** (2026-06-23) — 9/9 phases, 22/22 reqs, tag `v1.0`
 
-Progress: [████████░░] 83%
+Progress: [████████░░] 76%
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [████████░░] 83%
 - **Nav button state** — `refreshNavButtons(e)` enables/disables Prev/Next by specimen position only; incomplete landmark/anchor counts show inline warning without trapping buttons (2026-06-25 UAT fix)
 - **Unified tab gating** — `refreshTabGating(e)` unlock-on-load for Anchors; GPA gated on current-specimen landmark count; Place Anchors checkbox decoupled from tab availability (2026-06-26)
 - **Workflow discoverability** — disabled-tab status explanations, `e$stepLabel` step indicator, `e$hintLabel` placement hints, jump-to specimen combobox, Specimen N of M counter (2026-06-26)
+- **Global keyboard accelerators** — `bind.accelerators(e)` on `e$wnd` for Ctrl+O/S/[/]/F; Help → Keyboard Shortcuts dialog; Ctrl+Z binding deferred to 14-02 (2026-06-25)
 
 ### Blockers/Concerns
 
@@ -100,5 +101,5 @@ Identified from GUI source + README "Known quirks":
 ## Session Continuity
 
 Last session: 2026-06-25
-Stopped at: Phase 13 planned (2 plans, 2 waves) — ready to execute
-Resume file: .planning/phases/13-guided-workflow-discoverability/13-01-PLAN.md
+Stopped at: Completed 14-01-PLAN.md
+Resume file: .planning/phases/14-keyboard-shortcuts-undo/14-02-PLAN.md

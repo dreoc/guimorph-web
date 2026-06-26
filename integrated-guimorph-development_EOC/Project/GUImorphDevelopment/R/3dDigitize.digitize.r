@@ -52,6 +52,89 @@ init.digitize <- function(e)
   }
  	set("dot", "labeled", 1)
   set("dot", "alabeled", 1) #toggle for anchor point labels
+  e$undo <- NULL
+}
+
+
+pushUndo <- function(e, entry) {
+  e$undo <- entry
+}
+
+
+clearUndo <- function(e) {
+  e$undo <- NULL
+  e$dragDot <- FALSE
+  e$dragX <- -1L
+  e$dragY <- -1L
+}
+
+
+doUndo <- function(e) {
+  if (is.null(e$undo)) {
+    setStatus(e, "Nothing to undo", "warning")
+    return(invisible())
+  }
+
+  entry <- e$undo
+  scr <- entry$screen
+  ok <- FALSE
+  msg <- NULL
+
+  if (entry$action == "place") {
+    if (!set("dot", "selected", scr[1], scr[2])) {
+      setStatus(e, "Nothing to undo", "warning")
+      return(invisible())
+    }
+    if (entry$kind == "landmark") {
+      del("dot")
+      updateDotNum(e, -1)
+      msg <- "Undid landmark placement"
+      ok <- TRUE
+    } else if (entry$kind == "anchor") {
+      del("anchor")
+      updateAnchorNum(e, -1)
+      msg <- "Undid anchor placement"
+      ok <- TRUE
+    }
+  } else if (entry$action == "delete") {
+    coord <- entry$coord
+    if (entry$kind == "landmark") {
+      if (TRUE == add("dot", coord[1], coord[2], coord[3])) {
+        updateDotNum(e, 1)
+        msg <- "Undid landmark deletion"
+        ok <- TRUE
+      }
+    } else if (entry$kind == "anchor") {
+      if (TRUE == add("anchor", coord[1], coord[2], coord[3])) {
+        updateAnchorNum(e, 1)
+        msg <- "Undid anchor deletion"
+        ok <- TRUE
+      }
+    }
+  } else if (entry$action == "move") {
+    before <- entry$before
+    if (set("dot", "selected", scr[1], scr[2])) {
+      set("dot", "coordinate", before[1], before[2], before[3])
+      msg <- if (entry$kind == "anchor") "Undid anchor move" else "Undid landmark move"
+      ok <- TRUE
+    }
+  }
+
+  if (ok) {
+    clearUndo(e)
+    setStatus(e, msg, "info")
+  } else {
+    setStatus(e, "Nothing to undo", "warning")
+  }
+  invisible()
+}
+
+
+.overrideCtrlZ <- function(widget, e) {
+  tkbind(widget, "<Control-z>", function() {
+    doUndo(e)
+    tcl("break")
+  })
 }
 
 
@@ -190,6 +273,7 @@ ui.digitize <- function(e, parent)
     tkpack,
     pady = 3
   )
+  .overrideCtrlZ(e$lmCountSpin, e)
   return (digCtlFrame)
 }
 
@@ -291,6 +375,7 @@ ui.anchor <- function(e, parent)
     tkpack,
     pady = 3
   )
+  .overrideCtrlZ(e$anchorCountSpin, e)
   return (anchorCtlFrame)
 
 
@@ -451,6 +536,8 @@ onLeftBtnPress <- function(e, x, y)
       if (result)
       {
         e$dragDot <- TRUE
+        e$dragStartCoord <- convertCoor(e, x, y)
+        e$dragStartScreen <- c(as.integer(x), as.integer(y))
         set(
           "dot",
           "anchorColor",
@@ -478,6 +565,8 @@ onLeftBtnPress <- function(e, x, y)
       if (TRUE == result)
       {
         e$dragDot <- TRUE
+        e$dragStartCoord <- convertCoor(e, x, y)
+        e$dragStartScreen <- c(as.integer(x), as.integer(y))
         set("dot", "color", as.double(1 / 255), as.double(164 / 255),  as.double(191 / 255))
       }
       else
@@ -504,10 +593,11 @@ onLeftBtnRelease <- function(e, x, y)
   ##print ("onLeftBtnrelease ... ")
   if (length(e$activeDataList) > 0)
   {
+    wasDragging <- e$dragDot
     e$dragX <- as.integer(-1)
     e$dragY <- as.integer(-1)
 
-    if (e$dragDot)
+    if (wasDragging)
     {
       e$dragDot <- FALSE
       if (e$tab == 1)
@@ -521,6 +611,18 @@ onLeftBtnRelease <- function(e, x, y)
         ##print ("ready to call set dot color")
         color <- e$dColor
         set("dot", "color", color[1], color[2], color[3])
+      }
+
+      after <- convertCoor(e, x, y)
+      if (!is.null(e$dragStartCoord) &&
+          sum((e$dragStartCoord - after)^2) > 1e-12) {
+        pushUndo(e, list(
+          action = "move",
+          kind = if (e$tab == 1) "anchor" else "landmark",
+          before = e$dragStartCoord,
+          after = after,
+          screen = e$dragStartScreen
+        ))
       }
     }
   }
@@ -795,8 +897,15 @@ deleteLandmark <- function(e, x, y)
   }
 
   if (set("dot", "selected", x, y)) {
+    coord <- convertCoor(e, x, y)
     del("dot")
     updateDotNum(e, -1)
+    pushUndo(e, list(
+      action = "delete",
+      kind = "landmark",
+      coord = coord,
+      screen = c(as.integer(x), as.integer(y))
+    ))
   }
 }
 
@@ -810,8 +919,15 @@ deleteAnchor <- function(e, x, y)
   }
 
   if (set("dot", "selected", x, y)) {
+    coord <- convertCoor(e, x, y)
     del("anchor")
     updateAnchorNum(e, -1)
+    pushUndo(e, list(
+      action = "delete",
+      kind = "anchor",
+      coord = coord,
+      screen = c(as.integer(x), as.integer(y))
+    ))
   }
 }
 
@@ -877,6 +993,12 @@ addDot <- function(e, x, y)
       {
         print(coord)
         updateDotNum(e, 1)
+        pushUndo(e, list(
+          action = "place",
+          kind = "landmark",
+          coord = coord,
+          screen = c(as.integer(x), as.integer(y))
+        ))
       }
       else
       {
@@ -922,6 +1044,12 @@ addAnchor <- function(e, x, y)
       if (TRUE == add("anchor", coord[1], coord[2], coord[3]))
       {
         updateAnchorNum(e, 1)
+        pushUndo(e, list(
+          action = "place",
+          kind = "anchor",
+          coord = coord,
+          screen = c(as.integer(x), as.integer(y))
+        ))
       }
       else
       {
