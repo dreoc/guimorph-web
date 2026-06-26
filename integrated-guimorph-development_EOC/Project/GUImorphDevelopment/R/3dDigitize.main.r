@@ -558,67 +558,9 @@ switchTab <- function(e, id)
    curves <- e$activeDataList[[1]][[4]]    # make it exist even if null
    ## print (e$activeDataList[[1]][[4]])
 
-if(1)
-{
-    if(0 == length(curves))
-    {
-      print ("NO EXISTING CURVE DATA  ... select curve dots as desired")
+if (!is.null(curves) && nrow(curves) > 0) {
+      .redrawAllCurves(e)
     }
-    else
-    {
-      print ("CURVE ... TAB SWITCH ... curves is  NOT null")
-      add ("initialize", 2, 0, 0 )   # initialize curve data -- the dots
-
-      curves <- e$activeDataList[[1]][[4]]
-      print (curves)
-
-
-      myNumberOfRows  <- nrow(curves)
-      print (paste("HAVE CURVE DATA : EXISTING NUMBER OF CURVES",  myNumberOfRows))
-
-      for (j in 1:nrow(curves))
-      {
-        print (paste("index j", j, "curve points ", curves[j, 1], curves[j, 2], curves[j, 3] ))
-      }
-
-      myNumberOfSpecimens <-length(e$activeDataList)
-      print (paste("switch tab : specimen count is :", myNumberOfSpecimens))
-
-      # releases all existing curve data as part of the recalculation
-      add ("InfoCurves", nrow(curves), 3, myNumberOfSpecimens)
-      add("SetLandmarkIndex", e$currImgId, -1, -2)
-      add ("SetCurveIndex", e$currImgId, 0, 0 )
-
-      for (j in 1:nrow(curves))
-      {
-
-        p1 <- as.integer(curves[j,1])
-        p2 <- as.integer(curves[j,2])
-        p3 <- as.integer(curves[j,3])
-        print (as.integer(p1))
-        print (as.integer(p2))
-        print (as.integer(p3))
-        print (paste("index j (row) ", j, "curve points ", p1, p2, p3))
-        add ("curve", as.integer(p1), as.integer(p2), as.integer(p3) )
-      }
-
-
-      for (j in 1:nrow(curves))
-      {
-
-        p2 <- as.integer(curves[j,2])
-        add ("curveSetDotSliderColor",  as.integer(p2) )
-      }
-
-
-
-
-
-
-      add ("InfoCurves_complete", 0, 0, 0)
-      print (".............. all done .........................")
-    }
-}
     }
 
 

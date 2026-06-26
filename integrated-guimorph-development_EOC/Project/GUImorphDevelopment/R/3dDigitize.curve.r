@@ -531,8 +531,54 @@ onCurrentCurveNumOk <- function(e, win)
 
 
 
-onComputeCurves <- function(e)
-{
-  print ("under construction compute curves")
+.redrawAllCurves <- function(e) {
+  curves <- e$activeDataList[[1]][[4]]
+  if (is.null(curves) || nrow(curves) == 0) {
+    setStatus(e, "No curve segments defined yet.", "warning")
+    return(FALSE)
+  }
+
+  add("initialize", 2, 0, 0)
+  add("InfoCurves", nrow(curves), 3, length(e$activeDataList))
+  add("SetLandmarkIndex", e$currImgId, -1, -2)
+  add("SetCurveIndex", e$currImgId, 0, 0)
+
+  for (j in seq_len(nrow(curves))) {
+    p1 <- as.integer(curves[j, 1])
+    p2 <- as.integer(curves[j, 2])
+    p3 <- as.integer(curves[j, 3])
+    add("curve", p1, p2, p3)
+  }
+
+  for (j in seq_len(nrow(curves))) {
+    p2 <- as.integer(curves[j, 2])
+    add("curveSetDotSliderColor", p2)
+  }
+
+  add("InfoCurves_complete", 0, 0, 0)
+  showPicture(e)
+  TRUE
+}
+
+onComputeCurves <- function(e) {
+  curves <- e$activeDataList[[1]][[4]]
+  if (is.null(curves) || nrow(curves) == 0) {
+    setStatus(e, "No curve segments defined yet.", "warning")
+    return(invisible())
+  }
+
+  n <- nrow(curves)
+  busyStart(e, "Computing curves\u2026", "indeterminate")
+  ok <- FALSE
+  on.exit({
+    if (ok) {
+      busyStop(e, paste0("Drew ", n, " curve segment(s)."), "success")
+    } else {
+      busyStop(e)
+    }
+  }, add = TRUE)
+
+  ok <- isTRUE(.redrawAllCurves(e))
+  invisible()
 }
 
