@@ -798,14 +798,25 @@ ui.main <- function(e)
   tcl("after", "idle", pushCanvasSize)
 
   createMenu(e)
+  bind.accelerators(e)
   bind.digitize(e)
 
   .center_toplevel(e$wnd)
 }
 
 
+
+bind.accelerators <- function(e)
+{
+  tkbind(e$wnd, "<Control-o>", function() loadPly(e))
+  tkbind(e$wnd, "<Control-s>", function() saveToDgt(e))
+  tkbind(e$wnd, "<Control-bracketleft>", function() onPrevious(e))
+  tkbind(e$wnd, "<Control-bracketright>", function() onNext(e))
+  tkbind(e$wnd, "<Control-f>", function() onFit(e))
+}
+
 #configures file menu
-createMenu <- function(e)
+
 {
   topMenu <- tkmenu(e$wnd)
   tkconfigure(e$wnd, menu = topMenu)
