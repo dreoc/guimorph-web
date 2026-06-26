@@ -238,6 +238,65 @@ refreshNavButtons <- function(e) {
               state = if (e$currImgId > 1) "normal" else "disabled")
   tkconfigure(e$nextBtn,
               state = if (e$currImgId < n) "normal" else "disabled")
+  if (!is.null(e$specimenCombo) && length(e$activeDataList) > 0) {
+    p <- e$activeDataList[[e$currImgId]][[1]]
+    nm <- if (is.null(p) || !nzchar(p)) paste0("specimen ", e$currImgId) else basename(p)
+    tclvalue(e$specimenSelectVar) <- paste0(e$currImgId, ": ", nm)
+  }
+}
+
+populateSpecimenCombo <- function(e) {
+  if (is.null(e$specimenCombo)) return(invisible())
+  N <- length(e$activeDataList)
+  if (N == 0) {
+    tkconfigure(e$specimenCombo, values = "", state = "disabled")
+    tclvalue(e$specimenSelectVar) <- ""
+    return(invisible())
+  }
+  vals <- vapply(seq_len(N), function(i) {
+    p <- e$activeDataList[[i]][[1]]
+    nm <- if (is.null(p) || !nzchar(p)) paste0("specimen ", i) else basename(p)
+    paste0(i, ": ", nm)
+  }, character(1))
+  tkconfigure(e$specimenCombo, values = vals, state = "readonly")
+  tclvalue(e$specimenSelectVar) <- vals[e$currImgId]
+  invisible()
+}
+
+jumpToSpecimen <- function(e, id) {
+  if (length(e$activeDataList) == 0) return(invisible())
+  if (id < 1 || id > length(e$activeDataList) || id == e$currImgId) {
+    refreshNavButtons(e); return(invisible())
+  }
+  if (e$tab != 0) {
+    setStatus(e, "Switch to the 3D Digitizing tab to change specimen.", "warning")
+    refreshNavButtons(e); return(invisible())
+  }
+  nCurrLM <- e$activeDataList[[e$currImgId]][[3]]
+  if (nCurrLM < as.integer(e$landmarkNum)) {
+    setStatus(e,
+      paste0("Place all ", e$landmarkNum,
+             " landmarks before jumping to another specimen \u2014 ",
+             nCurrLM, " of ", e$landmarkNum, " placed."),
+      "warning")
+    refreshNavButtons(e); return(invisible())
+  }
+  nCurrA <- e$activeDataList[[e$currImgId]][[9]]
+  if (is.null(nCurrA)) nCurrA <- 0
+  if (tclvalue(e$placeAnchorsVar) == "1" &&
+      nCurrA < as.integer(e$anchorNum)) {
+    setStatus(e,
+      paste0("Place all ", e$anchorNum,
+             " anchors before jumping \u2014 ",
+             nCurrA, " of ", e$anchorNum, " placed."),
+      "warning")
+    refreshNavButtons(e); return(invisible())
+  }
+  e$currImgId <- id
+  add("specimen", e$activeDataList[[e$currImgId]][[1]], e$currImgId)
+  refreshTabGating(e)
+  showPicture(e)
+  invisible()
 }
 
 refreshTabGating <- function(e) {
@@ -848,6 +907,14 @@ createNavFrame <- function(e, parent) {
   e$prevBtn <- prevBtn
   e$nextBtn <- nextBtn
 
+  e$specimenSelectVar <- tclVar("")
+  e$specimenCombo <- ttkcombobox(btnFrame, state = "disabled", width = 20,
+                                 textvariable = e$specimenSelectVar)
+  tkbind(e$specimenCombo, "<<ComboboxSelected>>", function() {
+    sel <- suppressWarnings(as.integer(tcl(e$specimenCombo, "current")))
+    if (!is.na(sel) && sel >= 0) jumpToSpecimen(e, sel + 1L)
+  })
+
   tkpack(
     ttklabel(btnFrame, text = " "),
     expand = TRUE,
@@ -858,6 +925,7 @@ createNavFrame <- function(e, parent) {
          tkpack,
          side = "left",
          padx = 6)
+  tkpack(e$specimenCombo, side = "left", padx = 8)
   tkpack(
     ttklabel(btnFrame, text = " "),
     expand = TRUE,
@@ -1410,6 +1478,7 @@ loadPly <- function(e)
         setStatus(e, paste0("Loaded ", nSpecimens, " specimen", s, "."), "success")
         tkconfigure(e$progressBar, mode = "determinate", value = 0)
         refreshTabGating(e)
+        populateSpecimenCombo(e)
         updateStepLabel(e)
       }
     }
@@ -1486,6 +1555,7 @@ if(0)
     tkconfigure(e$bt, state = "normal")
   }
   refreshTabGating(e)
+  populateSpecimenCombo(e)
   updateStepLabel(e)
 
 
