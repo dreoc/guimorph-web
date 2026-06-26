@@ -292,6 +292,7 @@ jumpToSpecimen <- function(e, id) {
       "warning")
     refreshNavButtons(e); return(invisible())
   }
+  clearUndo(e)
   e$currImgId <- id
   add("specimen", e$activeDataList[[e$currImgId]][[1]], e$currImgId)
   refreshTabGating(e)
@@ -812,6 +813,7 @@ bind.accelerators <- function(e)
   tkbind(e$wnd, "<Control-bracketleft>", function() onPrevious(e))
   tkbind(e$wnd, "<Control-bracketright>", function() onNext(e))
   tkbind(e$wnd, "<Control-f>", function() onFit(e))
+  tkbind(e$wnd, "<Control-z>", function() doUndo(e))
 }
 
 showShortcutsDialog <- function(e)
@@ -1256,6 +1258,7 @@ onNext <- function(e)
 
 
 
+  clearUndo(e)
   e$currImgId <- e$currImgId + 1
 
 
@@ -1364,6 +1367,7 @@ onPrevious <- function(e)
     return()
   }
 
+  clearUndo(e)
   e$currImgId <- e$currImgId - 1
   if (as.integer(e$currImgId) == 1)
   {
@@ -1554,6 +1558,7 @@ loadPly <- function(e)
         tkconfigure(e$wnd, cursor = "")
         s <- if (nSpecimens == 1) "" else "s"
         setStatus(e, paste0("Loaded ", nSpecimens, " specimen", s, "."), "success")
+        clearUndo(e)
         tkconfigure(e$progressBar, mode = "determinate", value = 0)
         refreshTabGating(e)
         populateSpecimenCombo(e)
@@ -1816,6 +1821,7 @@ if (!is.null(curves) && length(curves) > 0 && nrow(curves) > 0)
 }
 
     e$activeDataList <- dgtDataList
+    clearUndo(e)
 
     refreshTabGating(e)
     populateSpecimenCombo(e)
