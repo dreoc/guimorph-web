@@ -67,7 +67,7 @@ Each task was committed atomically:
 2. **Task 2: Jump-to combobox + populateSpecimenCombo + jumpToSpecimen** - `5658ee9` (feat)
 3. **Task 3: Specimen counter and status copy fixes** - `aef251c` (feat)
 
-**Plan metadata:** pending orchestrator wave commit
+**Plan metadata:** `2d5719e` (docs)
 
 ## Files Created/Modified
 
@@ -114,6 +114,7 @@ None - no external service configuration required.
 - FOUND: `dc79b6c` (task 1)
 - FOUND: `5658ee9` (task 2)
 - FOUND: `aef251c` (task 3)
+- FOUND: `2d5719e` (plan metadata)
 
 ---
 *Phase: 13-guided-workflow-discoverability*
