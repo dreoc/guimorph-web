@@ -1,0 +1,27 @@
+pkg_root <- normalizePath(file.path(testthat::test_path(), "..", ".."))
+source(file.path(pkg_root, "R", "3dDigitize.curve.r"), local = FALSE)
+
+test_that("write.curve and read.curve round-trip a 3-column integer matrix", {
+  curves <- matrix(c(1, 2, 3, 4, 5, 6), ncol = 3, byrow = TRUE)
+  tmp <- tempfile(fileext = ".dgt")
+  on.exit(unlink(tmp), add = TRUE)
+
+  write.curve(tmp, curves)
+  content <- readLines(tmp, warn = FALSE)
+  result <- read.curve(content)
+
+  expect_equal(result, curves)
+  expect_type(result, "integer")
+  expect_equal(ncol(result), 3L)
+})
+
+test_that("write.curve and read.curve handle empty curve matrix", {
+  tmp <- tempfile(fileext = ".dgt")
+  on.exit(unlink(tmp), add = TRUE)
+
+  write.curve(tmp, matrix(integer(), nrow = 0, ncol = 3))
+  content <- readLines(tmp, warn = FALSE)
+  result <- read.curve(content)
+
+  expect_null(result)
+})

@@ -1,4 +1,4 @@
 library(testthat)
-library(GUImorphDevelopment)
+library(GUImorph)
 
-test_check("GUImorphDevelopment")
+test_check("GUImorph")

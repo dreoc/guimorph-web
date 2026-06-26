@@ -15,6 +15,24 @@ get_curve_date <- function()
 #dgtDataList[imgId][[7]]: zoom
 #dgtDataList[imgId][[8]]: surface file
 
+# Clamp helpers for curve spinbox validation (testable without Tk)
+.clampCurveMax <- function(val) {
+  val <- suppressWarnings(as.integer(val))
+  if (is.na(val) || val < 1L)
+    val <- 1L
+  val
+}
+
+.clampCurveCurrent <- function(val, maxC) {
+  maxC <- .clampCurveMax(maxC)
+  val <- suppressWarnings(as.integer(val))
+  if (is.na(val) || val < 1L)
+    val <- 1L
+  if (val > maxC)
+    val <- maxC
+  val
+}
+
 #initializes parameters for curve component
 init.curve <- function(e)
 {
