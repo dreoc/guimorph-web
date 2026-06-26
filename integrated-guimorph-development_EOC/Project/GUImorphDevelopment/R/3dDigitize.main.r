@@ -342,8 +342,26 @@ updateStepLabel <- function(e) {
   invisible()
 }
 
+updateCurveHint <- function(e) {
+  if (is.null(e$hintLabel)) return(invisible())
+  cur <- e$curveCurrentCurveNumber
+  maxC <- e$curveMaxCurves
+  txt <- paste0(
+    "Double-click 3 landmarks per curve segment \u00b7 Current curve: ",
+    cur,
+    " of ",
+    maxC
+  )
+  tkconfigure(e$hintLabel, text = txt)
+  invisible()
+}
+
 updateHintLabel <- function(e, tabId = e$tab) {
   if (is.null(e$hintLabel)) return(invisible())
+  if (as.integer(tabId) == 3L) {
+    updateCurveHint(e)
+    return(invisible())
+  }
   HINT_TEXT <- c(
     "0" = "Double-click to place landmark \u00b7 Drag to rotate \u00b7 Right-click to delete",
     "1" = "Double-click to place anchor \u00b7 Drag to rotate \u00b7 Right-click to delete"
@@ -515,6 +533,7 @@ switchTab <- function(e, id)
 
     e$tab <- 3
     set("window", "mode", "curve")
+    bind.curve(e)
 
 
     # from development of dgt file reader

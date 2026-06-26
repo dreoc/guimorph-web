@@ -50,6 +50,7 @@ onCurveMaxChange <- function(e) {
   tclvalue(e$curveMaxVar) <- as.character(val)
   e$curveMaxCurves <- val
   onCurveCurrentChange(e)
+  updateCurveHint(e)
 }
 
 onCurveCurrentChange <- function(e) {
@@ -58,6 +59,7 @@ onCurveCurrentChange <- function(e) {
   tclvalue(e$curveCurrentVar) <- as.character(val)
   e$curveCurrentCurveNumber <- val
   add("SetCurveIndex", val, -1, -2)
+  updateCurveHint(e)
 }
 
 #creates user interface layout for curve component
@@ -276,6 +278,8 @@ changeDotColor<-function(e)
 #sets and configures dot on curve
 onSelectCurve <- function(e, x, y)
 {
+  if (e$tab != 3) return(invisible())
+
   print("file 3dDigitize.curve ... function onSelectCurve line 165")
 
   print (paste  ("onSelectCurve argument x", x))
