@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: GUImorph UI Modernization
 status: executing
-stopped_at: Phase 13 complete — ready to plan Phase 14
-last_updated: "2026-06-26"
-last_activity: 2026-06-26 — Phase 13 shipped + UAT confirmed (guided workflow & discoverability; UX-WF-01..04 validated)
+stopped_at: Phase 14 context gathered
+last_updated: "2026-06-25"
+last_activity: 2026-06-25 — Phase 14 discuss-phase complete (keyboard shortcuts & undo decisions captured)
 progress:
   total_phases: 6
   completed_phases: 4
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-24)
 
 **Core value:** A researcher runs the full digitize → analyze workflow in a GUI that feels modern, gives clear in-app feedback, and doesn't interrupt with modal nags — without changing the C/OpenGL renderer or breaking `.dgt` files.
-**Current focus:** v1.1 Phase 14 next — Keyboard Shortcuts & Undo (Phase 13 shipped + UAT 2026-06-26).
+**Current focus:** v1.1 Phase 14 — Keyboard Shortcuts & Undo context gathered; ready to plan.
 
 ## Current Position
 
