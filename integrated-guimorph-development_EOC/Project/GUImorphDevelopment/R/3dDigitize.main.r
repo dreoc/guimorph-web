@@ -336,6 +336,18 @@ updateStepLabel <- function(e) {
   invisible()
 }
 
+updateHintLabel <- function(e, tabId = e$tab) {
+  if (is.null(e$hintLabel)) return(invisible())
+  HINT_TEXT <- c(
+    "0" = "Double-click to place landmark \u00b7 Drag to rotate \u00b7 Right-click to delete",
+    "1" = "Double-click to place anchor \u00b7 Drag to rotate \u00b7 Right-click to delete"
+  )
+  hk <- as.character(tabId)
+  txt <- if (!is.na(HINT_TEXT[hk])) HINT_TEXT[hk] else ""
+  tkconfigure(e$hintLabel, text = txt)
+  invisible()
+}
+
 #initializes parameters for main component
 init.main <- function(e)
 {
@@ -392,13 +404,7 @@ switchTab <- function(e, id)
     return(invisible())
   }
 
-  HINT_TEXT <- c(
-    "0" = "Double-click to place landmark \u00b7 Drag to rotate \u00b7 Right-click to delete",
-    "1" = "Double-click to place anchor \u00b7 Drag to rotate \u00b7 Right-click to delete"
-  )
-  hk <- as.character(id)
-  txt <- if (!is.na(HINT_TEXT[hk])) HINT_TEXT[hk] else ""
-  if (!is.null(e$hintLabel)) tkconfigure(e$hintLabel, text = txt)
+  updateHintLabel(e, id)
 
   if (id == 0)
   {
@@ -957,9 +963,11 @@ showPicture <- function(e)
 
   print(paste("showPicture : calling set 'specimen, id' : ", e$currImgId) )
   if (!is.null(e$statusLabel)) {
+    p <- e$activeDataList[[e$currImgId]][[1]]
+    nm <- if (is.null(p) || !nzchar(p)) paste0("specimen ", e$currImgId) else basename(p)
     setStatus(e,
       paste0("Specimen ", e$currImgId, " of ", length(e$activeDataList),
-             " \u2014 ", basename(e$activeDataList[[e$currImgId]][[1]])),
+             " \u2014 ", nm),
       "neutral")
   }
   set("specimen", "id", e$currImgId)
@@ -987,6 +995,7 @@ showPicture <- function(e)
   updateWidgets(e)
   refreshNavButtons(e)
   updateStepLabel(e)
+  updateHintLabel(e)
 }
 
 
@@ -1553,11 +1562,6 @@ if(0)
     tclvalue(e$placeAnchorsVar) <- "0"
     tkconfigure(e$bt, state = "normal")
   }
-  refreshTabGating(e)
-  populateSpecimenCombo(e)
-  updateStepLabel(e)
-
-
 
   dgtDataList <- list()
   specId <- 1
@@ -1742,6 +1746,10 @@ if (!is.null(curves) && length(curves) > 0 && nrow(curves) > 0)
 }
 
     e$activeDataList <- dgtDataList
+
+    refreshTabGating(e)
+    populateSpecimenCombo(e)
+    updateStepLabel(e)
 
 # this line makes things look ugly !
 #draw.digitize(e, 1, e$activeDataList[[1]][[1]], e$activeDataList[[1]][[10]])

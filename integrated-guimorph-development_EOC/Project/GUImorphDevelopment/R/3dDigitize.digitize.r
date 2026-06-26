@@ -779,6 +779,8 @@ loadLandmark <- function(e)
   e$activeDataList[[e$currImgId]][[3]] <- e$landmarkNum
   tkconfigure(e$landMarkNumLabel,
               text = paste("Number of Landmarks: ", e$landmarkNum))
+  refreshTabGating(e)
+  updateStepLabel(e)
 }
 
 
