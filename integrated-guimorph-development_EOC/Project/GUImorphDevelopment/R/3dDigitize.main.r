@@ -202,6 +202,20 @@ refreshTabGating <- function(e) {
   invisible()
 }
 
+.STATUS_FG <- c(
+  neutral = "#000000",
+  info    = "#1a5fb4",
+  success = "#2e7d32",
+  warning = "#b35900",
+  error   = "#c01c28"
+)
+
+setStatus <- function(e, text, state = "neutral") {
+  if (is.null(e$statusLabel)) return(invisible())
+  tkconfigure(e$statusLabel, text = text,
+              foreground = .STATUS_FG[[state]])
+}
+
 #initializes parameters for main component
 init.main <- function(e)
 {
@@ -241,6 +255,23 @@ switchTab <- function(e, id)
 {
   print (" ")
   print ("3dDigitize.main ... switch tabs line 139")
+
+
+  numId <- suppressWarnings(as.integer(id))
+  if (!is.na(numId) && numId >= 1 && numId <= 4 && e$tabState[numId] == 0) {
+    if (length(e$activeDataList) == 0) {
+      setStatus(e, "Load a PLY or DGT file to begin.", "info")
+    } else if (numId == 2) {
+      setStatus(e, "Surface Sliders aren\u2019t part of this version yet.", "warning")
+    } else if (numId == 3) {
+      setStatus(e, "Curves are coming in a later update.", "warning")
+    } else if (numId == 4) {
+      setStatus(e, "GPA unlocks once all landmarks are placed on this specimen.", "warning")
+    } else if (numId == 1) {
+      setStatus(e, "Load a specimen to use the Anchors tab.", "info")
+    }
+    return(invisible())
+  }
 
   if (id == 0)
   {
