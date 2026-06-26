@@ -113,7 +113,13 @@ doUndo <- function(e) {
     }
   } else if (entry$action == "move") {
     before <- entry$before
-    if (set("dot", "selected", scr[1], scr[2])) {
+    # Re-select at release screen (where marker sits after drag); fall back to
+    # drag-start screen if the user rotated/zoomed before Ctrl+Z.
+    selected <- set("dot", "selected", scr[1], scr[2])
+    if (!selected && !is.null(entry$screenStart)) {
+      selected <- set("dot", "selected", entry$screenStart[1], entry$screenStart[2])
+    }
+    if (selected) {
       set("dot", "coordinate", before[1], before[2], before[3])
       msg <- if (entry$kind == "anchor") "Undid anchor move" else "Undid landmark move"
       ok <- TRUE
@@ -621,7 +627,8 @@ onLeftBtnRelease <- function(e, x, y)
           kind = if (e$tab == 1) "anchor" else "landmark",
           before = e$dragStartCoord,
           after = after,
-          screen = e$dragStartScreen
+          screen = c(as.integer(x), as.integer(y)),
+          screenStart = e$dragStartScreen
         ))
       }
     }
