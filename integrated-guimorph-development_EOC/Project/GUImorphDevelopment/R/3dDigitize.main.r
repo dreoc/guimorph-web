@@ -805,7 +805,6 @@ ui.main <- function(e)
 }
 
 
-
 bind.accelerators <- function(e)
 {
   tkbind(e$wnd, "<Control-o>", function() loadPly(e))
@@ -815,8 +814,58 @@ bind.accelerators <- function(e)
   tkbind(e$wnd, "<Control-f>", function() onFit(e))
 }
 
-#configures file menu
+showShortcutsDialog <- function(e)
+{
+  win <- tktoplevel(parent = e$wnd)
+  tkwm.title(win, "Keyboard Shortcuts")
+  tkwm.transient(win, e$wnd)
+  tkgrab(win)
 
+  contentFrame <- ttkframe(win)
+  tkpack(
+    contentFrame,
+    expand = TRUE,
+    fill = "both",
+    padx = 10,
+    pady = 10
+  )
+
+  shortcuts <- c(
+    "Ctrl+O    Load PLY File",
+    "Ctrl+S    Save to DGT",
+    "Ctrl+[    Previous specimen",
+    "Ctrl+]    Next specimen",
+    "Ctrl+F    Fit view",
+    "Ctrl+Z    Undo last landmark/anchor action"
+  )
+  for (line in shortcuts) {
+    tkpack(
+      ttklabel(contentFrame, text = line, anchor = "w"),
+      fill = "x",
+      pady = 2
+    )
+  }
+
+  tkpack(
+    ttklabel(
+      contentFrame,
+      text = "Previous/Next shortcuts respect the same tab and placement gating as the nav buttons.",
+      wraplength = 360
+    ),
+    fill = "x",
+    pady = c(8, 0)
+  )
+
+  btnFrame <- ttkframe(win)
+  tkpack(btnFrame, fill = "x", padx = 10, pady = 10)
+  tkpack(
+    ttkbutton(btnFrame, text = "OK", command = function() tkdestroy(win)),
+    side = "right"
+  )
+}
+
+#configures file menu
+createMenu <- function(e)
 {
   topMenu <- tkmenu(e$wnd)
   tkconfigure(e$wnd, menu = topMenu)
@@ -898,6 +947,16 @@ bind.accelerators <- function(e)
       onExit(e)
   )
   tkadd(topMenu, "cascade", label = "File", menu = fileMenu)
+
+  helpMenu <- tkmenu(topMenu, tearoff = FALSE)
+  tkadd(
+    helpMenu,
+    "command",
+    label = "Keyboard Shortcuts",
+    command = function()
+      showShortcutsDialog(e)
+  )
+  tkadd(topMenu, "cascade", label = "Help", menu = helpMenu)
 }
 
 
