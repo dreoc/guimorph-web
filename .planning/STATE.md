@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: GUImorph UI Modernization
 status: executing
-stopped_at: Phase 13 executed (2/2 plans) — awaiting human UAT
-last_updated: "2026-06-25"
-last_activity: 2026-06-25 — Phase 13 executed (guided workflow & discoverability); code review fixes applied; 5 UAT items pending
+stopped_at: Phase 13 complete — ready to plan Phase 14
+last_updated: "2026-06-26"
+last_activity: 2026-06-26 — Phase 13 shipped + UAT confirmed (guided workflow & discoverability; UX-WF-01..04 validated)
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 15
   completed_plans: 12
-  percent: 80
+  percent: 83
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-24)
 
 **Core value:** A researcher runs the full digitize → analyze workflow in a GUI that feels modern, gives clear in-app feedback, and doesn't interrupt with modal nags — without changing the C/OpenGL renderer or breaking `.dgt` files.
-**Current focus:** v1.1 Phase 13 executed (2/2 plans) — Guided Workflow & Discoverability awaiting human UAT.
+**Current focus:** v1.1 Phase 14 next — Keyboard Shortcuts & Undo (Phase 13 shipped + UAT 2026-06-26).
 
 ## Current Position
 
 Milestone: **v1.1 UI Modernization** — executing  
-Phases: 3/6 complete (10, 11, 12 shipped); Phase 13 plans done, UAT pending  
-Requirements: 10/18 validated (+ 3 constraints)  
+Phases: 4/6 complete (10, 11, 12, 13 shipped + UAT)  
+Requirements: 14/18 validated (+ 3 constraints)  
 Previous: **v1.0 ARCHIVED** (2026-06-23) — 9/9 phases, 22/22 reqs, tag `v1.0`
 
-Progress: [████████░░] 80%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
@@ -56,6 +56,8 @@ Progress: [████████░░] 80%
 - **PLY load progress** — determinate per-file bar in `loadPly` with inline failure status (2026-06-25)
 - **Status bar visibility** — `.center_toplevel` sets explicit `WxH+X+Y` capped to screen (95%/90%) so bottom-docked status bar is never off-screen (2026-06-25 UAT fix)
 - **Nav button state** — `refreshNavButtons(e)` enables/disables Prev/Next by specimen position only; incomplete landmark/anchor counts show inline warning without trapping buttons (2026-06-25 UAT fix)
+- **Unified tab gating** — `refreshTabGating(e)` unlock-on-load for Anchors; GPA gated on current-specimen landmark count; Place Anchors checkbox decoupled from tab availability (2026-06-26)
+- **Workflow discoverability** — disabled-tab status explanations, `e$stepLabel` step indicator, `e$hintLabel` placement hints, jump-to specimen combobox, Specimen N of M counter (2026-06-26)
 
 ### Blockers/Concerns
 

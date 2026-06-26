@@ -54,11 +54,11 @@ Full phase details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 - [x] [12-03](phases/12-in-gui-feedback-status/12-03-PLAN.md) — Compute-gate inline conversion + GPA busy feedback (wave 2) (UX-FB-03/02/01)
 - [x] [12-04](phases/12-in-gui-feedback-status/12-04-PLAN.md) — PLY load determinate progress + load failure status (wave 3) (UX-FB-02/01)
 
-#### Phase 13: Guided Workflow & Discoverability
+#### Phase 13: Guided Workflow & Discoverability ✅
 **Goal:** Make the digitize order and placement model obvious — placement hints, transparent/streamlined tab-gating, "specimen N of M" with jump-to.
-**Requirements:** UX-WF-01, UX-WF-02, UX-WF-03, UX-WF-04
+**Requirements:** UX-WF-01, UX-WF-02, UX-WF-03, UX-WF-04 — validated 2026-06-26
 **Depends on:** Phase 12 (uses the status/feedback surface).
-**Plans:** 2 plans in 2 waves (planned 2026-06-25)
+**Plans:** 2 plans in 2 waves — shipped + UAT 2026-06-26
 - [x] [13-01](phases/13-guided-workflow-discoverability/13-01-PLAN.md) — Unified unlock-on-load tab-gating + disabled-tab click-to-explain + step indicator (wave 1) (UX-WF-04/02)
 - [x] [13-02](phases/13-guided-workflow-discoverability/13-02-PLAN.md) — Placement hint + specimen counter + jump-to combobox (wave 2) (UX-WF-01/03)
 
@@ -82,7 +82,7 @@ Full phase details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 | 10 | v1.1 | 3/3 | Shipped | 2026-06-24 |
 | 11 | v1.1 | 4/4 | Shipped | 2026-06-24 |
 | 12 | v1.1 | 4/4 | Shipped + UAT | 2026-06-25 |
-| 13 | v1.1 | 2/2 | Awaiting UAT | — |
+| 13 | v1.1 | 2/2 | Shipped + UAT | 2026-06-26 |
 | 14 | v1.1 | 0 | Not started | — |
 | 15 | v1.1 | 0 | Not started | — |
 
