@@ -577,7 +577,7 @@ switchTab <- function(e, id)
    curves <- e$activeDataList[[1]][[4]]    # make it exist even if null
    ## print (e$activeDataList[[1]][[4]])
 
-if (!is.null(curves) && nrow(curves) > 0) {
+    if (!is.null(curves) && nrow(curves) > 0) {
       .redrawAllCurves(e)
     }
     }
@@ -824,8 +824,8 @@ showShortcutsDialog <- function(e)
     "Ctrl+S    Save to DGT",
     "Ctrl+[    Previous specimen",
     "Ctrl+]    Next specimen",
-    "Ctrl+F    Fit view",
-    "Ctrl+Z    Undo last landmark/anchor action"
+    "Ctrl+F    Fit view (Curves tab: Reset view button)",
+    "Ctrl+Z    Undo last landmark, anchor, or curve segment action"
   )
   for (line in shortcuts) {
     tkpack(
