@@ -663,7 +663,7 @@ ui.main <- function(e)
   centerFrame <- tkframe(e$wnd, width = 600, height = 670)
 
   titleFrame <- ttkframe(centerFrame)
-  e$imgPath <- ttklabel(titleFrame, text = "Specimen Id: NA")
+  e$imgPath <- ttklabel(titleFrame, text = "Specimen: \u2014")
   tkpack(e$imgPath)
   tkpack(titleFrame)
 
@@ -958,9 +958,8 @@ showPicture <- function(e)
   print(paste("showPicture : calling set 'specimen, id' : ", e$currImgId) )
   if (!is.null(e$statusLabel)) {
     setStatus(e,
-      paste0("Specimen ", e$currImgId,
-             " \u2014 ", e$currImgId,
-             " of ", length(e$activeDataList)),
+      paste0("Specimen ", e$currImgId, " of ", length(e$activeDataList),
+             " \u2014 ", basename(e$activeDataList[[e$currImgId]][[1]])),
       "neutral")
   }
   set("specimen", "id", e$currImgId)
@@ -1427,7 +1426,7 @@ loadPly <- function(e)
                   text = paste("Number of Specimens: ", nSpecimens))
       tkconfigure(e$specimenNumLabel2,
                   text = paste("Number of Specimens: ", nSpecimens))
-      tkconfigure(e$imgPath, text = paste("Specimen Id: ", dgtDataList[[1]][[1]]))
+      tkconfigure(e$imgPath, text = paste0("Specimen ", e$currImgId, " of ", length(e$activeDataList)))
 
       if (0)
       {
@@ -2581,7 +2580,7 @@ loadPlyTest <- function(e, yourFileName)
                   text = paste("Number of Specimens: ", nSpecimens))
       tkconfigure(e$specimenNumLabel2,
                   text = paste("Number of Specimens: ", nSpecimens))
-      tkconfigure(e$imgPath, text = paste("Specimen Id: ", dgtDataList[[1]][[1]]))
+      tkconfigure(e$imgPath, text = paste0("Specimen ", e$currImgId, " of ", length(e$activeDataList)))
 
       if (1)
       {

@@ -83,10 +83,10 @@ ui.digitize <- function(e, parent)
       command = function()
         onLmCountChange(e)
     )
-  tkbind(e$lmCountSpin, "<Return>", function()
+  tkbind(e$lmCountSpin, "<Return>", function() {
     onLmCountChange(e)
   })
-  tkbind(e$lmCountSpin, "<FocusOut>", function()
+  tkbind(e$lmCountSpin, "<FocusOut>", function() {
     onLmCountChange(e)
   })
   loadLandmarkBtn <-
@@ -214,10 +214,10 @@ ui.anchor <- function(e, parent)
       command = function()
         onAnchorCountChange(e)
     )
-  tkbind(e$anchorCountSpin, "<Return>", function()
+  tkbind(e$anchorCountSpin, "<Return>", function() {
     onAnchorCountChange(e)
   })
-  tkbind(e$anchorCountSpin, "<FocusOut>", function()
+  tkbind(e$anchorCountSpin, "<FocusOut>", function() {
     onAnchorCountChange(e)
   })
 
@@ -643,6 +643,126 @@ onPlaceAnchor <- function(e)
 
 
 
+#Pop up window for setting number of landmarks
+setLandmarkNum <- function(e)
+{
+  win <- tktoplevel()
+  tkwm.title(win, "Set Landmark Number")
+
+  entryFrame <- ttkframe(win)
+  tkpack(
+    entryFrame,
+    expand = TRUE,
+    fill = "both",
+    padx = 5,
+    pady = 5
+  )
+  label = tklabel(entryFrame, text = 'Set landmark Number: ')
+
+  e$landmarkEntry = tkentry(entryFrame, textvariable = tclVar(e$landmarkNum))
+  sapply(list(label, e$landmarkEntry),
+         tkpack,
+         side = "left",
+         padx = 6)
+
+  btnFrame <- ttkframe(win)
+  tkpack(btnFrame,
+         fill = "x",
+         padx = 5,
+         pady = 5)
+  cancelBtn <-
+    ttkbutton(
+      btnFrame,
+      text = "cancel",
+      command = function()
+        tkdestroy(win)
+    )
+  okBtn <-
+    ttkbutton(
+      btnFrame,
+      text = "ok",
+      command = function()
+        onlandmarkNumOk(e, win)
+    )
+
+  tkpack(
+    ttklabel(btnFrame, text = " "),
+    expand = TRUE,
+    fill = "y",
+    side = "left"
+  )
+  sapply(list(cancelBtn, okBtn),
+         tkpack,
+         side = "left",
+         padx = 6)
+
+  tkfocus(win)
+}
+
+
+
+
+
+
+#Pop up window for setting number of anchors
+setAnchorNum <- function(e)
+{
+  win <- tktoplevel()
+  tkwm.title(win, "Set Anchor Number")
+
+  entryFrame <- ttkframe(win)
+  tkpack(
+    entryFrame,
+    expand = TRUE,
+    fill = "both",
+    padx = 5,
+    pady = 5
+  )
+  label = tklabel(entryFrame, text = 'Set anchor Number: ')
+
+  e$anchorEntry = tkentry(entryFrame, textvariable = tclVar(e$anchorNum))
+  sapply(list(label, e$anchorEntry),
+         tkpack,
+         side = "left",
+         padx = 6)
+
+  btnFrame <- ttkframe(win)
+  tkpack(btnFrame,
+         fill = "x",
+         padx = 5,
+         pady = 5)
+  cancelBtn <-
+    ttkbutton(
+      btnFrame,
+      text = "cancel",
+      command = function()
+        tkdestroy(win)
+    )
+  okBtn <-
+    ttkbutton(
+      btnFrame,
+      text = "ok",
+      command = function()
+        onanchorNumOk(e, win)
+    )
+
+  tkpack(
+    ttklabel(btnFrame, text = " "),
+    expand = TRUE,
+    fill = "y",
+    side = "left"
+  )
+  sapply(list(cancelBtn, okBtn),
+         tkpack,
+         side = "left",
+         padx = 6)
+
+  tkfocus(win)
+}
+
+
+
+
 
 #loads landmark file
 loadLandmark <- function(e)
@@ -696,10 +816,42 @@ deleteAnchor <- function(e, x, y)
 
 
 
+# Guard against the Tk multi-click cascade: only <Double-Button-1> is bound for
+# placement, and Tk re-fires that binding for the 3rd/4th clicks of a rapid burst
+# (no <Triple-Button-1>/<Quadruple-Button-1> binding to absorb them). One jittery
+# double/triple-click can therefore call addDot/addAnchor several times a few
+# pixels apart, placing phantom points. Treat a placement that lands within a few
+# pixels of the previous one within 400 ms as the same gesture and ignore it. A
+# deliberate second placement is always farther away and/or slower, so normal
+# double-click placement (which fires the handler exactly once) is unaffected.
+.placeIsDuplicate <- function(e, x, y)
+{
+  now <- as.numeric(Sys.time())
+  xi <- as.integer(x)
+  yi <- as.integer(y)
+  prev <- e$lastPlace
+  dup <- FALSE
+  if (!is.null(prev) &&
+      (now - prev$t) < 0.4 &&
+      abs(xi - prev$x) <= 8 &&
+      abs(yi - prev$y) <= 8)
+  {
+    dup <- TRUE
+  }
+  e$lastPlace <- list(t = now, x = xi, y = yi)
+  dup
+}
+
+
 #adds one landmark
 addDot <- function(e, x, y)
 {
   print(paste("line 908 : function addDot : ", x, y))
+  if (.placeIsDuplicate(e, x, y))
+  {
+    print("INFO : ignoring duplicate landmark from multi-click burst")
+    return(invisible())
+  }
   if (length(e$activeDataList) > 0)
   {
     dotNum <- e$activeDataList[[e$currImgId]][[3]]
@@ -745,6 +897,11 @@ addDot <- function(e, x, y)
 addAnchor <- function(e, x, y)
 {
   print(paste("line 954 : function addAnchor : ", x, y))
+  if (.placeIsDuplicate(e, x, y))
+  {
+    print("INFO : ignoring duplicate anchor from multi-click burst")
+    return(invisible())
+  }
   if (length(e$activeDataList) > 0)
   {
     anchorNum <- e$activeDataList[[e$currImgId]][[9]]
@@ -794,6 +951,21 @@ updateDotNum <- function(e, delt)
   refreshTabGating(e)
   updateStepLabel(e)
 
+  nTarget <- as.integer(e$landmarkNum)
+  if (!is.null(e$statusLabel)) {
+    if (nDots < nTarget) {
+      setStatus(e,
+        paste0("Place all ", nTarget, " landmarks before continuing \u2014 ",
+               nDots, " of ", nTarget, " placed."),
+        "warning")
+    } else {
+      setStatus(e,
+        paste0("Specimen ", e$currImgId, " of ", length(e$activeDataList),
+               " \u2014 ", basename(e$activeDataList[[e$currImgId]][[1]])),
+        "neutral")
+    }
+  }
+
 }
 
 
@@ -812,6 +984,22 @@ updateAnchorNum <- function(e, delt)
 
   refreshTabGating(e)
   updateStepLabel(e)
+
+  nTarget <- as.integer(e$anchorNum)
+  if (!is.null(e$statusLabel) &&
+      tclvalue(e$placeAnchorsVar) == "1") {
+    if (nAnchors < nTarget) {
+      setStatus(e,
+        paste0("Place all ", nTarget, " anchors before continuing \u2014 ",
+               nAnchors, " of ", nTarget, " placed."),
+        "warning")
+    } else {
+      setStatus(e,
+        paste0("Specimen ", e$currImgId, " of ", length(e$activeDataList),
+               " \u2014 ", basename(e$activeDataList[[e$currImgId]][[1]])),
+        "neutral")
+    }
+  }
 }
 
 
@@ -832,7 +1020,7 @@ updateWidgets.digitize <- function(e)
     tkconfigure(e$lmCountSpin, from = max(1L, as.integer(dotNum)))
   }
   tkconfigure(e$landMarkNumLabel, text = paste("Number of Landmarks: ", dotNum))
-  tkconfigure(e$imgPath, text = paste("Specimen Id: ", e$activeDataList[[e$currImgId]][[1]]))
+  tkconfigure(e$imgPath, text = paste0("Specimen ", e$currImgId, " of ", length(e$activeDataList)))
 }
 
 
@@ -852,7 +1040,7 @@ updateWidgets.anchor <- function(e)
     tkconfigure(e$anchorCountSpin, from = max(1L, as.integer(anchorNum)))
   }
   tkconfigure(e$anchorNumLabel, text = paste("Number of Anchors: ", anchorNum))
-  tkconfigure(e$imgPath, text = paste("Specimen Id: ", e$activeDataList[[e$currImgId]][[1]]))
+  tkconfigure(e$imgPath, text = paste0("Specimen ", e$currImgId, " of ", length(e$activeDataList)))
 }
 
 
