@@ -305,13 +305,18 @@ refreshTabGating <- function(e) {
   loaded <- length(e$activeDataList) > 0
   tcl(e$nb, "tab", 1, state = if (loaded) "normal" else "disabled")
   e$tabState[1] <- if (loaded) 1L else 0L
+  lmOk <- loaded &&
+    as.integer(e$activeDataList[[e$currImgId]][[3]]) == as.integer(e$landmarkNum)
+  prev23 <- e$tabState[2:3]
   for (i in c(2L, 3L)) {
-    tcl(e$nb, "tab", i, state = "disabled")
-    e$tabState[i] <- 0L
+    tcl(e$nb, "tab", i, state = if (lmOk) "normal" else "disabled")
+    e$tabState[i] <- if (lmOk) 1L else 0L
   }
-  gpaOk <- loaded && e$activeDataList[[e$currImgId]][[3]] == e$landmarkNum
-  tcl(e$nb, "tab", 4, state = if (gpaOk) "normal" else "disabled")
-  e$tabState[4] <- if (gpaOk) 1L else 0L
+  tcl(e$nb, "tab", 4, state = if (lmOk) "normal" else "disabled")
+  e$tabState[4] <- if (lmOk) 1L else 0L
+  if (lmOk && any(prev23 == 0L)) {
+    setStatus(e, "Surface Sliders and Curves unlocked.", "success")
+  }
   invisible()
 }
 
@@ -394,11 +399,32 @@ switchTab <- function(e, id)
     if (length(e$activeDataList) == 0) {
       setStatus(e, "Load a PLY or DGT file to begin.", "info")
     } else if (numId == 2) {
-      setStatus(e, "Surface Sliders aren\u2019t part of this version yet.", "warning")
+      nPlaced <- e$activeDataList[[e$currImgId]][[3]]
+      if (is.null(nPlaced)) nPlaced <- 0
+      target <- as.integer(e$landmarkNum)
+      setStatus(e,
+        paste0("Place all ", target,
+               " landmarks to unlock Surface Sliders \u2014 ",
+               nPlaced, " of ", target, " placed."),
+        "warning")
     } else if (numId == 3) {
-      setStatus(e, "Curves are coming in a later update.", "warning")
+      nPlaced <- e$activeDataList[[e$currImgId]][[3]]
+      if (is.null(nPlaced)) nPlaced <- 0
+      target <- as.integer(e$landmarkNum)
+      setStatus(e,
+        paste0("Place all ", target,
+               " landmarks to unlock Curves \u2014 ",
+               nPlaced, " of ", target, " placed."),
+        "warning")
     } else if (numId == 4) {
-      setStatus(e, "GPA unlocks once all landmarks are placed on this specimen.", "warning")
+      nPlaced <- e$activeDataList[[e$currImgId]][[3]]
+      if (is.null(nPlaced)) nPlaced <- 0
+      target <- as.integer(e$landmarkNum)
+      setStatus(e,
+        paste0("Place all ", target,
+               " landmarks to unlock GPA \u2014 ",
+               nPlaced, " of ", target, " placed."),
+        "warning")
     } else if (numId == 1) {
       setStatus(e, "Load a specimen to use the Anchors tab.", "info")
     }
