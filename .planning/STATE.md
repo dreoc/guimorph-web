@@ -1,16 +1,17 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.1
-milestone_name: UI Modernization
-status: Ready to execute
-stopped_at: Phase 12 context gathered
-last_updated: "2026-06-25T22:11:31.776Z"
+milestone_name: GUImorph UI Modernization
+status: executing
+stopped_at: Phase 13 executed (2/2 plans) — awaiting human UAT
+last_updated: "2026-06-25"
+last_activity: 2026-06-25 — Phase 13 executed (guided workflow & discoverability); code review fixes applied; 5 UAT items pending
 progress:
   total_phases: 6
-  completed_phases: 2
-  total_plans: 7
-  completed_plans: 6
-  percent: 50
+  completed_phases: 3
+  total_plans: 15
+  completed_plans: 12
+  percent: 80
 ---
 
 # Project State
@@ -20,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-24)
 
 **Core value:** A researcher runs the full digitize → analyze workflow in a GUI that feels modern, gives clear in-app feedback, and doesn't interrupt with modal nags — without changing the C/OpenGL renderer or breaking `.dgt` files.
-**Current focus:** v1.1 Phase 11 complete (all 4 plans shipped); ready for Phase 12 — In-GUI Feedback & Status.
+**Current focus:** v1.1 Phase 13 executed (2/2 plans) — Guided Workflow & Discoverability awaiting human UAT.
 
 ## Current Position
 
 Milestone: **v1.1 UI Modernization** — executing  
-Phases: 2/6 complete (10, 11 shipped 2026-06-24)  
-Requirements: 7/18 validated (+ 3 constraints)  
+Phases: 3/6 complete (10, 11, 12 shipped); Phase 13 plans done, UAT pending  
+Requirements: 10/18 validated (+ 3 constraints)  
 Previous: **v1.0 ARCHIVED** (2026-06-23) — 9/9 phases, 22/22 reqs, tag `v1.0`
 
-Progress: [█████░░░░░] 50%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -50,6 +51,11 @@ Progress: [█████░░░░░] 50%
 - **ttkscale size sliders (0.001–0.050, 0.001 grain)** replace +/- steppers on Digitize and Anchor tabs; `onLmSizeSlide` reads linked `tclVar`, quantizes, calls `set("dot",attr,v)`, persists `[[2]]` (2026-06-24)
 - **ttkspinbox count controls (1–100, placed-count floor)** replace modal setLandmarkNum/setAnchorNum on Digitize and Anchor tabs; clamp on Return/FocusOut (2026-06-24)
 - **Immediate right-click delete** via inline `del()` + `updateDotNum`/`updateAnchorNum`; `popUpRemoveWindow` and `digRemove*` handlers removed (2026-06-24)
+- **Status bar + feedback helpers** — `.STATUS_FG`, `setStatus`/`busyStart`/`busyStop`, bottom status bar with shared `ttkprogressbar` (2026-06-25)
+- **Non-blocking validation** — 12 flow-control `tkmessageBox` modals replaced with inline status; GPA compute wrapped in indeterminate busy feedback (2026-06-25)
+- **PLY load progress** — determinate per-file bar in `loadPly` with inline failure status (2026-06-25)
+- **Status bar visibility** — `.center_toplevel` sets explicit `WxH+X+Y` capped to screen (95%/90%) so bottom-docked status bar is never off-screen (2026-06-25 UAT fix)
+- **Nav button state** — `refreshNavButtons(e)` enables/disables Prev/Next by specimen position only; incomplete landmark/anchor counts show inline warning without trapping buttons (2026-06-25 UAT fix)
 
 ### Blockers/Concerns
 
@@ -92,5 +98,5 @@ Identified from GUI source + README "Known quirks":
 ## Session Continuity
 
 Last session: 2026-06-25
-Stopped at: Phase 12 context gathered
-Resume file: .planning/phases/12-in-gui-feedback-status/12-CONTEXT.md
+Stopped at: Phase 13 planned (2 plans, 2 waves) — ready to execute
+Resume file: .planning/phases/13-guided-workflow-discoverability/13-01-PLAN.md

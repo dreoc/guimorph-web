@@ -29,51 +29,46 @@ Full phase details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 > Strategy: modernize in place on Tk/ttk; the C/OpenGL renderer and `.dgt` format are unchanged (CON-01/02/03). Order runs low-risk visual foundation first → controls → feedback → guidance → shortcuts → the more isolated Curve functional work last.
 
 #### Phase 10: Visual Chrome & Menu Cleanup
-
 **Goal:** A clean, themed, end-user-appropriate shell — no developer/diagnostic clutter, consistent widgets, resizable centered window, corrected wording.
 **Requirements:** UX-MENU-01, UX-MENU-02, UX-MENU-03
 **Why first:** Lowest-risk, high visual payoff, and establishes the theming/layout foundation later phases build on. No logic changes.
 **Plans:** 3 (planned 2026-06-24) — [10-01](phases/10-visual-chrome-menu-cleanup/10-01-PLAN.md) File menu cleanup · [10-02](phases/10-visual-chrome-menu-cleanup/10-02-PLAN.md) Themed/resizable/centered shell · [10-03](phases/10-visual-chrome-menu-cleanup/10-03-PLAN.md) Widget unification + wording + smoke UAT
 
 #### Phase 11: Direct-Manipulation Controls
-
 **Goal:** Replace modal/stepper interactions with inline controls — spinbox counts, size slider, non-modal delete, responsive viewport + panel.
 **Requirements:** UX-CTL-01, UX-CTL-02, UX-CTL-03, UX-CTL-04
 **Depends on:** Phase 10 (layout/theme foundation).
 **Plans:** 4 (planned 2026-06-24)
-
 - [x] [11-01](phases/11-direct-manipulation-controls/11-01-PLAN.md) — Live size slider on Digitize + Anchor tabs (UX-CTL-01)
 - [x] [11-02](phases/11-direct-manipulation-controls/11-02-PLAN.md) — Inline count spinbox with placed-count floor (UX-CTL-02)
 - [x] [11-03](phases/11-direct-manipulation-controls/11-03-PLAN.md) — Non-modal immediate right-click delete (UX-CTL-03)
 - [x] [11-04](phases/11-direct-manipulation-controls/11-04-PLAN.md) — Responsive viewport + panel resize, debounced (UX-CTL-04)
 
-#### Phase 12: In-GUI Feedback & Status
-
+#### Phase 12: In-GUI Feedback & Status ✅
 **Goal:** A status bar + progress feedback; route key console output to the GUI; make validation non-blocking instead of modal nags.
-**Requirements:** UX-FB-01, UX-FB-02, UX-FB-03
-**Depends on:** Phase 10 (shell has a place for the status area).**Plans:** 4 plans in 3 waves (planned 2026-06-25)
-
-- [ ] [12-01](phases/12-in-gui-feedback-status/12-01-PLAN.md) — Status API helpers + status bar widgets + env-storage gaps (wave 1) (UX-FB-01/02/03)
-- [ ] [12-02](phases/12-in-gui-feedback-status/12-02-PLAN.md) — Nav-gate modal→inline conversion + proactive disable + showPicture parity (wave 2) (UX-FB-03/01)
-- [ ] [12-03](phases/12-in-gui-feedback-status/12-03-PLAN.md) — Compute-gate inline conversion + GPA busy feedback (wave 2) (UX-FB-03/02/01)
-- [ ] [12-04](phases/12-in-gui-feedback-status/12-04-PLAN.md) — PLY load determinate progress + load failure status (wave 3) (UX-FB-02/01)
+**Requirements:** UX-FB-01, UX-FB-02, UX-FB-03 — validated 2026-06-25
+**Depends on:** Phase 10 (shell has a place for the status area).
+**Plans:** 4 plans in 3 waves (planned 2026-06-25) — shipped + UAT 2026-06-25
+- [x] [12-01](phases/12-in-gui-feedback-status/12-01-PLAN.md) — Status API helpers + status bar widgets + env-storage gaps (wave 1) (UX-FB-01/02/03)
+- [x] [12-02](phases/12-in-gui-feedback-status/12-02-PLAN.md) — Nav-gate modal→inline conversion + proactive disable + showPicture parity (wave 2) (UX-FB-03/01)
+- [x] [12-03](phases/12-in-gui-feedback-status/12-03-PLAN.md) — Compute-gate inline conversion + GPA busy feedback (wave 2) (UX-FB-03/02/01)
+- [x] [12-04](phases/12-in-gui-feedback-status/12-04-PLAN.md) — PLY load determinate progress + load failure status (wave 3) (UX-FB-02/01)
 
 #### Phase 13: Guided Workflow & Discoverability
-
 **Goal:** Make the digitize order and placement model obvious — placement hints, transparent/streamlined tab-gating, "specimen N of M" with jump-to.
 **Requirements:** UX-WF-01, UX-WF-02, UX-WF-03, UX-WF-04
 **Depends on:** Phase 12 (uses the status/feedback surface).
-**Plans:** 2/2 plans complete
+**Plans:** 2 plans in 2 waves (planned 2026-06-25)
+- [x] [13-01](phases/13-guided-workflow-discoverability/13-01-PLAN.md) — Unified unlock-on-load tab-gating + disabled-tab click-to-explain + step indicator (wave 1) (UX-WF-04/02)
+- [x] [13-02](phases/13-guided-workflow-discoverability/13-02-PLAN.md) — Placement hint + specimen counter + jump-to combobox (wave 2) (UX-WF-01/03)
 
 #### Phase 14: Keyboard Shortcuts & Undo
-
 **Goal:** Accelerators for common actions and an undo for landmark/anchor placement & deletion.
 **Requirements:** UX-KEY-01, UX-KEY-02
 **Depends on:** Phase 11 (delete/placement paths settled before adding undo).
 **Plans:** TBD via `/gsd-plan-phase 14`
 
 #### Phase 15: Curve Tab Rehabilitation
-
 **Goal:** Re-enable the commented-out Curve controls, make curve definition round-trip through `.dgt`, and reconcile UI with the README.
 **Requirements:** UX-CRV-01, UX-CRV-02
 **Why last:** Most isolated functional work and the only phase touching curve behavior; benefits from the modernized control patterns from Phases 11–14.
@@ -86,8 +81,8 @@ Full phase details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 | 1–9 | v1.0 | 28/28 | Shipped | 2026-06-23 |
 | 10 | v1.1 | 3/3 | Shipped | 2026-06-24 |
 | 11 | v1.1 | 4/4 | Shipped | 2026-06-24 |
-| 12 | v1.1 | 0/4 | Planned | — |
-| 13 | v1.1 | 2/2 | Complete   | 2026-06-26 |
+| 12 | v1.1 | 4/4 | Shipped + UAT | 2026-06-25 |
+| 13 | v1.1 | 2/2 | Awaiting UAT | — |
 | 14 | v1.1 | 0 | Not started | — |
 | 15 | v1.1 | 0 | Not started | — |
 
@@ -104,7 +99,6 @@ Parking-lot items (999.x) — not sequenced; promote with `/gsd-review-backlog` 
 **Plans:** 0 plans
 
 Plans:
-
 - [ ] TBD (promote with `/gsd-review-backlog` when ready)
 
 ### Phase 999.2: openDgt shows second specimen first on load (BACKLOG)
@@ -116,7 +110,6 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
-
 - [ ] TBD (promote with `/gsd-review-backlog` when ready)
 
 ---
