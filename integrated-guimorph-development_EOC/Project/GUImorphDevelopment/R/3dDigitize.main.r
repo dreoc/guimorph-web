@@ -187,6 +187,21 @@ write.vertex.3D <- function(content, key, fileName)
   )
 }
 
+refreshTabGating <- function(e) {
+  if (is.null(e$nb)) return(invisible())
+  loaded <- length(e$activeDataList) > 0
+  tcl(e$nb, "tab", 1, state = if (loaded) "normal" else "disabled")
+  e$tabState[1] <- if (loaded) 1L else 0L
+  for (i in c(2L, 3L)) {
+    tcl(e$nb, "tab", i, state = "disabled")
+    e$tabState[i] <- 0L
+  }
+  gpaOk <- loaded && e$activeDataList[[e$currImgId]][[3]] == e$landmarkNum
+  tcl(e$nb, "tab", 4, state = if (gpaOk) "normal" else "disabled")
+  e$tabState[4] <- if (gpaOk) 1L else 0L
+  invisible()
+}
+
 #initializes parameters for main component
 init.main <- function(e)
 {
@@ -996,37 +1011,7 @@ onNext <- function(e)
     add("specimen", e$activeDataList[[e$currImgId]][[1]], e$currImgId)
   }
 
-  for (i in 1:4)  # turn off the ability to change tabs on the GUI at this time
-  {
-    tcl(e$nb, "tab", i, state = "disabled")
-    e$tabState[i] <- 0
-  }
-
-  if (e$activeDataList[[e$currImgId]][[3]] == e$landmarkNum &&
-      tclvalue(e$placeAnchorsVar) == "0")
-  {
-    for (i in 2:4)
-    {
-      tcl(e$nb, "tab", i, state = "normal")
-      e$tabState[i] <- 1
-    }
-  }
-  else if (e$activeDataList[[e$currImgId]][[3]] == e$landmarkNum &&
-           tclvalue(e$placeAnchorsVar) == "1")
-  {
-    tcl(e$nb, "tab", 1, state = "normal")
-    e$tabState[1] <- 1
-  }
-
-
-  if (e$activeDataList[[e$currImgId]][[9]] == e$anchorNum)
-  {
-    for (i in 2:4)
-    {
-      tcl(e$nb, "tab", i, state = "normal")
-      e$tabState[i] <- 1
-    }
-  }
+  refreshTabGating(e)
 
 
   if (e$currImgId == length(e$activeDataList))
@@ -1105,6 +1090,7 @@ onPrevious <- function(e)
 
   add("specimen", e$activeDataList[[e$currImgId]][[1]], e$currImgId)
 
+  refreshTabGating(e)
   showPicture(e)
 }
 
@@ -1253,6 +1239,7 @@ loadPly <- function(e)
 
       set("specimen", "allocate", length(e$activeDataList))
       add("specimen", e$activeDataList[[1]][[1]], e$currImgId)
+      refreshTabGating(e)
     }
   }
 
@@ -1317,25 +1304,12 @@ if(0)
   if (!anyNA(anchors) && !is.null(anchors))
   {
     print("drawElements ... all anchors detected")
-    for (i in 1:4)
-    {
-      tcl(e$nb, "tab", i, state = "normal")
-      e$tabState[i] <- 1
-    }
     tclvalue(e$placeAnchorsVar) <- "1"
     tkconfigure(e$bt, state = "disabled")
   }
   else
   {
     print ("drawElements ... missing anchors detected")
-    for (i in 2:4)
-    {
-      tcl(e$nb, "tab", i, state = "normal")
-      e$tabState[i] <- 1
-    }
-
-    tcl(e$nb, "tab", 1, state = "disabled")
-    e$tabState[1] <- 0
     tclvalue(e$placeAnchorsVar) <- "0"
     tkconfigure(e$bt, state = "normal")
   }

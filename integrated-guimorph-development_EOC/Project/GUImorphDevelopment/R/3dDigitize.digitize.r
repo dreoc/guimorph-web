@@ -632,24 +632,7 @@ onPlaceAnchor <- function(e)
     return()
   }
 
-  if (e$activeDataList[[e$currImgId]][[3]] == e$landmarkNum &&
-      tclvalue(e$placeAnchorsVar) == "1")
-  {
-    tcl(e$nb, "tab", 1, state = "normal")
-    e$tabState[1] <- 1
-
-    if (e$activeDataList[[e$currImgId]][[9]] != e$anchorNum)
-    {
-      for (i in 2:4)
-      {
-        tcl(e$nb, "tab", i, state = "disabled")
-        e$tabState[i] <- 0
-      }
-    }
-  }
-
-  else
-    return()
+  refreshTabGating(e)
 }
 
 
@@ -807,20 +790,7 @@ updateDotNum <- function(e, delt)
   }
 
 
-  if (nDots == e$landmarkNum && tclvalue(e$placeAnchorsVar) == "1")
-  {
-    tcl(e$nb, "tab", 1, state = "normal")
-    e$tabState[1] <- 1
-  }
-  else if (nDots == e$landmarkNum &&
-           tclvalue(e$placeAnchorsVar) == "0")
-  {
-    for (i in 2:4)
-    {
-      tcl(e$nb, "tab", i, state = "normal")
-      e$tabState[i] <- 1
-    }
-  }
+  refreshTabGating(e)
 
 }
 
@@ -838,14 +808,7 @@ updateAnchorNum <- function(e, delt)
   }
 
 
-  if (nAnchors == e$anchorNum)
-  {
-    for (i in 2:4)
-    {
-      tcl(e$nb, "tab", i, state = "normal")
-      e$tabState[i] <- 1
-    }
-  }
+  refreshTabGating(e)
 }
 
 
