@@ -278,7 +278,7 @@ onSelectCurve <- function(e, x, y)
 
 .redrawAllCurves <- function(e) {
   curves <- e$activeDataList[[1]][[4]]
-  if (is.null(curves) || nrow(curves) == 0) {
+  if (!is.matrix(curves) || nrow(curves) < 1L) {
     setStatus(e, "No curve segments defined yet.", "warning")
     return(FALSE)
   }

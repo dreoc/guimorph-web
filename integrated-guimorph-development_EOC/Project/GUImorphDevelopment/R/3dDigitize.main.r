@@ -538,7 +538,7 @@ switchTab <- function(e, id)
 
     curves <- e$activeDataList[[1]][[4]]
 
-    if (!is.null(curves) && nrow(curves) > 0) {
+    if (is.matrix(curves) && nrow(curves) > 0L) {
       .redrawAllCurves(e)
     }
     }
