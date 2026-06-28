@@ -344,15 +344,10 @@ updateStepLabel <- function(e) {
 
 updateCurveHint <- function(e) {
   if (is.null(e$hintLabel)) return(invisible())
-  cur <- e$curveCurrentCurveNumber
-  maxC <- e$curveMaxCurves
-  txt <- paste0(
-    "Double-click 3 landmarks per curve segment \u00b7 Current curve: ",
-    cur,
-    " of ",
-    maxC
+  tkconfigure(
+    e$hintLabel,
+    text = "Double-click 3 landmarks per curve segment \u00b7 Drag to rotate"
   )
-  tkconfigure(e$hintLabel, text = txt)
   invisible()
 }
 
@@ -533,49 +528,15 @@ switchTab <- function(e, id)
 
     e$tab <- 3
     set("window", "mode", "curve")
-    bind.curve(e)
-
-
-    # from development of dgt file reader
-    if ( ! is.null(e$dgtFileName))
-    {
-      print (paste ("e$dgtFileName", e$dgtFileName))
-      print (paste ("e$dgtPath", e$dgtPath))
-    }
-    else
-    {
-      print ("e$dgtFileName is NULL")
-    }
-
-
-    # from development of dgt file reader
-    if ( !is.null (e$dgtcurvestuff))
-    {
-      curves <- e$dgtcurvestuff
-      print("NEW CURVES")
-      print(curves)
-      draw.curves(curves)
-    }
-    else
-    {
-      print ("e$dgtcurvestuff is null")
-    }
-
-
-
 
     if (length(e$activeDataList) > 0) {
     myNumberOfSpecimens <-length(e$activeDataList)
     print (paste ("Specimen Count :", myNumberOfSpecimens ))
     print (paste ("Current specimen number :", e$currImgId))
 
-
-    add("SetCurveIndex", e$currImgId, -1, -2)
     add("SetLandmarkIndex", e$currImgId, -1, -2)
 
-   ## print ("This is the curve data from a simple tab switch")
-   curves <- e$activeDataList[[1]][[4]]    # make it exist even if null
-   ## print (e$activeDataList[[1]][[4]])
+    curves <- e$activeDataList[[1]][[4]]
 
     if (!is.null(curves) && nrow(curves) > 0) {
       .redrawAllCurves(e)

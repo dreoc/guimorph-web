@@ -15,24 +15,6 @@ get_curve_date <- function()
 #dgtDataList[imgId][[7]]: zoom
 #dgtDataList[imgId][[8]]: surface file
 
-# Clamp helpers for curve spinbox validation (testable without Tk)
-.clampCurveMax <- function(val) {
-  val <- suppressWarnings(as.integer(val))
-  if (is.na(val) || val < 1L)
-    val <- 1L
-  val
-}
-
-.clampCurveCurrent <- function(val, maxC) {
-  maxC <- .clampCurveMax(maxC)
-  val <- suppressWarnings(as.integer(val))
-  if (is.na(val) || val < 1L)
-    val <- 1L
-  if (val > maxC)
-    val <- maxC
-  val
-}
-
 #initializes parameters for curve component
 init.curve <- function(e)
 {
@@ -40,26 +22,7 @@ init.curve <- function(e)
 	e$curveDots <- c()
 	e$curveLine<- c()
 	e$sliders<-c()
-
-	e$curveMaxCurves <- 1L            # 1 based
-	e$curveCurrentCurveNumber <- 1L   # 1 based
-}
-
-onCurveMaxChange <- function(e) {
-  val <- .clampCurveMax(tclvalue(e$curveMaxVar))
-  tclvalue(e$curveMaxVar) <- as.character(val)
-  e$curveMaxCurves <- val
-  onCurveCurrentChange(e)
-  updateCurveHint(e)
-}
-
-onCurveCurrentChange <- function(e) {
-  maxC <- .clampCurveMax(tclvalue(e$curveMaxVar))
-  val <- .clampCurveCurrent(tclvalue(e$curveCurrentVar), maxC)
-  tclvalue(e$curveCurrentVar) <- as.character(val)
-  e$curveCurrentCurveNumber <- val
-  add("SetCurveIndex", val, -1, -2)
-  updateCurveHint(e)
+	e$curveBound <- FALSE
 }
 
 #creates user interface layout for curve component
@@ -73,66 +36,6 @@ ui.curve <- function(e, parent)
   )
   tkconfigure(e$curveDescLabel, foreground = "#505050")
 
-  e$curveMaxVar <- tclVar("1")
-  e$curveMaxRow <- ttkframe(curveCtlFrame)
-  tkpack(
-    ttklabel(e$curveMaxRow, text = "Total curves:"),
-    side = "left",
-    padx = c(8, 4)
-  )
-  e$curveMaxSpin <-
-    ttkspinbox(
-      e$curveMaxRow,
-      from = 1,
-      to = 9999,
-      increment = 1,
-      textvariable = e$curveMaxVar,
-      width = 5,
-      command = function()
-        onCurveMaxChange(e)
-    )
-  tkpack(e$curveMaxSpin, side = "left", padx = c(0, 8))
-  tkbind(e$curveMaxSpin, "<Return>", function() {
-    onCurveMaxChange(e)
-  })
-  tkbind(e$curveMaxSpin, "<FocusOut>", function() {
-    onCurveMaxChange(e)
-  })
-
-  e$curveCurrentVar <- tclVar("1")
-  e$curveCurrentRow <- ttkframe(curveCtlFrame)
-  tkpack(
-    ttklabel(e$curveCurrentRow, text = "Current curve:"),
-    side = "left",
-    padx = c(8, 4)
-  )
-  e$curveCurrentSpin <-
-    ttkspinbox(
-      e$curveCurrentRow,
-      from = 1,
-      to = 9999,
-      increment = 1,
-      textvariable = e$curveCurrentVar,
-      width = 5,
-      command = function()
-        onCurveCurrentChange(e)
-    )
-  tkpack(e$curveCurrentSpin, side = "left", padx = c(0, 8))
-  tkbind(e$curveCurrentSpin, "<Return>", function() {
-    onCurveCurrentChange(e)
-  })
-  tkbind(e$curveCurrentSpin, "<FocusOut>", function() {
-    onCurveCurrentChange(e)
-  })
-
-  computeCurvesBtn <-
-    ttkbutton(
-      curveCtlFrame,
-      text = "Compute Curves",
-      command = function()
-        onComputeCurves(e)
-    )
-
   resetViewBtn <-
     ttkbutton(
       curveCtlFrame,
@@ -143,12 +46,7 @@ ui.curve <- function(e, parent)
 
   tkpack(ttklabel(curveCtlFrame, text = " "), pady = 6)
   tkpack(e$curveDescLabel, pady = c(0, 4))
-  tkpack(e$curveMaxRow, pady = 3)
-  tkpack(e$curveCurrentRow, pady = 3)
-  tkpack(computeCurvesBtn, pady = 3)
   tkpack(resetViewBtn, pady = 3)
-  .overrideCtrlZ(e$curveMaxSpin, e)
-  .overrideCtrlZ(e$curveCurrentSpin, e)
 
   return (curveCtlFrame)
 }
@@ -157,7 +55,10 @@ ui.curve <- function(e, parent)
 #drag and place landmarks on curve component
 bind.curve <- function(e)
 {
-  #print("bind.curve")
+  if (isTRUE(e$curveBound))
+    return(invisible())
+  e$curveBound <- TRUE
+
   tkbind(e$canvasFrame, "<ButtonPress-1>", function(x, y) {
     e$dragX <- as.integer(x)
     e$dragY <- as.integer(y)
@@ -179,10 +80,15 @@ read.curve <- function(content)
 	##print ("file 3dDigitize.curve ... function read.curve")
 
   ignore.case = TRUE
-	startLine <- grep("Curve=", content, ignore.case)
-	num <- sub("Curve=", "", content[startLine], ignore.case)
+	startLine <- grep("^Curve=", content, ignore.case)
+	if (length(startLine) == 0L)
+		return(NULL)
+	if (length(startLine) > 1L)
+		startLine <- startLine[1L]
 
-	if (num == 0)
+	num <- as.integer(sub("Curve=", "", content[startLine], ignore.case = TRUE))
+
+	if (is.na(num) || num == 0L)
 	{
 	  print ("No curve data to process")
 		return (NULL)
@@ -380,9 +286,9 @@ onSelectCurve <- function(e, x, y)
   add("initialize", 2, 0, 0)
   add("InfoCurves", nrow(curves), 3, length(e$activeDataList))
   add("SetLandmarkIndex", e$currImgId, -1, -2)
-  add("SetCurveIndex", e$currImgId, 0, 0)
 
   for (j in seq_len(nrow(curves))) {
+    add("SetCurveIndex", j, -1, -1)
     p1 <- as.integer(curves[j, 1])
     p2 <- as.integer(curves[j, 2])
     p3 <- as.integer(curves[j, 3])
@@ -399,25 +305,10 @@ onSelectCurve <- function(e, x, y)
   TRUE
 }
 
-onComputeCurves <- function(e) {
-  curves <- e$activeDataList[[1]][[4]]
-  if (is.null(curves) || nrow(curves) == 0) {
-    setStatus(e, "No curve segments defined yet.", "warning")
-    return(invisible())
-  }
-
-  n <- nrow(curves)
-  busyStart(e, "Computing curves\u2026", "indeterminate")
-  ok <- FALSE
-  on.exit({
-    if (ok) {
-      busyStop(e, paste0("Drew ", n, " curve segment(s)."), "success")
-    } else {
-      busyStop(e)
-    }
-  }, add = TRUE)
-
-  ok <- isTRUE(.redrawAllCurves(e))
-  invisible()
+.clearAllCurves <- function(e) {
+  add("initialize", 2, 0, 0)
+  add("InfoCurves", 0, 3, length(e$activeDataList))
+  add("InfoCurves_complete", 0, 0, 0)
+  showPicture(e)
+  invisible(TRUE)
 }
-
