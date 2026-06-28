@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: GUImorph UI Modernization
-status: ready to execute
-stopped_at: Phase 14 UAT complete — Phase 15 next
-last_updated: "2026-06-26"
-last_activity: 2026-06-26 — Phase 14 UAT complete (keyboard shortcuts & undo; UX-KEY-01/02 validated)
+status: human verification
+stopped_at: Phase 15 executed — UAT pending (5 items)
+last_updated: "2026-06-28"
+last_activity: 2026-06-28 - Completed quick task 260627-w5c: Simplify curve tab UI (auto-draw, reset view only)
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 17
-  completed_plans: 15
-  percent: 88
+  total_plans: 18
+  completed_plans: 18
+  percent: 100
 ---
 
 # Project State
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-24)
 
 **Core value:** A researcher runs the full digitize → analyze workflow in a GUI that feels modern, gives clear in-app feedback, and doesn't interrupt with modal nags — without changing the C/OpenGL renderer or breaking `.dgt` files.
-**Current focus:** v1.1 Phase 15 — Curve tab rehabilitation (UX-CRV-01/02); plan via `/gsd-discuss-phase 15`.
+**Current focus:** v1.1 Phase 15 — Curve tab rehabilitation (UX-CRV-01/02); human UAT via `/gsd-verify-work 15`.
 
 ## Current Position
 
 Milestone: **v1.1 UI Modernization** — executing  
-Phases: 5/6 complete (10–14 shipped + UAT)  
+Phases: 5/6 complete (10–14 shipped + UAT); Phase 15 executed, UAT pending  
 Requirements: 16/18 validated (+ 3 constraints)  
 Previous: **v1.0 ARCHIVED** (2026-06-23) — 9/9 phases, 22/22 reqs, tag `v1.0`
 
@@ -86,6 +86,7 @@ Items acknowledged at milestone close on 2026-06-23:
 |---|-------------|------|--------|-----------|
 | 250623-001 | Milestone v1.0 audit tech-debt cleanup | 2026-06-23 | b926ee1 | [250623-001-milestone-tech-debt](./quick/250623-001-milestone-tech-debt/) |
 | 260623-l8r | Plug-and-play R package distribution assessment | 2026-06-23 | d5ff92c | [260623-l8r-assess](./quick/260623-l8r-assess/) |
+| 260627-w5c | Simplify curve tab UI (auto-draw, reset view only) | 2026-06-28 | 141d8ac | [260627-w5c-simplify](./quick/260627-w5c-simplify/) |
 
 ### v1.1 UI Pain Points (source for milestone scope, 2026-06-24)
 
@@ -103,6 +104,6 @@ Identified from GUI source + README "Known quirks":
 
 ## Session Continuity
 
-Last session: 2026-06-26
-Stopped at: Phase 14 UAT complete — ready for Phase 15 discuss/plan
-Resume file: .planning/ROADMAP.md (Phase 15)
+Last session: 2026-06-25
+Stopped at: Phase 15 planned — ready to execute
+Resume file: .planning/phases/15-curve-tab-rehabilitation/15-01-PLAN.md
