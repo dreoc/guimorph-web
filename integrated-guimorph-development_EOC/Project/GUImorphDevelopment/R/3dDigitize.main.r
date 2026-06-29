@@ -38,6 +38,13 @@ NULL
 # Active ttk theme (clam is themeable on Windows; vista/xpnative/winnative also valid)
 GUIMORPH_THEME <- "clam"
 
+# White panel styles for the center workspace (header, canvas surround, nav bar).
+configureGuimorphCenterStyles <- function() {
+  bg <- "white"
+  tcl("ttk::style", "configure", "Center.TFrame", background = bg, borderwidth = 0)
+  tcl("ttk::style", "configure", "Center.TLabel", background = bg)
+}
+
 # Developer/diagnostic UI is hidden by default. Opt in with
 #   options(guimorph.dev = TRUE)  -or-  set env GUIMORPH_DEV=1
 .guimorph_dev_mode <- function() {
@@ -353,7 +360,9 @@ updateCurveHint <- function(e) {
 
 updateHintLabel <- function(e, tabId = e$tab) {
   if (is.null(e$hintLabel)) return(invisible())
-  if (as.integer(tabId) == 3L) {
+  tabInt <- suppressWarnings(as.integer(tabId))
+  if (length(tabInt) != 1L || is.na(tabInt)) return(invisible())
+  if (tabInt == 3L) {
     updateCurveHint(e)
     return(invisible())
   }
@@ -361,7 +370,7 @@ updateHintLabel <- function(e, tabId = e$tab) {
     "0" = "Double-click to place landmark \u00b7 Drag to rotate \u00b7 Right-click to delete",
     "1" = "Double-click to place anchor \u00b7 Drag to rotate \u00b7 Right-click to delete"
   )
-  hk <- as.character(tabId)
+  hk <- as.character(tabInt)
   txt <- if (!is.na(HINT_TEXT[hk])) HINT_TEXT[hk] else ""
   tkconfigure(e$hintLabel, text = txt)
   invisible()
@@ -408,7 +417,8 @@ switchTab <- function(e, id)
   print ("3dDigitize.main ... switch tabs line 139")
 
   numId <- suppressWarnings(as.integer(id))
-  if (!is.na(numId) && numId >= 1 && numId <= 4 && e$tabState[numId] == 0) {
+  if (length(numId) != 1L || is.na(numId)) return(invisible())
+  if (numId >= 1 && numId <= 4 && e$tabState[numId] == 0) {
     if (length(e$activeDataList) == 0) {
       setStatus(e, "Load a PLY or DGT file to begin.", "info")
     } else if (numId == 2) {
@@ -444,9 +454,9 @@ switchTab <- function(e, id)
     return(invisible())
   }
 
-  updateHintLabel(e, id)
+  updateHintLabel(e, numId)
 
-  if (id == 0)
+  if (numId == 0)
   {
     e$tab <- 0
     set("window", "mode", "digitize")
@@ -458,14 +468,14 @@ switchTab <- function(e, id)
 
     class(e) <- "digitize"
   }
-  else if (id == 1 && e$tabState[1] == 1)
+  else if (numId == 1 && e$tabState[1] == 1)
   {
     #anchor tab
     e$tab <- 1
     set("window", "mode", "anchor")
     class(e) <- "anchor"
   }
-  else if (id == 2 && e$tabState[2] == 1)
+  else if (numId == 2 && e$tabState[2] == 1)
   {
     print("switched to Surface Sliders Tab")
     e$tab <- 2
@@ -521,7 +531,7 @@ switchTab <- function(e, id)
 
     showPicture(e)
   }
-  else if (id == 3 && e$tabState[3] == 1)
+  else if (numId == 3 && e$tabState[3] == 1)
   {
     print("switched to CURVE Tab")
     print("---------------------")
@@ -562,7 +572,7 @@ switchTab <- function(e, id)
     showPicture(e)
     print ("Tab switch to CURVES ... processing complete")
   }
-  else if (id == 4 && e$tabState[4] == 1)
+  else if (numId == 4 && e$tabState[4] == 1)
   {
     e$tab <- 4
     set("window", "mode", "geomorph")
@@ -605,6 +615,7 @@ ui.main <- function(e)
       )
     }
   )
+  configureGuimorphCenterStyles()
 
   tkwm.minsize(e$wnd, 900, 700)
   e$nb <- NULL
@@ -615,14 +626,15 @@ ui.main <- function(e)
   e$stepLabel <- ttklabel(rightPanel, text = "Load specimens to begin",
                           foreground = "#505050")
 
-  centerFrame <- tkframe(e$wnd, width = 600, height = 670)
+  centerFrame <- tkframe(e$wnd, width = 600, height = 670, background = "white")
 
-  titleFrame <- ttkframe(centerFrame)
-  e$imgPath <- ttklabel(titleFrame, text = "Specimen: \u2014")
+  titleFrame <- ttkframe(centerFrame, style = "Center.TFrame")
+  e$imgPath <- ttklabel(titleFrame, text = "Specimen: \u2014", style = "Center.TLabel")
   tkpack(e$imgPath)
-  tkpack(titleFrame)
+  tkpack(titleFrame, fill = "x")
 
   e$hintLabel <- ttklabel(centerFrame, text = "",
+                          style = "Center.TLabel",
                           foreground = "#505050",
                           anchor = "center", justify = "center")
   tkpack(e$hintLabel, side = "top", fill = "x", padx = 8, pady = c(0, 4))
@@ -637,12 +649,12 @@ ui.main <- function(e)
     )
   btnFrame <- createNavFrame(e, centerFrame)
   tkpack(canvasFrame, expand = TRUE, fill = "both")
-  tkpack(btnFrame)
+  tkpack(btnFrame, fill = "x")
   e$canvasFrame <- canvasFrame
 
   tkbind(tn, '<Button-1>', function(W, x, y) {
     id <- tclvalue(tcl(W, "identify", "tab", x, y))
-    switchTab(e, id)
+    if (nzchar(id)) switchTab(e, id)
   })
 
   digitizeFrame <- ui.digitize(e, tn)
@@ -914,7 +926,7 @@ createMenu <- function(e)
 
 #Display different loaded specimen
 createNavFrame <- function(e, parent) {
-  btnFrame <- ttkframe(parent)
+  btnFrame <- ttkframe(parent, style = "Center.TFrame")
   prevBtn <-
     ttkbutton(
       btnFrame,
@@ -942,7 +954,7 @@ createNavFrame <- function(e, parent) {
   })
 
   tkpack(
-    ttklabel(btnFrame, text = " "),
+    ttklabel(btnFrame, text = " ", style = "Center.TLabel"),
     expand = TRUE,
     fill = "both",
     side = "left"
@@ -953,7 +965,7 @@ createNavFrame <- function(e, parent) {
          padx = 6)
   tkpack(e$specimenCombo, side = "left", padx = 8)
   tkpack(
-    ttklabel(btnFrame, text = " "),
+    ttklabel(btnFrame, text = " ", style = "Center.TLabel"),
     expand = TRUE,
     fill = "both",
     side = "left"
