@@ -71,9 +71,8 @@ After `install_github`, you may still need to run `renv::restore()` from the ins
 The window has a 3D viewport on the left and a set of tabs on the right:
 **3D Digitizing**, **Anchors**, **Surface Sliders**, **Curves**, and **GPA**.
 At startup only the **3D Digitizing** tab is active — the others stay disabled
-(grayed out) until you have placed the required landmarks (and anchors, if you
-opted in). This is intentional, to keep you from running later steps on
-incomplete data.
+(grayed out) until you meet each tab's prerequisites (see Known quirks). This
+is intentional, to keep you from running later steps on incomplete data.
 
 A typical end-to-end session looks like this:
 
@@ -96,11 +95,13 @@ A typical end-to-end session looks like this:
    - **Label Landmark** toggles the numeric labels on/off.
    - **Missing Landmark** marks the next index as missing if a point can't be placed.
    - **Landmark Size +/-** and **Landmark Color** adjust appearance.
-4. When the placed count reaches the number you set, the remaining tabs unlock.
+4. When the placed count reaches the number you set, **Surface Sliders**,
+   **Curves**, and **GPA** unlock for the current specimen.
 
-> **Want anchors too?** Tick **Place Anchors** *before* you finish, then digitize
-> on the **Anchors** tab. Whether this box is checked changes which tabs unlock
-> after landmarking (see Known quirks).
+> **Want anchors too?** Tick **Place Anchors** *before* you finish landmarks,
+> then digitize on the **Anchors** tab. Anchors are optional for unlocking
+> Surface Sliders, Curves, and GPA, but if the box is checked you must finish
+> anchors before switching to another specimen.
 
 ### 3. Place anchors (Anchors tab — optional)
 
@@ -109,9 +110,10 @@ A typical end-to-end session looks like this:
 
 ### 4. Curves and surface sliders (optional)
 
-- **Curves tab:** **Set curves (total) number**, pick the **Set Current curve
-  number**, then **Compute Curves**. Curves are legacy chord segments defined by
-  landmark IDs (not surface-following splines).
+- **Curves tab:** Set **Total curves** and **Current curve** with the spinboxes, then
+  **double-click** three landmarks per segment on the mesh. Click **Compute Curves**
+  to draw all segments. Use **Reset view** to restore the default camera.
+  Define curves by selecting 3 landmarks per segment (landmark-ID triplets, not splines).
 - **Surface Sliders tab:** define surface semilandmarks for sliding.
 
 ### 5. Move between specimens
@@ -141,19 +143,20 @@ A typical end-to-end session looks like this:
 These are inherent GUImorph behaviors that can look like bugs:
 
 - **Tabs are disabled until prerequisites are met.** Only the **3D Digitizing**
-  tab is active at startup. The **Anchors**, **Surface Sliders**, **Curves**, and
-  **GPA** tabs stay grayed out until you finish placing the set number of
-  landmarks (and anchors, if **Place Anchors** is checked). This gating is
-  deliberate, to prevent acting on incomplete data.
+  tab is active at startup. **Surface Sliders**, **Curves**, and **GPA** unlock once
+  you finish placing all landmarks on the **current specimen**. The **Anchors** tab
+  unlocks when specimens are loaded.
 - **Placement is tab-specific.** You can only place **landmarks** while on the
   **3D Digitizing** tab, and **anchors** while on the **Anchors** tab.
-- **Place Anchors changes which tabs unlock.** With it **unchecked**, finishing
-  landmarks unlocks Anchors/Surface/Curves/GPA. With it **checked**, you're
-  routed to finish anchors first before the rest fully open.
+- **Place Anchors** enables the anchor workflow and step indicator, and requires
+  finishing anchors before switching specimens when checked. It does not block
+  **Surface Sliders**, **Curves**, or **GPA** — those unlock when landmarks are
+  complete on the current specimen.
 - **Double-click to place; single-click selects.** Single-click is pick/select
   only. Click and drag to move a landmark/anchor.
-- **Fit button** may show no visible change if the view is already at the default
-  rotation/zoom.
+- **Fit / Reset view** may show no visible change if the view is already at the
+  default rotation/zoom. The Curves tab labels this button **Reset view**; other
+  tabs use **Fit** (Ctrl+F runs the same action everywhere).
 - **GPA order matters:** **Plot Aligned Specimens** and **Save Result** require a
   successful **Compute** first (otherwise you'll see "Run Compute first").
 - **GPA Plot** may need the `rgl` package; if the plot opens behind the Tk window,

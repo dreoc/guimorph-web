@@ -1,5 +1,6 @@
 # PowerShell: & "C:\Program Files\R\R-4.6.0\bin\R.exe"
 # Then paste the setwd + load_all lines below (forward slashes required).
+
 setwd("//wsl$/Ubuntu/home/akagi/home/GUImorph/integrated-guimorph-development_EOC/Project/GUImorphDevelopment")
 devtools::load_all(".")
 GUImorph()

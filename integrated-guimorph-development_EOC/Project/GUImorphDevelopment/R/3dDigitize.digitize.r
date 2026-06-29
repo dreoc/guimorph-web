@@ -52,6 +52,114 @@ init.digitize <- function(e)
   }
  	set("dot", "labeled", 1)
   set("dot", "alabeled", 1) #toggle for anchor point labels
+  e$undo <- NULL
+}
+
+
+pushUndo <- function(e, entry) {
+  e$undo <- entry
+}
+
+
+clearUndo <- function(e) {
+  e$undo <- NULL
+  e$dragDot <- FALSE
+  e$dragX <- -1L
+  e$dragY <- -1L
+}
+
+
+doUndo <- function(e) {
+  if (is.null(e$undo)) {
+    setStatus(e, "Nothing to undo", "warning")
+    return(invisible())
+  }
+
+  entry <- e$undo
+  scr <- entry$screen
+  ok <- FALSE
+  msg <- NULL
+
+  if (entry$action == "place") {
+    if (!set("dot", "selected", scr[1], scr[2])) {
+      setStatus(e, "Nothing to undo", "warning")
+      return(invisible())
+    }
+    if (entry$kind == "landmark") {
+      del("dot")
+      updateDotNum(e, -1)
+      msg <- "Undid landmark placement"
+      ok <- TRUE
+    } else if (entry$kind == "anchor") {
+      del("anchor")
+      updateAnchorNum(e, -1)
+      msg <- "Undid anchor placement"
+      ok <- TRUE
+    }
+  } else if (entry$action == "delete") {
+    coord <- entry$coord
+    if (entry$kind == "landmark") {
+      if (TRUE == add("dot", coord[1], coord[2], coord[3])) {
+        updateDotNum(e, 1)
+        msg <- "Undid landmark deletion"
+        ok <- TRUE
+      }
+    } else if (entry$kind == "anchor") {
+      if (TRUE == add("anchor", coord[1], coord[2], coord[3])) {
+        updateAnchorNum(e, 1)
+        msg <- "Undid anchor deletion"
+        ok <- TRUE
+      }
+    }
+  } else if (entry$action == "move") {
+    before <- entry$before
+    # Re-select at release screen (where marker sits after drag); fall back to
+    # drag-start screen if the user rotated/zoomed before Ctrl+Z.
+    selected <- set("dot", "selected", scr[1], scr[2])
+    if (!selected && !is.null(entry$screenStart)) {
+      selected <- set("dot", "selected", entry$screenStart[1], entry$screenStart[2])
+    }
+    if (selected) {
+      set("dot", "coordinate", before[1], before[2], before[3])
+      msg <- if (entry$kind == "anchor") "Undid anchor move" else "Undid landmark move"
+      ok <- TRUE
+    }
+  } else if (entry$action == "curve_place") {
+    curves <- e$activeDataList[[1]][[4]]
+    if (!is.matrix(curves) || nrow(curves) < 1L) {
+      setStatus(e, "Nothing to undo", "warning")
+      return(invisible())
+    }
+    if (nrow(curves) == 1L) {
+      e$activeDataList[[1]][[4]] <- matrix(numeric(0), nrow = 0, ncol = 3)
+    } else {
+      e$activeDataList[[1]][[4]] <- curves[-nrow(curves), , drop = FALSE]
+    }
+    remaining <- e$activeDataList[[1]][[4]]
+    if (!is.matrix(remaining) || nrow(remaining) < 1L) {
+      .clearAllCurves(e)
+    } else {
+      .redrawAllCurves(e)
+    }
+    msg <- "Undid curve segment placement"
+    ok <- TRUE
+  }
+
+  if (ok) {
+    clearUndo(e)
+    setStatus(e, msg, "info")
+  } else {
+    setStatus(e, "Nothing to undo", "warning")
+  }
+  invisible()
+}
+
+
+.overrideCtrlZ <- function(widget, e) {
+  tkbind(widget, "<Control-z>", function() {
+    doUndo(e)
+    tcl("break")
+  })
 }
 
 
@@ -69,15 +177,26 @@ ui.digitize <- function(e, parent)
       command = function()
         setScale(e)
     )
-  e$scaleLabel = tklabel(digCtlFrame, text = 'Scale Factor: not set')
+  e$scaleLabel <- ttklabel(digCtlFrame, text = "Scale Factor: not set")
 
-  setLandmarkNumBtn <-
-    ttkbutton(
+  e$lmCountVar <- tclVar(as.character(e$landmarkNum))
+  e$lmCountSpin <-
+    ttkspinbox(
       digCtlFrame,
-      text = "Set number of landmarks",
+      from = 1,
+      to = 100,
+      increment = 1,
+      textvariable = e$lmCountVar,
+      width = 5,
       command = function()
-        setLandmarkNum(e)
+        onLmCountChange(e)
     )
+  tkbind(e$lmCountSpin, "<Return>", function() {
+    onLmCountChange(e)
+  })
+  tkbind(e$lmCountSpin, "<FocusOut>", function() {
+    onLmCountChange(e)
+  })
   loadLandmarkBtn <-
     ttkbutton(
       digCtlFrame,
@@ -121,19 +240,15 @@ ui.digitize <- function(e, parent)
 
 
   #####################################
-  lmSizeAdd <-
-    ttkbutton(
+  e$lmSizeVar <- tclVar("0.01")
+  e$lmSizeScale <-
+    ttkscale(
       digCtlFrame,
-      text = "Landmark Size +",
-      command = function()
-        onLmSizeAdd(e)
-    )
-  lmSizeDec <-
-    ttkbutton(
-      digCtlFrame,
-      text = "Landmark Size -",
-      command = function()
-        onLmSizeDec(e)
+      from = 0.001,
+      to = 0.050,
+      variable = e$lmSizeVar,
+      command = function(...)
+        onLmSizeSlide(e, "radius")
     )
 
   lmColorFrame <- ttkframe(digCtlFrame)
@@ -170,11 +285,10 @@ ui.digitize <- function(e, parent)
   tkpack(ttklabel(digCtlFrame, text = " "), pady = 6)
   sapply(
     list(
-      setLandmarkNumBtn,
+      e$lmCountSpin,
       loadLandmarkBtn,
       fitBtn,
-      lmSizeAdd,
-      lmSizeDec,
+      e$lmSizeScale,
       lmColorFrame,
       labelLandmark,
       placeAnchors,
@@ -184,6 +298,7 @@ ui.digitize <- function(e, parent)
     tkpack,
     pady = 3
   )
+  .overrideCtrlZ(e$lmCountSpin, e)
   return (digCtlFrame)
 }
 
@@ -196,13 +311,24 @@ ui.anchor <- function(e, parent)
 {
   anchorCtlFrame <- ttkframe(parent)
 
-  setAnchorNumBtn <-
-    ttkbutton(
+  e$anchorCountVar <- tclVar(as.character(e$anchorNum))
+  e$anchorCountSpin <-
+    ttkspinbox(
       anchorCtlFrame,
-      text = "Set number of anchors",
+      from = 1,
+      to = 100,
+      increment = 1,
+      textvariable = e$anchorCountVar,
+      width = 5,
       command = function()
-        setAnchorNum(e)
+        onAnchorCountChange(e)
     )
+  tkbind(e$anchorCountSpin, "<Return>", function() {
+    onAnchorCountChange(e)
+  })
+  tkbind(e$anchorCountSpin, "<FocusOut>", function() {
+    onAnchorCountChange(e)
+  })
 
   fitBtn <-
     ttkbutton(
@@ -225,21 +351,17 @@ ui.anchor <- function(e, parent)
   e$anchorNumLabel <-
     ttklabel(anchorCtlFrame, text = "Number of Anchors: 0")
   e$specimenNumLabel2 <-
-    ttklabel(anchorCtlFrame, text = "Number of Specimen: 0")
+    ttklabel(anchorCtlFrame, text = "Number of Specimens: 0")
 
-  anchorSizeAdd <-
-    ttkbutton(
+  e$anchorSizeVar <- tclVar("0.01")
+  e$anchorSizeScale <-
+    ttkscale(
       anchorCtlFrame,
-      text = "Anchor Size +",
-      command = function()
-        onLmSizeAdd(e)
-    )
-  anchorSizeDec <-
-    ttkbutton(
-      anchorCtlFrame,
-      text = "Anchor Size -",
-      command = function()
-        onLmSizeDec(e)
+      from = 0.001,
+      to = 0.050,
+      variable = e$anchorSizeVar,
+      command = function(...)
+        onLmSizeSlide(e, "anchorRadius")
     )
 
   anchorColorFrame <- ttkframe(anchorCtlFrame)
@@ -267,10 +389,9 @@ ui.anchor <- function(e, parent)
   tkpack(ttklabel(anchorCtlFrame, text = " "), pady = 6)
   sapply(
     list(
-      setAnchorNumBtn,
+      e$anchorCountSpin,
       fitBtn,
-      anchorSizeAdd,
-      anchorSizeDec,
+      e$anchorSizeScale,
       anchorColorFrame,
       labelAnchor,
       e$specimenNumLabel2,
@@ -279,6 +400,7 @@ ui.anchor <- function(e, parent)
     tkpack,
     pady = 3
   )
+  .overrideCtrlZ(e$anchorCountSpin, e)
   return (anchorCtlFrame)
 
 
@@ -439,6 +561,8 @@ onLeftBtnPress <- function(e, x, y)
       if (result)
       {
         e$dragDot <- TRUE
+        e$dragStartCoord <- convertCoor(e, x, y)
+        e$dragStartScreen <- c(as.integer(x), as.integer(y))
         set(
           "dot",
           "anchorColor",
@@ -466,6 +590,8 @@ onLeftBtnPress <- function(e, x, y)
       if (TRUE == result)
       {
         e$dragDot <- TRUE
+        e$dragStartCoord <- convertCoor(e, x, y)
+        e$dragStartScreen <- c(as.integer(x), as.integer(y))
         set("dot", "color", as.double(1 / 255), as.double(164 / 255),  as.double(191 / 255))
       }
       else
@@ -492,10 +618,11 @@ onLeftBtnRelease <- function(e, x, y)
   ##print ("onLeftBtnrelease ... ")
   if (length(e$activeDataList) > 0)
   {
+    wasDragging <- e$dragDot
     e$dragX <- as.integer(-1)
     e$dragY <- as.integer(-1)
 
-    if (e$dragDot)
+    if (wasDragging)
     {
       e$dragDot <- FALSE
       if (e$tab == 1)
@@ -510,6 +637,19 @@ onLeftBtnRelease <- function(e, x, y)
         color <- e$dColor
         set("dot", "color", color[1], color[2], color[3])
       }
+
+      after <- convertCoor(e, x, y)
+      if (!is.null(e$dragStartCoord) &&
+          sum((e$dragStartCoord - after)^2) > 1e-12) {
+        pushUndo(e, list(
+          action = "move",
+          kind = if (e$tab == 1) "anchor" else "landmark",
+          before = e$dragStartCoord,
+          after = after,
+          screen = c(as.integer(x), as.integer(y)),
+          screenStart = e$dragStartScreen
+        ))
+      }
     }
   }
   ##print ("onLeftBtnrelease ... end ")
@@ -520,45 +660,49 @@ onLeftBtnRelease <- function(e, x, y)
 
 
 
-#Increase landmark or anchor point size
-onLmSizeAdd <- function(e)
+# Live size slider: quantize to 0.001 grain, push to renderer, persist in [[2]]
+onLmSizeSlide <- function(e, attr)
 {
   if (length(e$activeDataList) == 0) {
     return()
   }
 
-
-  font <- e$activeDataList[[e$currImgId]][[2]]
-
-  if (e$tab == 1)
-    set("dot", "anchorRadius", font + 0.001)
-  else
-    set("dot", "radius", font + 0.001)
-
-
-  e$activeDataList[[e$currImgId]][[2]] <- font + 0.001
+  raw <- as.numeric(tclvalue(if (attr == "radius") e$lmSizeVar else e$anchorSizeVar))
+  v <- round(raw / 0.001) * 0.001
+  set("dot", attr, v)
+  e$activeDataList[[e$currImgId]][[2]] <- v
 }
 
 
-
-
-#Decrease landmark or anchor point size
-onLmSizeDec <- function(e)
+onLmCountChange <- function(e)
 {
-  if (length(e$activeDataList) == 0) {
-    return()
-  }
-
-  font <- e$activeDataList[[e$currImgId]][[2]]
-
-  if (e$tab == 1)
-    set("dot", "anchorRadius", font - 0.001)
+  floor <- if (length(e$activeDataList) > 0)
+    max(1L, as.integer(e$activeDataList[[e$currImgId]][[3]]))
   else
-    set("dot", "radius", font - 0.001)
+    1L
+  val <- suppressWarnings(as.integer(tclvalue(e$lmCountVar)))
+  if (is.na(val) || val < floor)
+    val <- floor
+  if (val > 100L)
+    val <- 100L
+  tclvalue(e$lmCountVar) <- as.character(val)
+  e$landmarkNum <- val
+}
 
 
-  shows("all")   # 10 JUne 2020 ... this is NOT implemented in the  C code of TCL_If
-  e$activeDataList[[e$currImgId]][[2]] <- font - 0.001
+onAnchorCountChange <- function(e)
+{
+  floor <- if (length(e$activeDataList) > 0)
+    max(1L, as.integer(e$activeDataList[[e$currImgId]][[9]]))
+  else
+    1L
+  val <- suppressWarnings(as.integer(tclvalue(e$anchorCountVar)))
+  if (is.na(val) || val < floor)
+    val <- floor
+  if (val > 100L)
+    val <- 100L
+  tclvalue(e$anchorCountVar) <- as.character(val)
+  e$anchorNum <- val
 }
 
 
@@ -616,70 +760,12 @@ onPlaceAnchor <- function(e)
     return()
   }
 
-  if (e$activeDataList[[e$currImgId]][[3]] == e$landmarkNum &&
-      tclvalue(e$placeAnchorsVar) == "1")
-  {
-    tcl(e$nb, "tab", 1, state = "normal")
-    e$tabState[1] <- 1
-
-    if (e$activeDataList[[e$currImgId]][[9]] != e$anchorNum)
-    {
-      for (i in 2:4)
-      {
-        tcl(e$nb, "tab", i, state = "disabled")
-        e$tabState[i] <- 0
-      }
-    }
-  }
-
-  else
-    return()
+  refreshTabGating(e)
+  updateStepLabel(e)
 }
 
 
 
-##
-##   10 June 2020 ... why are most of these functions commented out ??
-
-#Grabs user input and turns to first picture
-onlandmarkNumOk <- function(e, win)
-{
-  #get user input value
-  e$landmarkNum <- tclvalue(tkget(e$landmarkEntry))
-
-  tkdestroy(win)
-
-  print (paste("line 646 The number of landmarks is set to : ", e$landmarkNum) )
-
-
-  # # turn to the first picture
-  # if(length(e$activeDataList) > 0) {
-  # 	e$currImgId <- 1
-  # 	showPicture(e)
-  # }
-}
-
-
-
-
-onanchorNumOk <- function(e, win)
-{
-  #get user input value
-  e$anchorNum <- tclvalue(tkget(e$anchorEntry))
-
-  tkdestroy(win)
-
-
-  print (paste("line  602 The number of anchors is set to : ",  e$anchorNum) )
-
-
-
-  # # turn to the first picture
-  # if(length(e$activeDataList) > 0) {
-  #     e$currImgId <- 1
-  #     showPicture(e)
-  # }
-}
 
 
 
@@ -821,6 +907,8 @@ loadLandmark <- function(e)
   e$activeDataList[[e$currImgId]][[3]] <- e$landmarkNum
   tkconfigure(e$landMarkNumLabel,
               text = paste("Number of Landmarks: ", e$landmarkNum))
+  refreshTabGating(e)
+  updateStepLabel(e)
 }
 
 
@@ -830,21 +918,20 @@ loadLandmark <- function(e)
 #pop up window to remove selected landmark
 deleteLandmark <- function(e, x, y)
 {
-  #print("delete Dot")
-  # turn to the first picture
   if (length(e$activeDataList) == 0) {
     return()
   }
 
-
-  if (set("dot", "selected", x, y))
-  {
-    set("dot",
-        "color",
-        as.double(1 / 255),
-        as.double(164 / 255),
-        as.double(191 / 255))
-    popUpRemoveWindow(e, x, y, 'Do you want to delete this landmark?', "digdot")
+  if (set("dot", "selected", x, y)) {
+    coord <- convertCoor(e, x, y)
+    del("dot")
+    updateDotNum(e, -1)
+    pushUndo(e, list(
+      action = "delete",
+      kind = "landmark",
+      coord = coord,
+      screen = c(as.integer(x), as.integer(y))
+    ))
   }
 }
 
@@ -853,73 +940,62 @@ deleteLandmark <- function(e, x, y)
 
 deleteAnchor <- function(e, x, y)
 {
-  #print("delete Dot")
-  # turn to the first picture
-  if (length(e$activeDataList) == 0)
-  {
+  if (length(e$activeDataList) == 0) {
     return()
   }
 
-
-  if (set("dot", "selected", x, y))
-  {
-    set("dot",
-        "anchorColor",
-        as.double(1 / 255),
-        as.double(164 / 255),
-        as.double(191 / 255))
-    popUpRemoveWindow(e, x, y, 'Do you want to delete this anchor?', "anchor")
+  if (set("dot", "selected", x, y)) {
+    coord <- convertCoor(e, x, y)
+    del("anchor")
+    updateAnchorNum(e, -1)
+    pushUndo(e, list(
+      action = "delete",
+      kind = "anchor",
+      coord = coord,
+      screen = c(as.integer(x), as.integer(y))
+    ))
   }
 }
 
 
 
 
-
-#starts to delete landmark
-digRemoveDotOk <- function(e, x, y)
+# Guard against the Tk multi-click cascade: only <Double-Button-1> is bound for
+# placement, and Tk re-fires that binding for the 3rd/4th clicks of a rapid burst
+# (no <Triple-Button-1>/<Quadruple-Button-1> binding to absorb them). One jittery
+# double/triple-click can therefore call addDot/addAnchor several times a few
+# pixels apart, placing phantom points. Treat a placement that lands within a few
+# pixels of the previous one within 400 ms as the same gesture and ignore it. A
+# deliberate second placement is always farther away and/or slower, so normal
+# double-click placement (which fires the handler exactly once) is unaffected.
+.placeIsDuplicate <- function(e, x, y)
 {
-  msg <- del("dot")
-  tkdestroy(e$removeWin)
-  updateDotNum(e,-1)
+  now <- as.numeric(Sys.time())
+  xi <- as.integer(x)
+  yi <- as.integer(y)
+  prev <- e$lastPlace
+  dup <- FALSE
+  if (!is.null(prev) &&
+      (now - prev$t) < 0.4 &&
+      abs(xi - prev$x) <= 8 &&
+      abs(yi - prev$y) <= 8)
+  {
+    dup <- TRUE
+  }
+  e$lastPlace <- list(t = now, x = xi, y = yi)
+  dup
 }
-
-#starts deletes anchor
-digRemoveAnchorOk <- function(e, x, y)
-{
-  msg <- del("anchor")
-  tkdestroy(e$removeWin)
-  updateAnchorNum(e,-1)
-}
-
-
-
-
-#cancel to delete landmark
-digRemoveDotCancel <- function(e, x, y)
-{
-  #print("digRemoveDotCancel")
-  set("dot", "color", 1, 0, 0)
-  tkdestroy(e$removeWin)
-}
-
-
-
-#cancel to delete anchor
-digRemoveAnchorCancel <- function(e, x, y)
-{
-  #print("digRemoveDotCancel")
-  set("dot", "anchorColor", 0, 1, 0)
-  tkdestroy(e$removeWin)
-}
-
-
 
 
 #adds one landmark
 addDot <- function(e, x, y)
 {
   print(paste("line 908 : function addDot : ", x, y))
+  if (.placeIsDuplicate(e, x, y))
+  {
+    print("INFO : ignoring duplicate landmark from multi-click burst")
+    return(invisible())
+  }
   if (length(e$activeDataList) > 0)
   {
     dotNum <- e$activeDataList[[e$currImgId]][[3]]
@@ -943,6 +1019,12 @@ addDot <- function(e, x, y)
       {
         print(coord)
         updateDotNum(e, 1)
+        pushUndo(e, list(
+          action = "place",
+          kind = "landmark",
+          coord = coord,
+          screen = c(as.integer(x), as.integer(y))
+        ))
       }
       else
       {
@@ -965,6 +1047,11 @@ addDot <- function(e, x, y)
 addAnchor <- function(e, x, y)
 {
   print(paste("line 954 : function addAnchor : ", x, y))
+  if (.placeIsDuplicate(e, x, y))
+  {
+    print("INFO : ignoring duplicate anchor from multi-click burst")
+    return(invisible())
+  }
   if (length(e$activeDataList) > 0)
   {
     anchorNum <- e$activeDataList[[e$currImgId]][[9]]
@@ -983,6 +1070,12 @@ addAnchor <- function(e, x, y)
       if (TRUE == add("anchor", coord[1], coord[2], coord[3]))
       {
         updateAnchorNum(e, 1)
+        pushUndo(e, list(
+          action = "place",
+          kind = "anchor",
+          coord = coord,
+          screen = c(as.integer(x), as.integer(y))
+        ))
       }
       else
       {
@@ -1006,19 +1099,26 @@ updateDotNum <- function(e, delt)
   e$activeDataList[[e$currImgId]][[3]] <- nDots
   print (paste("Updated number of (landmarks) dots", nDots))
 
-
-  if (nDots == e$landmarkNum && tclvalue(e$placeAnchorsVar) == "1")
-  {
-    tcl(e$nb, "tab", 1, state = "normal")
-    e$tabState[1] <- 1
+  if (!is.null(e$lmCountSpin)) {
+    tkconfigure(e$lmCountSpin, from = max(1L, as.integer(nDots)))
   }
-  else if (nDots == e$landmarkNum &&
-           tclvalue(e$placeAnchorsVar) == "0")
-  {
-    for (i in 2:4)
-    {
-      tcl(e$nb, "tab", i, state = "normal")
-      e$tabState[i] <- 1
+
+
+  refreshTabGating(e)
+  updateStepLabel(e)
+
+  nTarget <- as.integer(e$landmarkNum)
+  if (!is.null(e$statusLabel)) {
+    if (nDots < nTarget) {
+      setStatus(e,
+        paste0("Place all ", nTarget, " landmarks before continuing \u2014 ",
+               nDots, " of ", nTarget, " placed."),
+        "warning")
+    } else {
+      setStatus(e,
+        paste0("Specimen ", e$currImgId, " of ", length(e$activeDataList),
+               " \u2014 ", basename(e$activeDataList[[e$currImgId]][[1]])),
+        "neutral")
     }
   }
 
@@ -1033,13 +1133,27 @@ updateAnchorNum <- function(e, delt)
   e$activeDataList[[e$currImgId]][[9]] <- nAnchors
   print (paste("Updated number of (anchors) dots", nAnchors))
 
+  if (!is.null(e$anchorCountSpin)) {
+    tkconfigure(e$anchorCountSpin, from = max(1L, as.integer(nAnchors)))
+  }
 
-  if (nAnchors == e$anchorNum)
-  {
-    for (i in 2:4)
-    {
-      tcl(e$nb, "tab", i, state = "normal")
-      e$tabState[i] <- 1
+
+  refreshTabGating(e)
+  updateStepLabel(e)
+
+  nTarget <- as.integer(e$anchorNum)
+  if (!is.null(e$statusLabel) &&
+      tclvalue(e$placeAnchorsVar) == "1") {
+    if (nAnchors < nTarget) {
+      setStatus(e,
+        paste0("Place all ", nTarget, " anchors before continuing \u2014 ",
+               nAnchors, " of ", nTarget, " placed."),
+        "warning")
+    } else {
+      setStatus(e,
+        paste0("Specimen ", e$currImgId, " of ", length(e$activeDataList),
+               " \u2014 ", basename(e$activeDataList[[e$currImgId]][[1]])),
+        "neutral")
     }
   }
 }
@@ -1055,8 +1169,14 @@ updateWidgets.digitize <- function(e)
   }
 
   dotNum <- e$activeDataList[[e$currImgId]][[3]]
+  sz <- e$activeDataList[[e$currImgId]][[2]]
+  tclvalue(e$lmSizeVar) <- as.character(sz)
+  tclvalue(e$lmCountVar) <- as.character(as.integer(e$landmarkNum))
+  if (!is.null(e$lmCountSpin)) {
+    tkconfigure(e$lmCountSpin, from = max(1L, as.integer(dotNum)))
+  }
   tkconfigure(e$landMarkNumLabel, text = paste("Number of Landmarks: ", dotNum))
-  tkconfigure(e$imgPath, text = paste("Specimen Id: ", e$activeDataList[[e$currImgId]][[1]]))
+  tkconfigure(e$imgPath, text = paste0("Specimen ", e$currImgId, " of ", length(e$activeDataList)))
 }
 
 
@@ -1069,8 +1189,14 @@ updateWidgets.anchor <- function(e)
   }
 
   anchorNum <- e$activeDataList[[e$currImgId]][[9]]
+  sz <- e$activeDataList[[e$currImgId]][[2]]
+  tclvalue(e$anchorSizeVar) <- as.character(sz)
+  tclvalue(e$anchorCountVar) <- as.character(as.integer(e$anchorNum))
+  if (!is.null(e$anchorCountSpin)) {
+    tkconfigure(e$anchorCountSpin, from = max(1L, as.integer(anchorNum)))
+  }
   tkconfigure(e$anchorNumLabel, text = paste("Number of Anchors: ", anchorNum))
-  tkconfigure(e$imgPath, text = paste("Specimen Id: ", e$activeDataList[[e$currImgId]][[1]]))
+  tkconfigure(e$imgPath, text = paste0("Specimen ", e$currImgId, " of ", length(e$activeDataList)))
 }
 
 
