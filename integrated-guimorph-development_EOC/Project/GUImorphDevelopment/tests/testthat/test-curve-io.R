@@ -11,8 +11,13 @@ test_that("write.curve and read.curve round-trip a 3-column integer matrix", {
   result <- read.curve(content)
 
   expect_equal(result, curves)
-  expect_type(result, "integer")
+  expect_type(result, "double")
   expect_equal(ncol(result), 3L)
+})
+
+test_that("read.curve returns NULL when Curve= header is absent", {
+  content <- c("Landmark= 0", "Specimen= foo")
+  expect_null(read.curve(content))
 })
 
 test_that("write.curve and read.curve handle empty curve matrix", {
