@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0 Modernization** — Phases 1–9 ([archive](milestones/v1.0-ROADMAP.md)) — shipped 2026-06-23
-- 🟡 **v1.1 UI Modernization** — Phases 10–15 — in planning (defined 2026-06-24)
+- ✅ **v1.1 UI Modernization** — Phases 10–15 ([archive](milestones/v1.1-ROADMAP.md)) — shipped 2026-06-29
 
 ## Phases
 
@@ -24,57 +24,19 @@ Full phase details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 
 </details>
 
-### 🟡 v1.1 UI Modernization (Phases 10–15)
+<details>
+<summary>✅ v1.1 UI Modernization (Phases 10–15) — SHIPPED 2026-06-29</summary>
 
-> Strategy: modernize in place on Tk/ttk; the C/OpenGL renderer and `.dgt` format are unchanged (CON-01/02/03). Order runs low-risk visual foundation first → controls → feedback → guidance → shortcuts → the more isolated Curve functional work last.
+- [x] Phase 10: Visual Chrome & Menu Cleanup (3/3) — 2026-06-24
+- [x] Phase 11: Direct-Manipulation Controls (4/4) — 2026-06-24
+- [x] Phase 12: In-GUI Feedback & Status (4/4) — 2026-06-25
+- [x] Phase 13: Guided Workflow & Discoverability (2/2) — 2026-06-26
+- [x] Phase 14: Keyboard Shortcuts & Undo (2/2) — 2026-06-26
+- [x] Phase 15: Curve Tab Rehabilitation (3/3) — 2026-06-29
 
-#### Phase 10: Visual Chrome & Menu Cleanup
-**Goal:** A clean, themed, end-user-appropriate shell — no developer/diagnostic clutter, consistent widgets, resizable centered window, corrected wording.
-**Requirements:** UX-MENU-01, UX-MENU-02, UX-MENU-03
-**Why first:** Lowest-risk, high visual payoff, and establishes the theming/layout foundation later phases build on. No logic changes.
-**Plans:** 3 (planned 2026-06-24) — [10-01](phases/10-visual-chrome-menu-cleanup/10-01-PLAN.md) File menu cleanup · [10-02](phases/10-visual-chrome-menu-cleanup/10-02-PLAN.md) Themed/resizable/centered shell · [10-03](phases/10-visual-chrome-menu-cleanup/10-03-PLAN.md) Widget unification + wording + smoke UAT
+Full phase details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 
-#### Phase 11: Direct-Manipulation Controls
-**Goal:** Replace modal/stepper interactions with inline controls — spinbox counts, size slider, non-modal delete, responsive viewport + panel.
-**Requirements:** UX-CTL-01, UX-CTL-02, UX-CTL-03, UX-CTL-04
-**Depends on:** Phase 10 (layout/theme foundation).
-**Plans:** 4 (planned 2026-06-24)
-- [x] [11-01](phases/11-direct-manipulation-controls/11-01-PLAN.md) — Live size slider on Digitize + Anchor tabs (UX-CTL-01)
-- [x] [11-02](phases/11-direct-manipulation-controls/11-02-PLAN.md) — Inline count spinbox with placed-count floor (UX-CTL-02)
-- [x] [11-03](phases/11-direct-manipulation-controls/11-03-PLAN.md) — Non-modal immediate right-click delete (UX-CTL-03)
-- [x] [11-04](phases/11-direct-manipulation-controls/11-04-PLAN.md) — Responsive viewport + panel resize, debounced (UX-CTL-04)
-
-#### Phase 12: In-GUI Feedback & Status ✅
-**Goal:** A status bar + progress feedback; route key console output to the GUI; make validation non-blocking instead of modal nags.
-**Requirements:** UX-FB-01, UX-FB-02, UX-FB-03 — validated 2026-06-25
-**Depends on:** Phase 10 (shell has a place for the status area).
-**Plans:** 4 plans in 3 waves (planned 2026-06-25) — shipped + UAT 2026-06-25
-- [x] [12-01](phases/12-in-gui-feedback-status/12-01-PLAN.md) — Status API helpers + status bar widgets + env-storage gaps (wave 1) (UX-FB-01/02/03)
-- [x] [12-02](phases/12-in-gui-feedback-status/12-02-PLAN.md) — Nav-gate modal→inline conversion + proactive disable + showPicture parity (wave 2) (UX-FB-03/01)
-- [x] [12-03](phases/12-in-gui-feedback-status/12-03-PLAN.md) — Compute-gate inline conversion + GPA busy feedback (wave 2) (UX-FB-03/02/01)
-- [x] [12-04](phases/12-in-gui-feedback-status/12-04-PLAN.md) — PLY load determinate progress + load failure status (wave 3) (UX-FB-02/01)
-
-#### Phase 13: Guided Workflow & Discoverability ✅
-**Goal:** Make the digitize order and placement model obvious — placement hints, transparent/streamlined tab-gating, "specimen N of M" with jump-to.
-**Requirements:** UX-WF-01, UX-WF-02, UX-WF-03, UX-WF-04 — validated 2026-06-26
-**Depends on:** Phase 12 (uses the status/feedback surface).
-**Plans:** 2 plans in 2 waves — shipped + UAT 2026-06-26
-- [x] [13-01](phases/13-guided-workflow-discoverability/13-01-PLAN.md) — Unified unlock-on-load tab-gating + disabled-tab click-to-explain + step indicator (wave 1) (UX-WF-04/02)
-- [x] [13-02](phases/13-guided-workflow-discoverability/13-02-PLAN.md) — Placement hint + specimen counter + jump-to combobox (wave 2) (UX-WF-01/03)
-
-#### Phase 14: Keyboard Shortcuts & Undo ✅
-**Goal:** Accelerators for common actions and an undo for landmark/anchor placement & deletion.
-**Requirements:** UX-KEY-01, UX-KEY-02 — validated 2026-06-26
-**Depends on:** Phase 11 (delete/placement paths settled before adding undo).
-**Plans:** 2 plans in 2 waves (planned 2026-06-25) — shipped + UAT 2026-06-26
-- [x] [14-01](phases/14-keyboard-shortcuts-undo/14-01-PLAN.md) — Global accelerators + Help shortcuts dialog (wave 1) (UX-KEY-01)
-- [x] [14-02](phases/14-keyboard-shortcuts-undo/14-02-PLAN.md) — Single-level undo helpers + Ctrl+Z + nav/load clears (wave 2) (UX-KEY-02)
-
-#### Phase 15: Curve Tab Rehabilitation
-**Goal:** Re-enable the commented-out Curve controls, make curve definition round-trip through `.dgt`, and reconcile UI with the README.
-**Requirements:** UX-CRV-01, UX-CRV-02
-**Why last:** Most isolated functional work and the only phase touching curve behavior; benefits from the modernized control patterns from Phases 11–14.
-**Plans:** TBD via `/gsd-plan-phase 15`
+</details>
 
 ## Progress
 
@@ -82,11 +44,11 @@ Full phase details: [milestones/v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md)
 |-------|-----------|-------|--------|-----------|
 | 1–9 | v1.0 | 28/28 | Shipped | 2026-06-23 |
 | 10 | v1.1 | 3/3 | Shipped | 2026-06-24 |
-| 11 | v1.1 | 4/4 | Shipped | 2026-06-24 |
+| 11 | v1.1 | 4/4 | Shipped + UAT | 2026-06-29 |
 | 12 | v1.1 | 4/4 | Shipped + UAT | 2026-06-25 |
 | 13 | v1.1 | 2/2 | Shipped + UAT | 2026-06-26 |
 | 14 | v1.1 | 2/2 | Shipped + UAT | 2026-06-26 |
-| 15 | v1.1 | 0 | Not started | — |
+| 15 | v1.1 | 3/3 | Shipped + UAT | 2026-06-29 |
 
 ## Backlog
 
@@ -117,4 +79,4 @@ Plans:
 ---
 *Roadmap created: 2026-06-13*  
 *v1.0 archived: 2026-06-23*  
-*v1.1 UI Modernization defined: 2026-06-24 — start execution with `/gsd-plan-phase 10`*
+*v1.1 archived: 2026-06-29*
