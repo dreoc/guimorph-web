@@ -404,7 +404,7 @@ init.main <- function(e)
 
 
   add ("setCurveScaleFactor", 1.0, 0.2, 0)   # THIS IS NOT COMPLETE
-  add ("setLabelScaleFactor", 1.0, 0.2, 0)
+  add ("setLabelScaleFactor", 1.0, 0.0, 0)
 
 }
 
