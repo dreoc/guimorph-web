@@ -555,14 +555,14 @@ int validateDot(point_t* p)
 		return -1;
 	}
 
-	if (p->x < models->min[X]) { fail = 1; }
-	if (p->x > models->max[X]) { fail = 1; }
+	if (p->x < models[model_index].min[X]) { fail = 1; }
+	if (p->x > models[model_index].max[X]) { fail = 1; }
 
-	if (p->y < models->min[Y]) { fail = 1; }
-	if (p->y > models->max[Y]) { fail = 1; }
+	if (p->y < models[model_index].min[Y]) { fail = 1; }
+	if (p->y > models[model_index].max[Y]) { fail = 1; }
 
-	if (p->z < models->min[Z]) { fail = 1; }
-	if (p->z > models->max[Z]) { fail = 1; }
+	if (p->z < models[model_index].min[Z]) { fail = 1; }
+	if (p->z > models[model_index].max[Z]) { fail = 1; }
 
 	simpleLog("   dot validation data ...");
 	if (1 == fail)
@@ -576,11 +576,11 @@ int validateDot(point_t* p)
 		simpleLog(buffer);
 	}
 
-	sprintf(buffer, " X : <  %10.6f  |  %10.6f  | %10.6f >", models->min[X], p->x, models->max[X]);
+	sprintf(buffer, " X : <  %10.6f  |  %10.6f  | %10.6f >", models[model_index].min[X], p->x, models[model_index].max[X]);
 	simpleLog(buffer);
-	sprintf(buffer, " Y : <  %10.6f  |  %10.6f  | %10.6f >", models->min[Y], p->y, models->max[Y]);
+	sprintf(buffer, " Y : <  %10.6f  |  %10.6f  | %10.6f >", models[model_index].min[Y], p->y, models[model_index].max[Y]);
 	simpleLog(buffer);
-	sprintf(buffer, " Z : <  %10.6f  |  %10.6f  | %10.6f >", models->min[Z], p->z, models->max[Z]);
+	sprintf(buffer, " Z : <  %10.6f  |  %10.6f  | %10.6f >", models[model_index].min[Z], p->z, models[model_index].max[Z]);
 	simpleLog(buffer);
 
 	if (1 == fail)
@@ -1647,7 +1647,7 @@ TCL_CMD(add)
 			simpleLog("INFO : attempting to load downsample model");
 
 			int rv = -1;
-			rv = ogl_loadDownSampleModel(flattenedVertices, listc, models);
+			rv = ogl_loadDownSampleModel(flattenedVertices, listc, &models[id]);
 			if (0 != rv)
 			{
 				simpleLog("ERROR : fail return from ogl_loadDownSampleModel");
@@ -3451,7 +3451,7 @@ void onDisplay()
 		glColor3f(1.0, 1.0, 1.0);
 		if (showModel != NONE && showModel != DOWN_SAMPLE_ONLY) //display model without any additional objects 
 		{
-			ogl_drawModel(models);
+			ogl_drawModel(&models[model_index]);
 		}
 
 		//based on which tab the user is on, it will display specific information. 
@@ -3471,14 +3471,14 @@ void onDisplay()
 			simpleLog("DAVE LOOK HERE");
 			simpleLogWriteModelToFile(models);
 
-			ogl_drawDownSampleModel(models, dotRadius, &downSampleOffset);
+			ogl_drawDownSampleModel(&models[model_index], dotRadius, &downSampleOffset);
 			break;
 		case CURVE:
 			drawDots();
 			drawCurves();
 			break;
 		case DOWN_SAMPLE_ONLY:
-			ogl_drawDownSampleModel(models, dotRadius, &downSampleOffset);
+			ogl_drawDownSampleModel(&models[model_index], dotRadius, &downSampleOffset);
 			break;
 		}
 	}

@@ -152,7 +152,7 @@ itob <- function(int) {
 
 #computes shape object data and performs analysis
 compute <- function(e) {
-  #e$sliderNum<-nrow(e$activeDataList[[1]][[8]])
+  if (!is.null(e$activeDataList[[1]][[8]]) && !is.null(nrow(e$activeDataList[[1]][[8]]))) e$sliderNum <- nrow(e$activeDataList[[1]][[8]])
   print("compute")
   nSpecimen <- length(e$activeDataList)
 

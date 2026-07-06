@@ -498,7 +498,7 @@ switchTab <- function(e, id)
 
 
     if (length(e$activeDataList) > 0) {
-    e$activeDataList[[e$currImgId]][[8]] <- 0
+    if (!is.matrix(e$activeDataList[[e$currImgId]][[8]])) e$activeDataList[[e$currImgId]][[8]] <- 0
 
     if (e$activeDataList[[e$currImgId]][[8]] == "NULL")
     {
@@ -1003,6 +1003,14 @@ showPicture <- function(e)
       "neutral")
   }
   set("specimen", "id", e$currImgId)
+
+  # switching specimens reloads the mesh, which clears its surface cloud;
+  # re-send this specimen's stored surface so the cloud persists across navigation
+  surf <- e$activeDataList[[imgId]][[8]]
+  if (!is.null(surf) && is.matrix(surf) && nrow(surf) > 0)
+  {
+    add("downsample", as.vector(t(surf)), imgId)
+  }
 
 
   zoom <- e$activeDataList[[imgId]][[7]]
@@ -1732,6 +1740,12 @@ if(0)
 
 
 
+
+    # display this specimen's surface semilandmarks loaded from the .dgt file
+    if (!is.null(surfaces) && length(surfaces) > 0 && !anyNA(surfaces[, , id]))
+    {
+      add("downsample", as.vector(t(surfaces[, , id])), id)
+    }
 
     dgtDataList[[specId]] <-
       list(
