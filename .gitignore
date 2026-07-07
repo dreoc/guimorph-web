@@ -142,3 +142,9 @@ _load_test.R
 *.mesh-validatedot-ok
 fixes/
 build-msvc/
+
+# --- edit/patcher backups (anything containing 'bak') ---
+*bak*
+
+# --- machine-specific template (regenerated per project) ---
+integrated-guimorph-development_EOC/Project/GUImorphDevelopment/template.txt
