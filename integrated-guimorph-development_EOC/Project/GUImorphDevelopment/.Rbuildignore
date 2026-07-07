@@ -2,3 +2,5 @@
 ^\.Rproj\.user$
 ^renv$
 ^renv\.lock$
+^bak
+template.txt

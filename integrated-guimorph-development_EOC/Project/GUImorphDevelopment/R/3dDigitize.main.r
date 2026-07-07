@@ -841,6 +841,13 @@ createMenu <- function(e)
     command = function()
       loadPly(e)
   )
+  tkadd(
+    fileMenu,
+    "command",
+    label = "Add PLY to Current DGT\u2026",
+    command = function()
+      addPly(e)
+  )
 
   tkadd(
     fileMenu,
@@ -856,6 +863,14 @@ createMenu <- function(e)
     label = "Save to DGT\u2026",
     command = function()
       saveToDgt(e)
+  )
+
+  tkadd(
+    fileMenu,
+    "command",
+    label = "Merge DGT Files\u2026",
+    command = function()
+      mergeDgtFiles(e)
   )
 
   tkadd(fileMenu, "separator")
@@ -2750,6 +2765,7 @@ openDgt <- function(e)
 
   ################### read template ##################
   templOrig <- read.template(rawContent)
+  if (file.exists("template.txt")) e$templatePoints <- as.matrix(read.table("template.txt", header = TRUE))
   if (1)
   {
     print(paste("e$templOrig", e$templOrig))
@@ -2917,6 +2933,10 @@ openDgt <- function(e)
   {
 
     e$templOrig <- templOrig
+    e$tmplVar <- tclVar(paste("Based on ", e$templOrig))
+    tkconfigure(e$tmplEntry, textvariable = e$tmplVar)
+    e$downsmplVar <- tclVar(paste("based on ", e$templOrig))
+    tkconfigure(e$downsmplEntry, textvariable = e$downsmplVar)
     e$sliderNum <- sliderNum
 
     print ("file 3dDigitize.main ... function openDgt ... line 2687")
@@ -3013,3 +3033,332 @@ openDgt <- function(e)
 
 
 
+
+# appends PLY specimens to the current session, then rebuilds the engine from the list
+addPly <- function(e)
+{
+  cat("\n>>>>> SAFE addPly (snapshot -> grow -> replay) RUNNING <<<<<\n")
+
+  if (length(e$activeDataList) == 0) {
+    tkmessageBox(title = "Add PLY", message = "Open a DGT first.",
+                 icon = "info", type = "ok")
+    return(invisible())
+  }
+
+  ## 1. pick PLY file(s) --------------------------------------------------
+  fileStr <- tclvalue(tkgetOpenFile(filetypes = "{{ply file} {.ply}}",
+                                    multiple = TRUE,
+                                    title = "Select PLY specimen(s) to add"))
+  if (!nchar(fileStr)) return(invisible())
+  if (length(grep("}", fileStr)) > 0) {
+    imgList <- unlist(strsplit(fileStr, "} ", fixed = FALSE))
+    imgList <- gsub("}", "", imgList, fixed = TRUE)
+    imgList <- gsub("\\{", "", imgList)
+  } else {
+    imgList <- unlist(strsplit(fileStr, " ", fixed = FALSE))
+  }
+  imgList <- imgList[nchar(imgList) > 0]
+  imgList <- imgList[file.exists(imgList)]
+  if (!length(imgList)) {
+    tkmessageBox(title = "Add PLY", message = "No valid PLY files selected.",
+                 icon = "info", type = "ok")
+    return(invisible())
+  }
+
+  nOld  <- length(e$activeDataList)
+  nNew  <- length(imgList)
+  total <- nOld + nNew
+  cat(sprintf("SAFE addPly: %d existing + %d new = %d total\n", nOld, nNew, total))
+
+  ## 2. SNAPSHOT existing specimens from the live engine ------------------
+  ##    (you will see getLandmark debug lines here - that proves it ran)
+  oldFiles <- vapply(seq_len(nOld), function(i) e$activeDataList[[i]][[1]], character(1))
+  oldSurf  <- lapply(seq_len(nOld), function(i) e$activeDataList[[i]][[8]])
+  oldTmpt  <- lapply(seq_len(nOld), function(i) e$activeDataList[[i]][[5]])
+  oldLM    <- lapply(seq_len(nOld), function(i) getLandmark(i))
+  oldAC    <- lapply(seq_len(nOld), function(i) getAnchor(i))
+  digIdx   <- which(vapply(oldLM, function(m) !is.null(m) && nrow(m) > 0, logical(1)))
+  cat(sprintf("SAFE addPly: captured landmarks for specimen(s): %s\n",
+              paste(digIdx, collapse = ",")))
+
+  L <- e$landmarkNum
+  if (is.null(L) || is.na(L) || L == 0) {
+    nn <- Filter(function(m) !is.null(m) && nrow(m) > 0, oldLM)
+    L  <- if (length(nn)) nrow(nn[[1]]) else 0
+  }
+  if (is.null(L) || L == 0) {
+    tkmessageBox(title = "Add PLY",
+                 message = "No digitized landmarks found in the session.",
+                 icon = "info", type = "ok")
+    return(invisible())
+  }
+
+  haveAnchors <- any(vapply(oldAC, function(a) !is.null(a) && nrow(a) > 0, logical(1)))
+  A <- if (haveAnchors) nrow(Filter(function(a) !is.null(a) && nrow(a) > 0, oldAC)[[1]]) else 0L
+  curves <- e$dgtcurvestuff
+
+  ## 3. GROW the engine to `total` (this wipes C) ------------------------
+  set("window", "mode", "none")
+  set("specimen", "allocate", total)
+  e$lmkLoadedInC <- as.list(rep(FALSE, total))
+  names(e$lmkLoadedInC) <- as.character(seq_len(total))
+  e$anchorsPresentInMemory <- 0
+  add("InfoLandmarks", L, 3, total)
+  if (haveAnchors) add("InfoAnchors", A, 3, total)
+
+  ## 4. REPLAY the existing specimens back into the engine ---------------
+  for (i in seq_len(nOld)) {
+    set("specimen", "id", i)
+    lm <- oldLM[[i]]
+    if (!is.null(lm) && nrow(lm) > 0) {
+      draw.digitize(e, i, oldFiles[i], lm)
+    } else {
+      add("specimen", oldFiles[i], i)
+    }
+    if (haveAnchors) {
+      ac <- oldAC[[i]]
+      if (!is.null(ac) && nrow(ac) > 0) {
+        e$anchorsPresentInMemory <- 0
+        draw.anchors(e, i, ac)
+      }
+    }
+    sf <- oldSurf[[i]]
+    if (is.matrix(sf) && nrow(sf) > 0) add("downsample", as.vector(t(sf)), i)
+  }
+  if (!is.null(curves) && length(curves) > 0 && nrow(curves) > 0) {
+    add("InfoCurves", nrow(curves), ncol(curves), total)
+    draw.curves(curves)
+  }
+
+  ## 5. register the NEW specimens (mesh only, empty landmark slots) ------
+  emptyMat   <- matrix(nrow = 0, ncol = 3)
+  tmplScalar <- if (nOld > 0) oldTmpt[[1]] else "NULL"
+  for (j in seq_len(nNew)) {
+    id <- nOld + j
+    set("specimen", "id", id)
+    add("specimen", imgList[j], id)
+  }
+  newEntries <- lapply(imgList, function(f)
+    list(f, 0.01, 0, emptyMat, tmplScalar, c(0, 0), 0, emptyMat, 0, emptyMat, emptyMat))
+  e$activeDataList <- c(e$activeDataList, newEntries)
+
+  ## 6. VERIFY the originals actually survived ---------------------------
+  restored <- vapply(seq_len(nOld),
+                     function(i) { m <- getLandmark(i); !is.null(m) && nrow(m) > 0 },
+                     logical(1))
+  cat(sprintf("SAFE addPly VERIFY: originals restored = %s\n",
+              paste(restored, collapse = ",")))
+  if (!all(restored)) {
+    tkmessageBox(title = "Add PLY - WARNING",
+      message = paste0("These existing specimens did NOT restore: ",
+                       paste(which(!restored), collapse = ", "),
+                       ".\nDo NOT Save. Please report this."),
+      icon = "warning", type = "ok")
+  }
+
+  ## 7. UI refresh (best-effort) -----------------------------------------
+  e$currImgId <- nOld + 1
+  set("specimen", "id", e$currImgId)
+  try(tkconfigure(e$specimenNumLabel,  text = paste("Number of Specimens: ", total)), silent = TRUE)
+  try(tkconfigure(e$specimenNumLabel2, text = paste("Number of Specimens: ", total)), silent = TRUE)
+  try(refreshNavButtons(e),     silent = TRUE)
+  try(populateSpecimenCombo(e), silent = TRUE)
+  try(updateStepLabel(e),       silent = TRUE)
+  try(refreshTabGating(e),      silent = TRUE)
+  modeStr <- if (identical(e$tab, 0)) "digitize" else
+             if (identical(e$tab, 2)) "surface"  else
+             if (identical(e$tab, 3)) "curve"    else "digitize"
+  set("window", "mode", modeStr)
+  showPicture(e)
+  try(setStatus(e, paste0("Added ", nNew, " specimen(s); ",
+                          sum(restored), "/", nOld, " originals preserved. ",
+                          "Digitize + downsample the new one(s), then Save."),
+                if (all(restored)) "success" else "warning"), silent = TRUE)
+
+  cat(">>>>> SAFE addPly DONE <<<<<\n")
+  invisible(TRUE)
+}
+
+
+# =====================================================================
+#  Merge multiple .dgt files into one dataset.
+#  Menu: File > Merge DGT Files...    Console: mergeDgt(inputs, output)
+#
+#  Offline-safe counterpart to Add PLY: each input .dgt was written while
+#  its own landmarks were live in the C engine, so concatenating their
+#  text can never disturb another specimen's data. Keeps ONE Curve block
+#  and ONE Template block, then appends every specimen body in order.
+#  Refuses to write unless the templates match, the curves match, and
+#  every specimen agrees on LM3 / AC3 / Surface counts -- the same
+#  invariants openDgt() enforces on load.
+# =====================================================================
+
+.mdgt_tol <- 1e-6
+
+.mdgt_read <- function(path) sub("\r$", "", readLines(path, warn = FALSE))
+
+.mdgt_keyIdx <- function(lines, key) grep(paste0("^", key), lines, ignore.case = TRUE)
+
+.mdgt_valAfter <- function(line, key) sub(paste0("^", key), "", line, ignore.case = TRUE)
+
+.mdgt_coordRows <- function(lines, start, n) {
+  if (n <= 0) return(matrix(numeric(0), ncol = 3))
+  body <- lines[(start + 1):(start + n)]
+  matrix(as.numeric(unlist(strsplit(trimws(body), "\\s+"))), ncol = 3, byrow = TRUE)
+}
+
+.mdgt_split <- function(path) {
+  lines <- .mdgt_read(path)
+  lm <- .mdgt_keyIdx(lines, "LM3=")
+  if (length(lm) == 0)
+    stop(sprintf("%s: no 'LM3=' blocks (not a digitized .dgt?)", basename(path)))
+  header <- if (lm[1] > 1) lines[1:(lm[1] - 1)] else character(0)
+  chunks <- lapply(seq_along(lm), function(k) {
+    s <- lm[k]; e <- if (k < length(lm)) lm[k + 1] - 1 else length(lines)
+    lines[s:e]
+  })
+  list(path = path, header = header, chunks = chunks)
+}
+
+# Curve/Template blocks compared as RAW TEXT (GUImorph copies them verbatim,
+# and the template's first data row is a non-numeric header "V1" "V2" "V3").
+.mdgt_rawLines <- function(header, start, n) {
+  if (n <= 0) return(character(0))
+  trimws(header[(start + 1):(start + n)])
+}
+
+.mdgt_curve <- function(header) {
+  i <- .mdgt_keyIdx(header, "Curve=")
+  if (length(i) == 0) return(list(count = 0L, rows = character(0)))
+  n <- as.integer(.mdgt_valAfter(header[i[1]], "Curve=")); if (is.na(n)) n <- 0L
+  list(count = n, rows = .mdgt_rawLines(header, i[1], n))
+}
+
+.mdgt_template <- function(header) {
+  i <- .mdgt_keyIdx(header, "TemplateNumber=")
+  if (length(i) == 0)
+    return(list(count = 0L, rows = character(0), null = TRUE))
+  v <- trimws(.mdgt_valAfter(header[i[1]], "TemplateNumber="))
+  if (toupper(v) == "NULL")
+    return(list(count = 0L, rows = character(0), null = TRUE))
+  m <- as.integer(v)
+  list(count = m, rows = .mdgt_rawLines(header, i[1] + 1, m), null = FALSE)
+}
+
+.mdgt_counts <- function(chunk) {
+  one <- function(key, default = NA_integer_) {
+    idx <- .mdgt_keyIdx(chunk, key); if (length(idx) == 0) return(default)
+    raw <- trimws(.mdgt_valAfter(chunk[idx[1]], key))
+    if (toupper(raw) == "NULL") return(0L)
+    v <- suppressWarnings(as.integer(raw)); if (is.na(v)) default else v
+  }
+  idID <- .mdgt_keyIdx(chunk, "ID=")
+  list(LM3 = one("LM3="), AC3 = one("AC3=", 0L), Surface = one("Surface="),
+       Template = length(.mdgt_keyIdx(chunk, "Template=")) > 0,
+       ID = if (length(idID)) .mdgt_valAfter(chunk[idID[1]], "ID=") else "<no ID>")
+}
+
+.mdgt_rowsEqual <- function(a, b) {
+  identical(as.character(a), as.character(b))
+}
+
+# public: returns list(ok, errors, summary, output). Writes file iff ok.
+mergeDgt <- function(inputs, output) {
+  if (length(inputs) < 2)
+    return(list(ok = FALSE, errors = "Select at least two .dgt files to merge.",
+                summary = NULL, output = output))
+  if (!grepl("\\.dgt$", output, ignore.case = TRUE)) output <- paste0(output, ".dgt")
+
+  parsed <- lapply(inputs, .mdgt_split)
+  ref <- parsed[[1]]
+  refCur <- .mdgt_curve(ref$header)
+  refTmp <- .mdgt_template(ref$header)
+  first <- .mdgt_counts(ref$chunks[[1]])
+  L0 <- first$LM3; A0 <- first$AC3; S0 <- first$Surface
+  if (is.na(L0) || is.na(S0))
+    return(list(ok = FALSE,
+                errors = sprintf("%s: first specimen missing LM3= or Surface=.", basename(ref$path)),
+                summary = NULL, output = output))
+
+  errs <- character(0); nTotal <- 0L
+  for (pf in parsed) {
+    cur <- .mdgt_curve(pf$header); tmp <- .mdgt_template(pf$header)
+    if (tmp$null != refTmp$null || tmp$count != refTmp$count || !.mdgt_rowsEqual(tmp$rows, refTmp$rows))
+      errs <- c(errs, sprintf(
+        "TEMPLATE MISMATCH: %s (%d pts) differs from %s (%d pts). Surface semilandmarks would not be homologous.",
+        basename(pf$path), tmp$count, basename(ref$path), refTmp$count))
+    if (cur$count != refCur$count || !.mdgt_rowsEqual(cur$rows, refCur$rows))
+      errs <- c(errs, sprintf("CURVE MISMATCH: %s (%d pts) differs from %s (%d pts).",
+                              basename(pf$path), cur$count, basename(ref$path), refCur$count))
+    for (ci in seq_along(pf$chunks)) {
+      cc <- .mdgt_counts(pf$chunks[[ci]]); nTotal <- nTotal + 1L
+      tag <- sprintf("%s specimen %d (ID=%s)", basename(pf$path), ci, cc$ID)
+      if (!identical(cc$LM3, L0)) errs <- c(errs, sprintf("LANDMARK COUNT: %s has LM3=%s, expected %d.", tag, cc$LM3, L0))
+      if (!identical(cc$AC3, A0)) errs <- c(errs, sprintf("ANCHOR COUNT: %s has AC3=%s, expected %d.", tag, cc$AC3, A0))
+      if (!identical(cc$Surface, S0)) errs <- c(errs, sprintf("SURFACE COUNT: %s has Surface=%s, expected %d.", tag, cc$Surface, S0))
+      if (!cc$Template) errs <- c(errs, sprintf("MISSING Template= line in %s.", tag))
+    }
+  }
+  if (refTmp$null)
+    errs <- c(errs, sprintf("%s has no template (TemplateNumber=NULL); a merged surface dataset needs a shared template.",
+                            basename(ref$path)))
+
+  if (length(errs) > 0)
+    return(list(ok = FALSE, errors = errs, summary = NULL, output = output))
+
+  out <- ref$header
+  for (pf in parsed) for (chunk in pf$chunks) {
+    out <- c(out, chunk)
+    if (length(chunk) == 0 || tail(chunk, 1) != "") out <- c(out, "")
+  }
+  con <- file(output, open = "wb"); writeLines(out, con, sep = "\r\n"); close(con)
+
+  summary <- paste(c(
+    sprintf("Merged %d files into:", length(inputs)), output, "",
+    sprintf("Specimens: %d", nTotal),
+    sprintf("Landmarks: %d   Anchors: %d   Surface: %d", L0, A0, S0),
+    sprintf("Template points: %d   Curve points: %d", refTmp$count, refCur$count)),
+    collapse = "\n")
+  list(ok = TRUE, errors = character(0), summary = summary, output = output)
+}
+
+# GUI wrapper wired to  File > Merge DGT Files...
+mergeDgtFiles <- function(e) {
+  fileStr <- tclvalue(tkgetOpenFile(filetypes = "{DGT {.dgt}}", multiple = TRUE,
+                                    title = "Select 2+ .dgt files to merge"))
+  if (!nchar(fileStr)) return(invisible())
+  if (length(grep("}", fileStr)) > 0) {
+    inputs <- unlist(strsplit(fileStr, "} ", fixed = FALSE))
+    inputs <- gsub("}", "", inputs, fixed = TRUE)
+    inputs <- gsub("\\{", "", inputs)
+  } else {
+    inputs <- unlist(strsplit(fileStr, " ", fixed = FALSE))
+  }
+  inputs <- inputs[nchar(inputs) > 0]
+  inputs <- inputs[file.exists(inputs)]
+  if (length(inputs) < 2) {
+    tkmessageBox(title = "Merge DGT Files",
+      message = "Select at least two existing .dgt files.", icon = "info", type = "ok")
+    return(invisible())
+  }
+
+  output <- tclvalue(tkgetSaveFile(filetypes = "{DGT {.dgt}}", title = "Save merged .dgt as"))
+  if (!nchar(output)) return(invisible())
+  if (!grepl("\\.dgt$", output, ignore.case = TRUE)) output <- paste0(output, ".dgt")
+
+  res <- tryCatch(mergeDgt(inputs, output),
+                  error = function(err) list(ok = FALSE,
+                    errors = paste("Unexpected error:", conditionMessage(err)),
+                    summary = NULL, output = output))
+
+  if (isTRUE(res$ok)) {
+    if (!is.null(e) && !is.null(e$statusLabel))
+      setStatus(e, paste0("Merged ", length(inputs), " .dgt files -> ", basename(output)), "success")
+    tkmessageBox(title = "Merge complete", message = res$summary, icon = "info", type = "ok")
+  } else {
+    tkmessageBox(title = "Merge refused",
+      message = paste0("No file was written.\n\n", paste(res$errors, collapse = "\n\n")),
+      icon = "error", type = "ok")
+  }
+  invisible(res$ok)
+}

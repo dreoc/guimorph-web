@@ -72,6 +72,19 @@ ui.geomorph <- function(e, parent) {
   tkgrid(tk2spinbox(gpagenCtlFrame, from = .5, to = 10, increment = .1
                     ,tip = "Mean Shape size", textvariable = e$meancex, width=5), row = 14, column = 0, sticky="e")
   tkgrid(plotspecsBtn)
+  # PCA morphospace
+  pcaBtn <- ttkbutton(gpagenCtlFrame, text = "PCA (morphospace)", command = function() plotPCA(e))
+  tkgrid(pcaBtn)
+  # mean-shape surface controls
+  e$bpFactor <- tclVar("2")
+  e$meshWire <- tclVar("0")
+  tkgrid(tk2label(gpagenCtlFrame, text = "Radius factor (x spacing)"), sticky = "w")
+  tkgrid(tk2spinbox(gpagenCtlFrame, from = 0.5, to = 10, increment = .1,
+                    tip = "Ball-pivot radius = factor x median point spacing. Up for holes, down if faces fuse.",
+                    textvariable = e$bpFactor, width = 6), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Wireframe (off = surface)", variable = e$meshWire), sticky = "w")
+  meanBtn <- ttkbutton(gpagenCtlFrame, text = "Plot Mean Shape", command = function() plotMeanShape(e))
+  tkgrid(meanBtn)
   return (gpagenCtlFrame)
 }
 
@@ -272,41 +285,77 @@ save <- function(e) {
 #graphs landmarks in xyz plane
 plotspecs <- function(e) {
   gm.res <- .gm_results_or_warn(e)
-  if (is.null(gm.res)) {
+  if (is.null(gm.res)) return()
+  if (!requireNamespace("rgl", quietly = TRUE)) {
+    tkmessageBox(title = "Plot error",
+      message = "3D plots need the rgl package. Run install.packages(\"rgl\").",
+      icon = "error", type = "ok"); return()
+  }
+  aligned   <- .gm_aligned_coords(gm.res)
+  consensus <- gm.res$consensus
+  ptcex   <- as.numeric(tclvalue(e$ptcex))
+  meancex <- as.numeric(tclvalue(e$meancex))
+  n <- dim(aligned)[3]
+  cols <- grDevices::rainbow(n)
+  rgl::open3d()
+  for (i in seq_len(n)) rgl::points3d(aligned[, , i], color = cols[i], size = ptcex * 3)
+  rgl::points3d(consensus, color = "red", size = meancex * 4)
+  rgl::aspect3d("iso")
+  rgl::rgl.bringtotop(stay = TRUE)
+}
+
+plotPCA <- function(e) {
+  gm.res <- .gm_results_or_warn(e)
+  if (is.null(gm.res)) return()
+  aligned <- .gm_aligned_coords(gm.res)
+  n <- dim(aligned)[3]
+  if (n < 2) {
+    tkmessageBox(title = "PCA", message = "PCA needs at least 2 specimens.", icon = "info", type = "ok")
     return()
   }
-  aligned <- .gm_aligned_coords(gm.res)
-  plot_param <- list(
-    pt.bg = "blue",
-    pt.cex = as.numeric(tclvalue(e$ptcex)),
-    mean.bg = "red",
-    mean.cex = as.numeric(tclvalue(e$meancex))
-  )
-  tryCatch({
-    if (requireNamespace("rgl", quietly = TRUE)) {
-      rgl::open3d()
-    }
-    geomorph::plotAllSpecimens(
-      aligned,
-      mean = TRUE,
-      links = NULL,
-      label = FALSE,
-      plot_param = plot_param
-    )
-    if (requireNamespace("rgl", quietly = TRUE)) {
-      rgl::rgl.bringtotop(stay = TRUE)
-    }
-  }, error = function(err) {
-    tkmessageBox(
-      title = "Plot error",
-      message = paste0(
-        "Plot Aligned Specimens failed:\n",
-        conditionMessage(err),
-        "\n\n3D plots need the rgl package. In Windows R run:\n",
-        "install.packages(\"rgl\")"
-      ),
-      icon = "error",
-      type = "ok"
-    )
-  })
+  pca <- geomorph::gm.prcomp(aligned)
+  scores <- pca$x
+  cols <- grDevices::rainbow(n)
+  vv <- apply(scores, 2, stats::var)
+  ve <- round(100 * vv / sum(vv), 1)
+  grDevices::dev.new()
+  if (ncol(scores) >= 2) {
+    plot(scores[, 1], scores[, 2], pch = 19, col = cols, cex = 1.5,
+      xlab = paste0("PC1 (", ve[1], "%)"), ylab = paste0("PC2 (", ve[2], "%)"),
+      main = "Shape morphospace (PCA)")
+    text(scores[, 1], scores[, 2], labels = seq_len(n), pos = 3, cex = 0.9)
+  } else {
+    plot(scores[, 1], rep(0, n), pch = 19, col = cols, cex = 1.5, yaxt = "n", ylab = "",
+      xlab = "PC1", main = "Shape PCA (2 specimens: one axis)")
+    text(scores[, 1], rep(0, n), labels = seq_len(n), pos = 3, cex = 0.9)
+  }
+}
+
+plotMeanShape <- function(e) {
+  gm.res <- .gm_results_or_warn(e)
+  if (is.null(gm.res)) return()
+  if (!requireNamespace("rgl", quietly = TRUE) || !requireNamespace("Rvcg", quietly = TRUE)) {
+    tkmessageBox(title = "Mean shape",
+      message = "Needs rgl and Rvcg. Run install.packages(c(\"rgl\",\"Rvcg\")).",
+      icon = "error", type = "ok"); return()
+  }
+  M <- as.matrix(gm.res$consensus)
+  factor <- suppressWarnings(as.numeric(tclvalue(e$bpFactor)))
+  if (is.na(factor) || factor <= 0) factor <- 2
+  spacing <- stats::median(Rvcg::vcgKDtree(M, M, k = 2)$distance[, 2])
+  r <- factor * spacing
+  cat(sprintf("Mean-shape mesh: spacing %.4f, factor %.2f, radius %.4f\n", spacing, factor, r))
+  mesh <- try(Rvcg::vcgBallPivoting(M, radius = r, clustering = 0.2, angle = pi / 2), silent = TRUE)
+  if (inherits(mesh, "try-error") || is.null(mesh$it) || ncol(mesh$it) == 0) {
+    tkmessageBox(title = "Mean shape",
+      message = sprintf("No faces at radius %.4f. Raise the factor for holes, lower it if faces fuse.", r),
+      icon = "warning", type = "ok")
+    return()
+  }
+  wire <- as.character(tclvalue(e$meshWire)) == "1"
+  rgl::open3d()
+  if (wire) rgl::wire3d(mesh, color = "black") else rgl::shade3d(mesh, color = "lightgray")
+  rgl::points3d(M, color = "red", size = 4)
+  rgl::aspect3d("iso")
+  rgl::rgl.bringtotop(stay = TRUE)
 }

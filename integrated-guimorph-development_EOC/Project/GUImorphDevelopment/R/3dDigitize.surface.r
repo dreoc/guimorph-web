@@ -300,6 +300,7 @@ buildTemplate <- function(e)
 	print ("ready to write template ... where does it go ?")
 	# template <- rbind(lmk,kmeans(x=specimen,centers=e$sliderNum,iter.max=100)$centers)
 	write.table(template,file="template.txt",row.names=F,col.names=TRUE)
+	e$templatePoints <- template
 	disableOper(e, F)
 
 	e$tmplVar <- tclVar(paste("Based on ", basename(fileName)))
@@ -476,7 +477,12 @@ downSample <- function(e)
   }
 
 
-  template<- as.matrix(read.table("template.txt",header=TRUE))
+  template <- getTemplate(e)
+  if (is.null(template)) {
+    tkmessageBox(title = "No template",
+      message = "No template found. Build a template first, or open a .dgt that carries one.",
+      icon = "info", type = "ok"); return()
+  }
   #specimen<-center(as.matrix(specimen))
   specimen <- as.matrix(specimen)
 
@@ -683,6 +689,14 @@ write.template <- function(fileName, templOrig)
 
 
 #reads template data from .dgt file
+# template points: memory first, then template.txt, then NULL
+getTemplate <- function(e) {
+  if (!is.null(e$templatePoints)) return(e$templatePoints)
+  if (file.exists("template.txt"))
+    return(as.matrix(read.table("template.txt", header = TRUE)))
+  NULL
+}
+
 read.template <- function(rawContent)
 {
   ##print("read.template")

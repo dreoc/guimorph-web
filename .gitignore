@@ -132,3 +132,19 @@ scripts/.phase*
 # ===========================================================================
 _load_test.R
 .Rproj.user
+
+# local build and edit artifacts
+*.bak
+*.bak2
+*.bak3
+*.orig-bak
+*.WORKING-*
+*.mesh-validatedot-ok
+fixes/
+build-msvc/
+
+# --- edit/patcher backups (anything containing 'bak') ---
+*bak*
+
+# --- machine-specific template (regenerated per project) ---
+integrated-guimorph-development_EOC/Project/GUImorphDevelopment/template.txt
