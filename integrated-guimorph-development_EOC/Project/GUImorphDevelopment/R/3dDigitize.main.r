@@ -3029,50 +3029,144 @@ openDgt <- function(e)
 # appends PLY specimens to the current session, then rebuilds the engine from the list
 addPly <- function(e)
 {
-  if (length(e$activeDataList) == 0)
-  {
-    ans <- tkmessageBox(title = "No dataset",
-      message = "No dataset is open. Open a DGT to add specimens to?",
-      icon = "question", type = "yesno")
-    if (as.character(ans) == "yes") openDgt(e)
-    return()
+  cat("\n>>>>> SAFE addPly (snapshot -> grow -> replay) RUNNING <<<<<\n")
+
+  if (length(e$activeDataList) == 0) {
+    tkmessageBox(title = "Add PLY", message = "Open a DGT first.",
+                 icon = "info", type = "ok")
+    return(invisible())
   }
+
+  ## 1. pick PLY file(s) --------------------------------------------------
   fileStr <- tclvalue(tkgetOpenFile(filetypes = "{{ply file} {.ply}}",
-                                    multiple = TRUE, title = "Select PLY specimen(s) to add"))
-  if (!nchar(fileStr)) return()
-  if (length(grep("}", fileStr)) > 0)
-  {
+                                    multiple = TRUE,
+                                    title = "Select PLY specimen(s) to add"))
+  if (!nchar(fileStr)) return(invisible())
+  if (length(grep("}", fileStr)) > 0) {
     imgList <- unlist(strsplit(fileStr, "} ", fixed = FALSE))
     imgList <- gsub("}", "", imgList, fixed = TRUE)
-    imgList <- gsub("{", "", imgList, fixed = TRUE)
-  }
-  else
-  {
+    imgList <- gsub("\\{", "", imgList)
+  } else {
     imgList <- unlist(strsplit(fileStr, " ", fixed = FALSE))
   }
   imgList <- imgList[nchar(imgList) > 0]
   imgList <- imgList[file.exists(imgList)]
-  if (length(imgList) == 0)
-  {
+  if (!length(imgList)) {
     tkmessageBox(title = "Add PLY", message = "No valid PLY files selected.",
-      icon = "info", type = "ok")
-    return()
+                 icon = "info", type = "ok")
+    return(invisible())
   }
-  offset <- length(e$activeDataList)
-  for (f in imgList)
-  {
-    e$activeDataList[[length(e$activeDataList) + 1]] <-
-      list(f, 0.01, 0, matrix(nrow = 0, ncol = 3), "NULL", c(0, 0), 0, "NULL", 0)
+
+  nOld  <- length(e$activeDataList)
+  nNew  <- length(imgList)
+  total <- nOld + nNew
+  cat(sprintf("SAFE addPly: %d existing + %d new = %d total\n", nOld, nNew, total))
+
+  ## 2. SNAPSHOT existing specimens from the live engine ------------------
+  ##    (you will see getLandmark debug lines here - that proves it ran)
+  oldFiles <- vapply(seq_len(nOld), function(i) e$activeDataList[[i]][[1]], character(1))
+  oldSurf  <- lapply(seq_len(nOld), function(i) e$activeDataList[[i]][[8]])
+  oldTmpt  <- lapply(seq_len(nOld), function(i) e$activeDataList[[i]][[5]])
+  oldLM    <- lapply(seq_len(nOld), function(i) getLandmark(i))
+  oldAC    <- lapply(seq_len(nOld), function(i) getAnchor(i))
+  digIdx   <- which(vapply(oldLM, function(m) !is.null(m) && nrow(m) > 0, logical(1)))
+  cat(sprintf("SAFE addPly: captured landmarks for specimen(s): %s\n",
+              paste(digIdx, collapse = ",")))
+
+  L <- e$landmarkNum
+  if (is.null(L) || is.na(L) || L == 0) {
+    nn <- Filter(function(m) !is.null(m) && nrow(m) > 0, oldLM)
+    L  <- if (length(nn)) nrow(nn[[1]]) else 0
   }
-  total <- length(e$activeDataList)
+  if (is.null(L) || L == 0) {
+    tkmessageBox(title = "Add PLY",
+                 message = "No digitized landmarks found in the session.",
+                 icon = "info", type = "ok")
+    return(invisible())
+  }
+
+  haveAnchors <- any(vapply(oldAC, function(a) !is.null(a) && nrow(a) > 0, logical(1)))
+  A <- if (haveAnchors) nrow(Filter(function(a) !is.null(a) && nrow(a) > 0, oldAC)[[1]]) else 0L
+  curves <- e$dgtcurvestuff
+
+  ## 3. GROW the engine to `total` (this wipes C) ------------------------
+  set("window", "mode", "none")
   set("specimen", "allocate", total)
-  e$currImgId <- offset + 1
-  add("specimen", e$activeDataList[[e$currImgId]][[1]], e$currImgId)
-  tkconfigure(e$specimenNumLabel,  text = paste("Number of Specimens: ", total))
-  tkconfigure(e$specimenNumLabel2, text = paste("Number of Specimens: ", total))
-  refreshNavButtons(e)
-  populateSpecimenCombo(e)
-  updateStepLabel(e)
+  e$lmkLoadedInC <- as.list(rep(FALSE, total))
+  names(e$lmkLoadedInC) <- as.character(seq_len(total))
+  e$anchorsPresentInMemory <- 0
+  add("InfoLandmarks", L, 3, total)
+  if (haveAnchors) add("InfoAnchors", A, 3, total)
+
+  ## 4. REPLAY the existing specimens back into the engine ---------------
+  for (i in seq_len(nOld)) {
+    set("specimen", "id", i)
+    lm <- oldLM[[i]]
+    if (!is.null(lm) && nrow(lm) > 0) {
+      draw.digitize(e, i, oldFiles[i], lm)
+    } else {
+      add("specimen", oldFiles[i], i)
+    }
+    if (haveAnchors) {
+      ac <- oldAC[[i]]
+      if (!is.null(ac) && nrow(ac) > 0) {
+        e$anchorsPresentInMemory <- 0
+        draw.anchors(e, i, ac)
+      }
+    }
+    sf <- oldSurf[[i]]
+    if (is.matrix(sf) && nrow(sf) > 0) add("downsample", as.vector(t(sf)), i)
+  }
+  if (!is.null(curves) && length(curves) > 0 && nrow(curves) > 0) {
+    add("InfoCurves", nrow(curves), ncol(curves), total)
+    draw.curves(curves)
+  }
+
+  ## 5. register the NEW specimens (mesh only, empty landmark slots) ------
+  emptyMat   <- matrix(nrow = 0, ncol = 3)
+  tmplScalar <- if (nOld > 0) oldTmpt[[1]] else "NULL"
+  for (j in seq_len(nNew)) {
+    id <- nOld + j
+    set("specimen", "id", id)
+    add("specimen", imgList[j], id)
+  }
+  newEntries <- lapply(imgList, function(f)
+    list(f, 0.01, 0, emptyMat, tmplScalar, c(0, 0), 0, emptyMat, 0, emptyMat, emptyMat))
+  e$activeDataList <- c(e$activeDataList, newEntries)
+
+  ## 6. VERIFY the originals actually survived ---------------------------
+  restored <- vapply(seq_len(nOld),
+                     function(i) { m <- getLandmark(i); !is.null(m) && nrow(m) > 0 },
+                     logical(1))
+  cat(sprintf("SAFE addPly VERIFY: originals restored = %s\n",
+              paste(restored, collapse = ",")))
+  if (!all(restored)) {
+    tkmessageBox(title = "Add PLY - WARNING",
+      message = paste0("These existing specimens did NOT restore: ",
+                       paste(which(!restored), collapse = ", "),
+                       ".\nDo NOT Save. Please report this."),
+      icon = "warning", type = "ok")
+  }
+
+  ## 7. UI refresh (best-effort) -----------------------------------------
+  e$currImgId <- nOld + 1
+  set("specimen", "id", e$currImgId)
+  try(tkconfigure(e$specimenNumLabel,  text = paste("Number of Specimens: ", total)), silent = TRUE)
+  try(tkconfigure(e$specimenNumLabel2, text = paste("Number of Specimens: ", total)), silent = TRUE)
+  try(refreshNavButtons(e),     silent = TRUE)
+  try(populateSpecimenCombo(e), silent = TRUE)
+  try(updateStepLabel(e),       silent = TRUE)
+  try(refreshTabGating(e),      silent = TRUE)
+  modeStr <- if (identical(e$tab, 0)) "digitize" else
+             if (identical(e$tab, 2)) "surface"  else
+             if (identical(e$tab, 3)) "curve"    else "digitize"
+  set("window", "mode", modeStr)
   showPicture(e)
-  setStatus(e, paste0("Added ", length(imgList), " specimen(s). Digitize the new ones."), "success")
+  try(setStatus(e, paste0("Added ", nNew, " specimen(s); ",
+                          sum(restored), "/", nOld, " originals preserved. ",
+                          "Digitize + downsample the new one(s), then Save."),
+                if (all(restored)) "success" else "warning"), silent = TRUE)
+
+  cat(">>>>> SAFE addPly DONE <<<<<\n")
+  invisible(TRUE)
 }
