@@ -841,6 +841,13 @@ createMenu <- function(e)
     command = function()
       loadPly(e)
   )
+  tkadd(
+    fileMenu,
+    "command",
+    label = "Add PLY to Current DGT\u2026",
+    command = function()
+      addPly(e)
+  )
 
   tkadd(
     fileMenu,
@@ -2750,6 +2757,7 @@ openDgt <- function(e)
 
   ################### read template ##################
   templOrig <- read.template(rawContent)
+  if (file.exists("template.txt")) e$templatePoints <- as.matrix(read.table("template.txt", header = TRUE))
   if (1)
   {
     print(paste("e$templOrig", e$templOrig))
@@ -2917,6 +2925,10 @@ openDgt <- function(e)
   {
 
     e$templOrig <- templOrig
+    e$tmplVar <- tclVar(paste("Based on ", e$templOrig))
+    tkconfigure(e$tmplEntry, textvariable = e$tmplVar)
+    e$downsmplVar <- tclVar(paste("based on ", e$templOrig))
+    tkconfigure(e$downsmplEntry, textvariable = e$downsmplVar)
     e$sliderNum <- sliderNum
 
     print ("file 3dDigitize.main ... function openDgt ... line 2687")
@@ -3013,3 +3025,54 @@ openDgt <- function(e)
 
 
 
+
+# appends PLY specimens to the current session, then rebuilds the engine from the list
+addPly <- function(e)
+{
+  if (length(e$activeDataList) == 0)
+  {
+    ans <- tkmessageBox(title = "No dataset",
+      message = "No dataset is open. Open a DGT to add specimens to?",
+      icon = "question", type = "yesno")
+    if (as.character(ans) == "yes") openDgt(e)
+    return()
+  }
+  fileStr <- tclvalue(tkgetOpenFile(filetypes = "{{ply file} {.ply}}",
+                                    multiple = TRUE, title = "Select PLY specimen(s) to add"))
+  if (!nchar(fileStr)) return()
+  if (length(grep("}", fileStr)) > 0)
+  {
+    imgList <- unlist(strsplit(fileStr, "} ", fixed = FALSE))
+    imgList <- gsub("}", "", imgList, fixed = TRUE)
+    imgList <- gsub("{", "", imgList, fixed = TRUE)
+  }
+  else
+  {
+    imgList <- unlist(strsplit(fileStr, " ", fixed = FALSE))
+  }
+  imgList <- imgList[nchar(imgList) > 0]
+  imgList <- imgList[file.exists(imgList)]
+  if (length(imgList) == 0)
+  {
+    tkmessageBox(title = "Add PLY", message = "No valid PLY files selected.",
+      icon = "info", type = "ok")
+    return()
+  }
+  offset <- length(e$activeDataList)
+  for (f in imgList)
+  {
+    e$activeDataList[[length(e$activeDataList) + 1]] <-
+      list(f, 0.01, 0, matrix(nrow = 0, ncol = 3), "NULL", c(0, 0), 0, "NULL", 0)
+  }
+  total <- length(e$activeDataList)
+  set("specimen", "allocate", total)
+  e$currImgId <- offset + 1
+  add("specimen", e$activeDataList[[e$currImgId]][[1]], e$currImgId)
+  tkconfigure(e$specimenNumLabel,  text = paste("Number of Specimens: ", total))
+  tkconfigure(e$specimenNumLabel2, text = paste("Number of Specimens: ", total))
+  refreshNavButtons(e)
+  populateSpecimenCombo(e)
+  updateStepLabel(e)
+  showPicture(e)
+  setStatus(e, paste0("Added ", length(imgList), " specimen(s). Digitize the new ones."), "success")
+}

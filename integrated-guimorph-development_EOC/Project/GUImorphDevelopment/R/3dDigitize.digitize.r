@@ -1368,7 +1368,6 @@ write.anchors <- function(fileName, Id, anchors)
 # specimen numbers are 1 based !
 draw.digitize <- function(e, id, specimen, landmarks)
 {
-
   sliceID <- id
   add("queryFromR", 1, sliceID)
   lmQuery <- suppressWarnings(as.integer(
@@ -1381,80 +1380,56 @@ draw.digitize <- function(e, id, specimen, landmarks)
 
   if (!alreadyLoaded && lmQuery == 0L)
   {
-
-    print ("file 3dDigitize.digitize ... function draw.digitize ... line 1229" )
-    print( paste("specimen id is ", id))
-
-    print (paste("loading PLY file for specimen ", id))
+    print(paste("loading PLY file for specimen ", id))
     add("specimen", specimen, id)   # load model in
-
-    # we must set the specimen after load ing the PLY file data
-    # and tcl_if.c knows min/max values
-
     set("specimen", "id", id)
 
-    #print (paste("landmark nRows", nrow(landmarks)))
-    #print (paste("landmark nCols", ncol(landmarks)))
-
-    #print(paste("Adding landmark for specimen ", id))
-
-
-
-    add("SetLandmarkIndex", id, -1, -2)
-    for (j in 1:nrow(landmarks))
+    # --- only push dots if this specimen actually has landmarks ---
+    if (!is.null(landmarks) && nrow(landmarks) > 0)
     {
-      print (paste("index j", j, "landmarks", landmarks[j, 1], landmarks[j, 2], landmarks[j, 3] ))
-      add("rawdot", landmarks[j, 1], landmarks[j, 2], landmarks[j, 3])
+      add("SetLandmarkIndex", id, -1, -2)
+      for (j in 1:nrow(landmarks))
+      {
+        add("rawdot", landmarks[j, 1], landmarks[j, 2], landmarks[j, 3])
+      }
+      add("InfoLandmarks_complete", 1, -1, -2)
+      e$lmkLoadedInC[[as.character(id)]] <- TRUE
     }
-    add("InfoLandmarks_complete", 1, -1, -2)
-    e$lmkLoadedInC[[as.character(id)]] <- TRUE
   }
   else
   {
-    print ("landmarks already loaded in memory ... skipped adding more landmarks")
+    print("landmarks already loaded in memory ... skipped adding more landmarks")
     add("specimen", specimen, id)
     set("specimen", "id", id)
   }
 
-
-  add("queryFromR", 1, sliceID);
-  add("queryFromR", 2, sliceID);
-  print ("file 3dDigitize.digitize ... function draw.digitize ...  end line 1257" )
-
+  add("queryFromR", 1, sliceID)
+  add("queryFromR", 2, sliceID)
 }
 
 
-
-
-# This function still in work ??
-#
 draw.anchors <- function(e, id, anchors)
 {
-  if (!anyNA(anchors))
+  if (!is.null(anchors) && nrow(anchors) > 0 && !anyNA(anchors))
   {
-
-
-
     if (0 == e$anchorsPresentInMemory)
     {
-      print (paste("Anchor rows this specimen ", nrow(anchors)))
-      add("SetAnchorIndex", id, 0,0)
-      messageToC( paste("function draw.anchors : id ", id))
+      add("SetAnchorIndex", id, 0, 0)
+      messageToC(paste("function draw.anchors : id ", id))
       for (j in 1:nrow(anchors))
       {
-        print (paste("index j", j, "anchor points", anchors[j, 1], anchors[j, 2], anchors[j, 3] ))
         add("rawanchor", anchors[j, 1], anchors[j, 2], anchors[j, 3])
       }
-      add("InfoAnchors_complete", 0, 0,0)
+      add("InfoAnchors_complete", 0, 0, 0)
     }
     else
     {
-      print ("anchors already loaded in memory ... skipped adding more anchors")
+      print("anchors already loaded in memory ... skipped adding more anchors")
     }
   }
   else
   {
-    print("Missing anchors")
+    print("Missing or empty anchors ... nothing to draw")
     return()
   }
   return()
