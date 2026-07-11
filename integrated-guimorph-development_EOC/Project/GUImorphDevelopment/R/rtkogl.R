@@ -17,33 +17,33 @@ add <- function(shape, arg1, arg2, arg3)
   if (shape == "getCompileInformation")
   {
     result <- tclvalue(tcl("add", shape, -1, -2, -3))  # returns a string
-    print(result)
+    dbg(result)
     return (TRUE)
   }
   else if (shape == "startRecording")
   {
     ## result <- tclvalue(tcl("add", shape, arg1, arg2, 0))
     result <- tcl("add", shape, arg1, arg2, 0)
-    print(result)
+    dbg(result)
     return (TRUE)
   }
   else if (shape == "endRecording")
   {
     result <- tcl("add", shape, arg1, arg2, 0)
-    print(result)
+    dbg(result)
     return (TRUE)
   }
   else if (shape == "openLogFile")
   {
     ##result <- tclvalue(tcl("add", shape, arg1, arg2, 0))
     result <- tcl("add", shape, arg1, arg2, 0)
-    print(result)
+    dbg(result)
     return (TRUE)
   }
   else if (shape == "closeLogFile")
   {
     result <- tcl("add", shape, arg1, arg2, 0)
-    print(result)
+    dbg(result)
     return (TRUE)
   }
   else if (shape == "logMessage")
@@ -53,13 +53,13 @@ add <- function(shape, arg1, arg2, arg3)
     print (paste ("ARG 1 : ",arg1))
     print (paste ("ARG 2 : ",arg2))
     result <- tcl("add", shape, arg1, arg2, 0)
-    print(paste ("normal result >",result,"<"))
+    dbg(paste ("normal result >",result,"<"))
     return (result)
   }
   else if (shape == "initialize")
   {
     result <- tcl("add", shape, arg1, arg2, 0)  # arg1 is the main selector and arg2 is the option applicable to arg1
-    print(result)
+    dbg(result)
     return (TRUE)
   }
   else if (shape == "rotationAngles")
@@ -114,14 +114,14 @@ add <- function(shape, arg1, arg2, arg3)
     {
       landmarksAlready <- suppressWarnings(as.integer(result))
       if (is.na(landmarksAlready)) landmarksAlready <- 0L
-      print(paste("landmarks already in C code", landmarksAlready))
+      dbg(paste("landmarks already in C code", landmarksAlready))
     }
 
     if (4 == arg1)
     {
       anchorsAlready <- suppressWarnings(as.integer(result))
       if (is.na(anchorsAlready)) anchorsAlready <- 0L
-      print(paste("anchors already in C code", anchorsAlready))
+      dbg(paste("anchors already in C code", anchorsAlready))
     }
 
 
@@ -143,38 +143,38 @@ add <- function(shape, arg1, arg2, arg3)
     result <- tcl("add", shape, arg1, arg2)
     if(1)
     {
-      print(paste ("add specimen result is :",result))
+      dbg(paste ("add specimen result is :",result))
     }
   }
   else if ( shape == "downsample")
   {
-    print(paste("add downsample : ", arg1, arg2))
+    dbg(paste("add downsample : ", arg1, arg2))
     result <- tcl("add", shape, arg1, arg2,0)
-    print(paste("add downsample ... result : <", result,">"))
+    dbg(paste("add downsample ... result : <", result,">"))
   }
   else if (shape == "InfoLandmarks" )
   {
     # added this capability ... tell tcl_if how many landmark sets,
     # rows, columns and again number of speciments
     print ("function add InfoLandmarks")
-    print(shape)
-    print(arg1)    # number of landmark sets
-    print(arg2)    # nrows
-    print(arg3)    # columns
+    dbg(shape)
+    dbg(arg1)    # number of landmark sets
+    dbg(arg2)    # nrows
+    dbg(arg3)    # columns
     result <- tcl("add", shape, arg1, arg2, arg3)
   }
   else if (shape == "SetLandmarkIndex" )
   {
     print ("function add SetLandmarkIndex")
-    print(shape)
-    print(arg1)    # which landmark set ... 1 based in R
+    dbg(shape)
+    dbg(arg1)    # which landmark set ... 1 based in R
     result <- tcl("add", shape, arg1, -1, -2)
   }
   else if (shape == "InfoLandmarks_complete" )
   {
     print ("function add InfoLandmarks_complete")
-    print(shape)
-    print(arg1)    # which set of landmarks 1 based in R
+    dbg(shape)
+    dbg(arg1)    # which set of landmarks 1 based in R
     result <- tcl("add", shape, arg1, -1, -2)
   }
 
@@ -183,24 +183,24 @@ add <- function(shape, arg1, arg2, arg3)
     # added this capability ... tell tcl_if how many anchor sets,
     # rows, columns and again number of speciments
     print ("function add InfoAnchors")
-    print(shape)
-    print(arg1)    # number of anchor sets
-    print(arg2)    # nrows
-    print(arg3)    # columns
+    dbg(shape)
+    dbg(arg1)    # number of anchor sets
+    dbg(arg2)    # nrows
+    dbg(arg3)    # columns
     result <- tcl("add", shape, arg1, arg2, arg3)
   }
   else if (shape == "SetAnchorIndex" )
   {
     print ("function add SetAnchorIndex")
-    print(shape)
-    print(arg1)
+    dbg(shape)
+    dbg(arg1)
     result <- tcl("add", shape, arg1, -1, -2)
   }
   else if (shape == "InfoAnchors_complete" )
   {
     print ("function add InfoAnchors_complete")
-    print(shape)
-    print(arg1)    # which set of landmarks 1 based in R
+    dbg(shape)
+    dbg(arg1)    # which set of landmarks 1 based in R
     result <- tcl("add", shape, arg1, -1, -2)
   }
   else if (shape == "InfoCurves" )
@@ -208,17 +208,17 @@ add <- function(shape, arg1, arg2, arg3)
     # added this capability ... tell tcl_if how many curves, curve length,
     # and again number of specimens
     print ("function add InfoCurves")
-    print(shape)
-    print(arg1)    # number of curves
-    print(arg2)    # curve length
-    print(arg3)    # number of specimens (again)
+    dbg(shape)
+    dbg(arg1)    # number of curves
+    dbg(arg2)    # curve length
+    dbg(arg3)    # number of specimens (again)
     result <- tcl("add", shape, arg1, arg2, arg3)
   }
   else if (shape == "SetCurveIndex" )
   {
     print ("function add SetCurveIndex")
-    print(shape)
-    print(arg1)   # which curve index 1 based
+    dbg(shape)
+    dbg(arg1)   # which curve index 1 based
     #print(arg2)
     # print(arg3)
     result <- tcl("add", shape, arg1, -1, -2)
@@ -226,8 +226,8 @@ add <- function(shape, arg1, arg2, arg3)
   else if (shape == "InfoCurves_complete" )
   {
     print ("function add InfoCurves_complete")
-    print(shape)
-    print(arg1)    # which curve is complete
+    dbg(shape)
+    dbg(arg1)    # which curve is complete
     #print(arg2)
     #print(arg3)
     result <- tcl("add", shape, arg1, -1, -2)
@@ -235,10 +235,10 @@ add <- function(shape, arg1, arg2, arg3)
   else if (shape == "curve" )
   {
     print ("function add curve")
-    print(shape)
-    print(arg1)
-    print(arg2)
-    print(arg3)
+    dbg(shape)
+    dbg(arg1)
+    dbg(arg2)
+    dbg(arg3)
     result <- tclvalue(tcl("add", shape, arg1, arg2, arg3))
     print (paste("Result from tcl add", result))
     if (startsWith(result, "WARNING"))
@@ -259,11 +259,11 @@ add <- function(shape, arg1, arg2, arg3)
     if(0)
     {
       print ("function add line 215")
-      print(paste ("Shape : ",shape))
-      print(paste ("arg1 : ",arg1))
-      print(paste ("arg2 : ",arg2))
-      print(paste ("arg3 : ",arg3))
-      print("------------------------")
+      dbg(paste ("Shape : ",shape))
+      dbg(paste ("arg1 : ",arg1))
+      dbg(paste ("arg2 : ",arg2))
+      dbg(paste ("arg3 : ",arg3))
+      dbg("------------------------")
     }
 
     result  <- tclvalue(tcl("add", shape, arg1, arg2, arg3))
@@ -279,7 +279,7 @@ add <- function(shape, arg1, arg2, arg3)
   }
   else if (shape == "setLabelScaleFactor")
   {
-    print("test case setLabelScaleFactor")
+    dbg("test case setLabelScaleFactor")
     #print(arg1)
     #print(arg2)
     # print(arg3)
@@ -291,7 +291,7 @@ add <- function(shape, arg1, arg2, arg3)
   {
     #print ("---------------------------------")
     #print ("---------------------------------")
-    print("test case setCurveScaleFactor")
+    dbg("test case setCurveScaleFactor")
     #print(arg1)
     #print(arg2)
     #print(arg3)
@@ -303,7 +303,7 @@ add <- function(shape, arg1, arg2, arg3)
   }
   else if (shape == "reset_state")
   {
-    print("test case reset_state")
+    dbg("test case reset_state")
     result <- tcl("add", shape, -3, -2, -1)
     print (paste("result : ", result))
     return (TRUE)
@@ -322,9 +322,9 @@ add <- function(shape, arg1, arg2, arg3)
 
   else
   {
-    print(paste("function add unknown shape <", shape,">"))
-    print("Usage: add specimen path_of_ply")
-    print("Usage: add dot x y z")
+    dbg(paste("function add unknown shape <", shape,">"))
+    dbg("Usage: add specimen path_of_ply")
+    dbg("Usage: add dot x y z")
     return(FALSE)
   }
 }
@@ -351,11 +351,11 @@ del <- function(shape, arg1 = -1, arg2 = -1, arg3 = -1)
   # coordinate-aware callers still work without an "argument missing" error.
 
 
-  print("function del")
-  print(shape)
-  print(arg1)
-  print(arg2)
-  print(arg3)
+  dbg("function del")
+  dbg(shape)
+  dbg(arg1)
+  dbg(arg2)
+  dbg(arg3)
 
   if (shape == "dot")
   {
@@ -383,7 +383,7 @@ del <- function(shape, arg1 = -1, arg2 = -1, arg3 = -1)
   }
   else
   {
-    print("Usage: del dot [...]")
+    dbg("Usage: del dot [...]")
     return(FALSE)
   }
   return(FALSE)
@@ -396,7 +396,8 @@ del <- function(shape, arg1 = -1, arg2 = -1, arg3 = -1)
 
 #' GUImorph
 #' @export
-GUImorph <- function() {
+GUImorph <- function(debug = FALSE) {
+  options(guimorph.debug = isTRUE(debug))
   e <- new.env()
   class(e) <- "main"
   ui(e)
@@ -423,32 +424,32 @@ GUImorph <- function() {
 #' @export
 loadDgt <- function(fileName)
 {
-  print("function loadDgt")
-  print(fileName)
+  dbg("function loadDgt")
+  dbg(fileName)
   result <- tclvalue(tcl("loadDgt", fileName))
   if (startsWith(result, "ERROR"))
   {
-    print("ERROR return from tcl_if loadDgt function")
+    dbg("ERROR return from tcl_if loadDgt function")
     return(FALSE)
   }
   else if (startsWith(result, "SUCCESS"))
   {
-    print("Success from tcl_if loadDgt")
+    dbg("Success from tcl_if loadDgt")
     return(TRUE)
   }
   else if (startsWith(result, "IGNORE"))
   {
-    print("IGNORE return from tcl_if loadDgt function")
+    dbg("IGNORE return from tcl_if loadDgt function")
   }
   else if (startsWith(result, "UNDER_CONSTRUCTION"))
   {
-    print("UNDER CONSTRUCTION C code in tcl_if (.c) file still in work !")
+    dbg("UNDER CONSTRUCTION C code in tcl_if (.c) file still in work !")
     return(FALSE)
   }
   else
   {
     print ("Unknown return value from tcl_if loadDgt")
-    print(result)
+    dbg(result)
   }
   return(FALSE)
 }
@@ -480,9 +481,9 @@ loadDgt <- function(fileName)
   file <-
     system.file(path, package = pkgname, lib.loc = libname)[1] #grabs full file name
 
-  print("File 3dDigitize.main ... function .onload")
-  print(file)
-  print("-----------------")
+  dbg("File 3dDigitize.main ... function .onload")
+  dbg(file)
+  dbg("-----------------")
   tryCatch(
     tcl("load", file, "Tkogl2"),
     error = function(e)
@@ -499,17 +500,17 @@ loadDgt <- function(fileName)
 #calls tkogl2 shows function / returns string value shape object with specified attributes
 shows <- function(shape, attr, arg1, arg2)
 {
-  print("function shows ... line 329")
-  print(paste ("Shape is : ", shape))
+  dbg("function shows ... line 329")
+  dbg(paste ("Shape is : ", shape))
   #print(paste ("attr is  : ", attr))     # dave ... need to find out how to determine argument existence
 
   if (shape == "specimen")
   {
-    print(paste("attr : " , attr))
+    dbg(paste("attr : " , attr))
     if (attr == "xyz")
     {
-      print(paste ("arg1 is  : ", arg1) )
-      print(paste ("arg2 is  : ", arg2) )
+      dbg(paste ("arg1 is  : ", arg1) )
+      dbg(paste ("arg2 is  : ", arg2) )
       result <- tcl("show", shape, attr, arg1, arg2,0)
       print (result)
     }
@@ -518,7 +519,7 @@ shows <- function(shape, attr, arg1, arg2)
   {
     if (attr == "xyz")
     {
-      print(paste("attr : " , attr))
+      dbg(paste("attr : " , attr))
       result <- tcl("show", shape, attr, arg1,0, 0)
       print (paste ("RESULT : <", result, ">"))
       return (result)
@@ -526,7 +527,7 @@ shows <- function(shape, attr, arg1, arg2)
     }
     else if (attr == "id")
     {
-      print(paste("attr : " , attr))
+      dbg(paste("attr : " , attr))
       result <- tcl("show", shape, attr, 0,0, 0)
     }
   }
@@ -534,13 +535,13 @@ shows <- function(shape, attr, arg1, arg2)
   {
     if (attr == "xyz")
     {
-      print(paste("attr : " , attr))
+      dbg(paste("attr : " , attr))
       result <- tcl("show", "anchor", "xyz", arg1,0,0)
       print (paste ("RESULT : <", result, ">"))
     }
     else if (attr == "id")
     {
-      print(paste("attr : " , attr))
+      dbg(paste("attr : " , attr))
       result <- tcl("show", shape, attr,0,0,0)
     }
   }
@@ -556,9 +557,9 @@ shows <- function(shape, attr, arg1, arg2)
   }
   else
   {
-    print("Usage: shows specimen [xyz] ...")
-    print("Usage: shows landmark [reqxyz|id] ...")
-    print("Usage: shows all")
+    dbg("Usage: shows specimen [xyz] ...")
+    dbg("Usage: shows landmark [reqxyz|id] ...")
+    dbg("Usage: shows all")
     return(FALSE)
   }
   return (result)
@@ -576,9 +577,9 @@ set <- function(shape, attr, arg1, arg2, arg3)
   if(0)
   {
     print ("function ... set at line 541")
-    print( paste ("Shape : ", shape) )
-    print( paste ("attr  : ", attr )  )
-    print("------------------")
+    dbg( paste ("Shape : ", shape) )
+    dbg( paste ("attr  : ", attr )  )
+    dbg("------------------")
   }
 
 
@@ -595,9 +596,9 @@ set <- function(shape, attr, arg1, arg2, arg3)
     }
     else if (attr == "mode")
     {
-      print(arg1)
+      dbg(arg1)
       result <- tcl("setWindow", attr, arg1, 0, 0, 0)
-      print(paste("set window mode ... result : <", result, ">"))
+      dbg(paste("set window mode ... result : <", result, ">"))
       return (TRUE)
 
     }
@@ -617,21 +618,21 @@ set <- function(shape, attr, arg1, arg2, arg3)
       {
         print (shape)
         print (attr)
-        print(arg1)
-        print("Now calling the setSpecimen function if tcl_if")
+        dbg(arg1)
+        dbg("Now calling the setSpecimen function if tcl_if")
       }
       result <- tclvalue(tcl("setSpecimen", attr, arg1, 0, 0))
       if(0)
       {
-        print(paste("set specimen ", attr, "... result : <", result,">"))
+        dbg(paste("set specimen ", attr, "... result : <", result,">"))
       }
 
     }
     else if (attr == "move")
     {
-      print(arg1)
-      print(arg2)
-      print(arg3)
+      dbg(arg1)
+      dbg(arg2)
+      dbg(arg3)
       result <- tcl("setSpecimen", attr, arg1, arg2, arg3)
       print (paste ("set specimen ",attr, " ... result : <", result,">"))
     }
@@ -653,14 +654,14 @@ set <- function(shape, attr, arg1, arg2, arg3)
     }
     else
     {
-      print(paste("shape specimen ...Not supported attribute", attr))
+      dbg(paste("shape specimen ...Not supported attribute", attr))
     }
   }
   else if (shape == "downsample")
   {
     print ("set downsample")
-    print(arg1)
-    print(arg2)
+    dbg(arg1)
+    dbg(arg2)
     result <- tcl("set DownSample", attr, arg1, arg2, 0)
     print (paste ("set DownSample ... result : <", result,">"))
 
@@ -685,7 +686,7 @@ set <- function(shape, attr, arg1, arg2, arg3)
       print (paste("set dot selected : arg_2", arg2))
       result <-  tclvalue(tcl("setDot", attr, arg1, arg2, 0))    ## possible return of a string !
 
-      print(paste ("set dot selected ... result : ", result))
+      dbg(paste ("set dot selected ... result : ", result))
       if (startsWith(result, "WARNING"))
       {
         print (paste("---------", result, "---------") )
@@ -711,9 +712,9 @@ set <- function(shape, attr, arg1, arg2, arg3)
              attr == "anchorColor" ||
              attr == "color")
     {
-      print(arg1)
-      print(arg2)
-      print(arg3)
+      dbg(arg1)
+      dbg(arg2)
+      dbg(arg3)
       result <- tclvalue(tcl("setDot", attr, arg1, arg2, arg3))
       print (paste ("set dot ", attr,  "... result : ", result))
       return (TRUE)
@@ -722,9 +723,9 @@ set <- function(shape, attr, arg1, arg2, arg3)
   }
   else
   {
-    print("Usage: set window [id|size]")
-    print("Usage: set specimen [amount|id|scale|angle]")
-    print("Usage: set dot [selected|coordinate|color|dcolor|labeled|radius]")
+    dbg("Usage: set window [id|size]")
+    dbg("Usage: set specimen [amount|id|scale|angle]")
+    dbg("Usage: set dot [selected|coordinate|color|dcolor|labeled|radius]")
     return(FALSE)
   }
   return(TRUE)
@@ -733,3 +734,6 @@ set <- function(shape, attr, arg1, arg2, arg3)
 
 
 
+# gated debug printer: prints only when options(guimorph.debug=TRUE),
+# which GUImorph(debug=TRUE) sets. Preserves every debugging note.
+dbg <- function(...) if (isTRUE(getOption("guimorph.debug", FALSE))) print(...)

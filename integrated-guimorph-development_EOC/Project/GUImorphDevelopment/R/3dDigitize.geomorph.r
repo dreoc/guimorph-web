@@ -166,7 +166,7 @@ itob <- function(int) {
 #computes shape object data and performs analysis
 compute <- function(e) {
   if (!is.null(e$activeDataList[[1]][[8]]) && !is.null(nrow(e$activeDataList[[1]][[8]]))) e$sliderNum <- nrow(e$activeDataList[[1]][[8]])
-  print("compute")
+  dbg("compute")
   nSpecimen <- length(e$activeDataList)
 
   coords.lmk <- c()
@@ -201,7 +201,7 @@ compute <- function(e) {
       for(i in 1:nSpecimen){
         anchors <- getAnchor(i)
         if(length(anchors) == 0) {
-          print("No anchors present, cannot use for GPA analysis")
+          dbg("No anchors present, cannot use for GPA analysis")
           return()
         }
         if(nrow(anchors) != as.numeric(e$anchorNum)) {
@@ -248,7 +248,7 @@ compute <- function(e) {
       coords.A <- array(coords.lmk,dim = c(as.numeric(e$landmarkNum),3,nSpecimen))
   }
 
-  print("before gpagen")
+  dbg("before gpagen")
   e$gm.results <- geomorph::gpagen(A=coords.A,
                          curves = curves,
                          surfaces = surfaces,

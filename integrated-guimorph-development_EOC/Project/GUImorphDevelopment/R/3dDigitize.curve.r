@@ -134,7 +134,7 @@ write.curve <- function(fileName, curves)
 #display curves to GUI
 draw.curves <- function(curves)
 {
-	print("file 3dDigitize.curve ... function draw.curves line 164")
+	dbg("file 3dDigitize.curve ... function draw.curves line 164")
   print (paste ("curves ... nrows",nrow(curves)))
   print (paste ("curves ... ncols",ncol(curves)))
 
@@ -146,7 +146,7 @@ draw.curves <- function(curves)
 	  add ("SetCurveIndex", j, -1,-1)
 	  add("curve", curves[j,1], curves[j,2], curves[j,3])
 	}
-  print("file 3dDigitize.curve ... function draw.curves ... complete")
+  dbg("file 3dDigitize.curve ... function draw.curves ... complete")
 }
 
 
@@ -159,7 +159,7 @@ updateWidgets.curve <- function(e) {
 #changes rgb values of selected dot to desired color
 changeDotColor<-function(e)
 {
-  print("changeDotColor")
+  dbg("changeDotColor")
   for(i in 1:3)
   {
     x  <- e$curveDots[[(i - 1) * 3 + 1]]
@@ -186,7 +186,7 @@ onSelectCurve <- function(e, x, y)
 {
   if (e$tab != 3) return(invisible())
 
-  print("file 3dDigitize.curve ... function onSelectCurve line 165")
+  dbg("file 3dDigitize.curve ... function onSelectCurve line 165")
 
   print (paste  ("onSelectCurve argument x", x))
   print (paste  ("onSelectCurve argument y", y))
@@ -229,7 +229,7 @@ onSelectCurve <- function(e, x, y)
     {
       print ("e$curveDotNum is 2 line 258")
       e$sliders <- c(e$sliders, id)
-      print(e$sliders)
+      dbg(e$sliders)
     }
     else if (e$curveDotNum == 3)
     {
@@ -272,7 +272,7 @@ onSelectCurve <- function(e, x, y)
     print ("file 3dDigitize curve line 296 : else clause ... false return from set dot selected at line 258")
   }
 
-  print("file 3dDigitize.curve ... function onSelectCurve ... end")
+  dbg("file 3dDigitize.curve ... function onSelectCurve ... end")
 }
 
 

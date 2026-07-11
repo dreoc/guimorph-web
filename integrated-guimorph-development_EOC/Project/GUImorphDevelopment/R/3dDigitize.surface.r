@@ -214,19 +214,19 @@ buildTemplate <- function(e)
 	print (lmk)
 	if(is.null(lmk))
 	{
-	  print("No landmarks. Downsampling is not allowed.")
+	  dbg("No landmarks. Downsampling is not allowed.")
 	  return ()
 	}
 
 
 	#check anchor toggle and if anchors are present
 	anc <- getAnchor(e$currImgId)
-	print(paste("current image id line 218 : ", e$currImgId))
+	dbg(paste("current image id line 218 : ", e$currImgId))
 	print ("anchors")
-	print(anc)
+	dbg(anc)
 	if(is.null(anc))
 	{
-	    print("No anchors. Cannot use in downsampling process.")
+	    dbg("No anchors. Cannot use in downsampling process.")
 	    if(tclvalue(e$useAnchorVar) == "1")
 	        return()
 	}
@@ -255,7 +255,7 @@ buildTemplate <- function(e)
 	}
 
 
-	print("e$useAnchorVar")
+	dbg("e$useAnchorVar")
 	print (e$useAnchorVar)
 
 
@@ -391,7 +391,7 @@ downSample <- function(e)
 
   if(is.null(lmk))
   {
-    print("No landmarks. Downsampling is not allowed.")
+    dbg("No landmarks. Downsampling is not allowed.")
     return ()
   }
 
@@ -408,7 +408,7 @@ downSample <- function(e)
 	# This operation could be delegated to the C code to run really fast
 
 	print ("fileName is")
-	print(fileName)
+	dbg(fileName)
 
 
 	#### 12.14.2017 changed read ply function from geomorph's read.ply to Rvcg's vcgPlyRead
@@ -461,17 +461,17 @@ downSample <- function(e)
 
 
   print (paste("surface line 447 ... use anchor ?  ... is NUll ? <", e$useAnchorVar, "> ...<", is.null(anc),  ">"))
-  print(anc)
-  print(paste("tclvalue(e$useAnchorVar) ", tclvalue(e$useAnchorVar) ))
-  print("")
+  dbg(anc)
+  dbg(paste("tclvalue(e$useAnchorVar) ", tclvalue(e$useAnchorVar) ))
+  dbg("")
   if(tclvalue(e$useAnchorVar) == 1 && is.null(anc))
   {
-      print("No anchors placed, cannot use in downsampling process")
+      dbg("No anchors placed, cannot use in downsampling process")
       return()
   }
   else if(tclvalue(e$useAnchorVar) == 1)
   {
-      print("have landmarks ... this is surface line 459")
+      dbg("have landmarks ... this is surface line 459")
       lmk <- rbind(lmk,anc)
       fixed <- fixed + aFixed
   }
@@ -495,7 +495,7 @@ downSample <- function(e)
   nei<-numeric(dim(template.tps)[1])
   sliders<-matrix(NA,nrow=dim(template.tps)[1],ncol=3)
 
-  print("this is line 478")
+  dbg("this is line 478")
 
   #now apply warping to semilandmarks
   for (i in 1:dim(template.tps)[1])
@@ -504,7 +504,7 @@ downSample <- function(e)
       sliders[i,]<-spec.surfs[nei[i],]
       spec.surfs<-spec.surfs[-nei[i],]
   }
-  print("this is line 487")
+  dbg("this is line 487")
   selected.out <- rbind(lmk,sliders)
 
   # why are we saving data to a file and then deleting it ?
@@ -515,10 +515,10 @@ downSample <- function(e)
 
   ntsFile <- paste(fileName, ".nts", sep="")
   write.nts(as.numeric(e$sliderNum), ntsFile, selected.out)
-  print("write to file")
+  dbg("write to file")
   #write.table(selected.out, file=ntsFile, row.names=F, col.names=F, append = TRUE)
 
-  print(paste ("add down sample ... id is ", e$currImgId))
+  dbg(paste ("add down sample ... id is ", e$currImgId))
 
   vertToDownsample <- as.vector(t(selected.out))
   ##print (vertToDownsample)
@@ -536,7 +536,7 @@ downSample <- function(e)
 
   tkmessageBox(title = "Information", message = "Specimen is downsampled", icon = "info", type = "ok")
 
-  print(paste("e$templOrig is ", e$templOrig))
+  dbg(paste("e$templOrig is ", e$templOrig))
   e$downsmplVar <- tclVar(paste("based on ",  e$templOrig))
   tkconfigure(e$downsmplEntry , textvariable=e$downsmplVar)
 }
@@ -550,10 +550,10 @@ downSample <- function(e)
 read.surface <- function(content)
 {
 
-  print("")
-  print("")
-  print("")
-  print("file 3dDigitize.surface ... function read.surface")
+  dbg("")
+  dbg("")
+  dbg("")
+  dbg("file 3dDigitize.surface ... function read.surface")
   ignore.case = TRUE
 
   tmpt <- NULL
@@ -562,9 +562,9 @@ read.surface <- function(content)
   nsurf <- NULL
   nsurf <- sub("Surface=", "", content[grep("Surface=", content, ignore.case)], ignore.case)
 
-  print(paste("tmpt  :", tmpt))
-  print(paste("nsurf :", nsurf))
-  print(paste("length of nsurf", length(nsurf)))
+  dbg(paste("tmpt  :", tmpt))
+  dbg(paste("nsurf :", nsurf))
+  dbg(paste("length of nsurf", length(nsurf)))
 
 
   for (ii in 1:length(tmpt))
@@ -603,14 +603,14 @@ read.surface <- function(content)
   if (!is.null(surfaces) && length(surfaces) > 0 && nrow(surfaces) > 0 &&
       all(is.na(surfaces)))
   {
-    print("read.surface : ALL surfaces NA returning NULL")
+    dbg("read.surface : ALL surfaces NA returning NULL")
     return(NULL)
   }
   else
   {
     print ("read.surface : have the data ... returning a list")
-    print("")
-    print("")
+    dbg("")
+    dbg("")
     return(list( template = tmpt, surfaces = surfaces,   sliderNum = nsurf  ))
   }
   return(NULL)
@@ -624,7 +624,7 @@ read.surface <- function(content)
 #writes surface data to .dgt file
 write.surface <- function(fileName, tempt, surface)
 {
-  print("write.surface")
+  dbg("write.surface")
   #write template
   if (!is.null(tempt))
   {
@@ -632,7 +632,7 @@ write.surface <- function(fileName, tempt, surface)
     write(temptLine, fileName, append = TRUE)
   }
 
-  print(paste("Length of surface data is", length(surface)))
+  dbg(paste("Length of surface data is", length(surface)))
 
  # if(length(surface <= 2))
  #  {
@@ -661,7 +661,7 @@ write.surface <- function(fileName, tempt, surface)
 #writes template data to .dgt file
 write.template <- function(fileName, templOrig)
 {
-  print("write.template")
+  dbg("write.template")
   temptLine <- "TemplateNumber=NULL"
   if (file.exists("template.txt"))
   {
@@ -738,8 +738,8 @@ read.template <- function(rawContent)
 #shows sample data on canvas
 draw.surface <- function(id, surface)
   {
-	print(paste("Add surface for  specimen", id, "... ..."))
-	print(surface)
+	dbg(paste("Add surface for  specimen", id, "... ..."))
+	dbg(surface)
 	add("downsample", surface, id)
 
 }

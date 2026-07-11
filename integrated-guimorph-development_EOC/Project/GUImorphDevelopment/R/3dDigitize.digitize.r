@@ -712,7 +712,7 @@ onAnchorCountChange <- function(e)
 #draw label for landmark
 onLabelLandMark <- function(e)
 {
-  print("onLabelLandMark")
+  dbg("onLabelLandMark")
   if (length(e$activeDataList) == 0)
   {
     return()
@@ -990,16 +990,16 @@ deleteAnchor <- function(e, x, y)
 #adds one landmark
 addDot <- function(e, x, y)
 {
-  print(paste("line 908 : function addDot : ", x, y))
+  dbg(paste("line 908 : function addDot : ", x, y))
   if (.placeIsDuplicate(e, x, y))
   {
-    print("INFO : ignoring duplicate landmark from multi-click burst")
+    dbg("INFO : ignoring duplicate landmark from multi-click burst")
     return(invisible())
   }
   if (length(e$activeDataList) > 0)
   {
     dotNum <- e$activeDataList[[e$currImgId]][[3]]
-    print(paste("dotNum raw : ", dotNum+1, "-of- ",  e$landmarkNum ))
+    dbg(paste("dotNum raw : ", dotNum+1, "-of- ",  e$landmarkNum ))
 
     if (dotNum < as.integer(e$landmarkNum))
     {
@@ -1009,15 +1009,15 @@ addDot <- function(e, x, y)
 
       ## This is provided for manual capture of digitized points for future testing needs
       print ("LANDMARK : Coordinate Data for post processing use : ")
-      print( paste( "x y, X,Y, Z : ", x, y, coord [1], coord[2], coord[3]))
+      dbg( paste( "x y, X,Y, Z : ", x, y, coord [1], coord[2], coord[3]))
 
 
       result <- add("dot", coord[1], coord[2], coord[3])
-      print(paste("LINE 929 !  Result from add dot ...", result))
+      dbg(paste("LINE 929 !  Result from add dot ...", result))
 
       if (TRUE == result)
       {
-        print(coord)
+        dbg(coord)
         updateDotNum(e, 1)
         pushUndo(e, list(
           action = "place",
@@ -1028,13 +1028,13 @@ addDot <- function(e, x, y)
       }
       else
       {
-        print("WARNING : add dot : not inside the specimen")
+        dbg("WARNING : add dot : not inside the specimen")
       }
     }
   }
   else
   {
-    print("WARNING : no specimen opened")
+    dbg("WARNING : no specimen opened")
   }
 }
 
@@ -1046,16 +1046,16 @@ addDot <- function(e, x, y)
 #adds one anchor point
 addAnchor <- function(e, x, y)
 {
-  print(paste("line 954 : function addAnchor : ", x, y))
+  dbg(paste("line 954 : function addAnchor : ", x, y))
   if (.placeIsDuplicate(e, x, y))
   {
-    print("INFO : ignoring duplicate anchor from multi-click burst")
+    dbg("INFO : ignoring duplicate anchor from multi-click burst")
     return(invisible())
   }
   if (length(e$activeDataList) > 0)
   {
     anchorNum <- e$activeDataList[[e$currImgId]][[9]]
-    print(paste("dotNum raw : ", anchorNum+1, "-of- ",  e$anchorNum ))
+    dbg(paste("dotNum raw : ", anchorNum+1, "-of- ",  e$anchorNum ))
 
     if (anchorNum < as.integer(e$anchorNum))
     {
@@ -1063,7 +1063,7 @@ addAnchor <- function(e, x, y)
 
       ## This is provided for manual capture of digitized points for future testing needs
       print ("ANCHOR : Coordinate Data for post processing use : ")
-      print( paste( "x y,  X,Y,  Z : ", x, y, coord [1], coord[2], coord[3]))
+      dbg( paste( "x y,  X,Y,  Z : ", x, y, coord [1], coord[2], coord[3]))
 
 
 
@@ -1079,13 +1079,13 @@ addAnchor <- function(e, x, y)
       }
       else
       {
-        print("WARNING : place anchor : not inside the specimen")
+        dbg("WARNING : place anchor : not inside the specimen")
       }
     }
   }
   else
   {
-    print("WARNING : no specimen opened")
+    dbg("WARNING : no specimen opened")
   }
 }
 
@@ -1244,7 +1244,7 @@ read.digitize <- function(e, content)
     ID <- paste(e$dgtPath, "/",
                 sub("ID=", "", content[grep("ID=", content, ignore.case)], ignore.case), sep =
                   "")
-    print("line 958")
+    dbg("line 958")
   }
 
 
@@ -1257,11 +1257,11 @@ read.digitize <- function(e, content)
     ID <- paste(e$dgtPath, "/",
                 sub("ID=", "", content[grep("ID=", content, ignore.case)], ignore.case), sep =
                   "")
-    print("line 971")
+    dbg("line 971")
   }
 
 
-  print(ID)
+  dbg(ID)
   if (length(ID) != 0)
   {
     dimnames(coords)[[3]] <- as.list(ID)
@@ -1288,7 +1288,7 @@ read.anchors <- function(content)
   if (anyNA(nanchors))
   {
     #make more robust
-    print("Missing anchors")
+    dbg("Missing anchors")
     return()
   }
   else
@@ -1376,11 +1376,11 @@ draw.digitize <- function(e, id, specimen, landmarks)
   if (is.na(lmQuery)) lmQuery <- 0L
   e$landmarksPresentInMemory <- lmQuery
   alreadyLoaded <- isTRUE(e$lmkLoadedInC[[as.character(id)]])
-  print(paste("landmarks already in C code", lmQuery, "R-tracked loaded:", alreadyLoaded))
+  dbg(paste("landmarks already in C code", lmQuery, "R-tracked loaded:", alreadyLoaded))
 
   if (!alreadyLoaded && lmQuery == 0L)
   {
-    print(paste("loading PLY file for specimen ", id))
+    dbg(paste("loading PLY file for specimen ", id))
     add("specimen", specimen, id)   # load model in
     set("specimen", "id", id)
 
@@ -1398,7 +1398,7 @@ draw.digitize <- function(e, id, specimen, landmarks)
   }
   else
   {
-    print("landmarks already loaded in memory ... skipped adding more landmarks")
+    dbg("landmarks already loaded in memory ... skipped adding more landmarks")
     add("specimen", specimen, id)
     set("specimen", "id", id)
   }
@@ -1424,12 +1424,12 @@ draw.anchors <- function(e, id, anchors)
     }
     else
     {
-      print("anchors already loaded in memory ... skipped adding more anchors")
+      dbg("anchors already loaded in memory ... skipped adding more anchors")
     }
   }
   else
   {
-    print("Missing or empty anchors ... nothing to draw")
+    dbg("Missing or empty anchors ... nothing to draw")
     return()
   }
   return()
