@@ -2,7 +2,7 @@
 # Developers to update this function
 get_surface_date <- function()
 {
-  print ("surface  15 August 2020")
+  dbg("GUImorph 0.9.0 - surface")
 }
 
 ################# main data structure ##############################
@@ -181,7 +181,7 @@ onSliderNumOk <- function(e, win)
 {
   e$sliderNum <- tclvalue(tkget(e$sliderEntry))
 	tkdestroy(win)
-  print (paste("3dDigitize.surface (178)... set surface sliders to : <", e$sliderNum, ">" ))
+  dbg(paste("3dDigitize.surface (178)... set surface sliders to : <", e$sliderNum, ">" ))
 }
 
 
@@ -202,16 +202,16 @@ disableOper<-function(e, state) {
 #builds template according to current specimen
 buildTemplate <- function(e)
 {
-  print ("3dDigitize.surface ... build template .. line 199")
+  dbg("3dDigitize.surface ... build template .. line 199")
 	disableOper(e, T)
 
-	print (paste("current image id ... line 202 ", e$currImgId))
+	dbg(paste("current image id ... line 202 ", e$currImgId))
 
 	lmk <- getLandmark(e$currImgId)
 
-	print (paste("landmarks for image id : ", e$currImgId))
+	dbg(paste("landmarks for image id : ", e$currImgId))
 
-	print (lmk)
+	dbg(lmk)
 	if(is.null(lmk))
 	{
 	  dbg("No landmarks. Downsampling is not allowed.")
@@ -222,7 +222,7 @@ buildTemplate <- function(e)
 	#check anchor toggle and if anchors are present
 	anc <- getAnchor(e$currImgId)
 	dbg(paste("current image id line 218 : ", e$currImgId))
-	print ("anchors")
+	dbg("anchors")
 	dbg(anc)
 	if(is.null(anc))
 	{
@@ -236,7 +236,7 @@ buildTemplate <- function(e)
 	e$aDimC <- dim(anc)[2]
 
 	fileName <- e$activeDataList[[e$currImgId]][[1]]
-  print (paste("Build template (233) ... file name is <", fileName, ">"))
+  dbg(paste("Build template (233) ... file name is <", fileName, ">"))
 
 
 
@@ -250,13 +250,13 @@ buildTemplate <- function(e)
 
 	if(0)
 	{
-	print ("line 247 this is specimen")
-	print (specimen)
+	dbg("line 247 this is specimen")
+	dbg(specimen)
 	}
 
 
 	dbg("e$useAnchorVar")
-	print (e$useAnchorVar)
+	dbg(e$useAnchorVar)
 
 
 
@@ -297,7 +297,7 @@ buildTemplate <- function(e)
 	}
 
 
-	print ("ready to write template ... where does it go ?")
+	dbg("ready to write template ... where does it go ?")
 	# template <- rbind(lmk,kmeans(x=specimen,centers=e$sliderNum,iter.max=100)$centers)
 	write.table(template,file="template.txt",row.names=F,col.names=TRUE)
 	e$templatePoints <- template
@@ -309,7 +309,7 @@ buildTemplate <- function(e)
 	e$templOrig <- basename(fileName)
 	tkmessageBox(title = "Information", message = "Template created", icon = "info", type = "ok")
 
-	print ("line 305 of surface build template end")
+	dbg("line 305 of surface build template end")
 }
 
 
@@ -383,11 +383,11 @@ write.nts <- function(vertexNum, fileName, vertex)
 downSample <- function(e)
   {
 
-  print ("3dDigitze.surface ... downsample ... line 371")
+  dbg("3dDigitze.surface ... downsample ... line 371")
 	disableOper(e, T)
   lmk <- getLandmark(e$currImgId)
-  print ("Landmarks (lmk) ")
-  print (lmk);
+  dbg("Landmarks (lmk) ")
+  dbg(lmk);
 
   if(is.null(lmk))
   {
@@ -407,7 +407,7 @@ downSample <- function(e)
 
 	# This operation could be delegated to the C code to run really fast
 
-	print ("fileName is")
+	dbg("fileName is")
 	dbg(fileName)
 
 
@@ -460,7 +460,7 @@ downSample <- function(e)
 
 
 
-  print (paste("surface line 447 ... use anchor ?  ... is NUll ? <", e$useAnchorVar, "> ...<", is.null(anc),  ">"))
+  dbg(paste("surface line 447 ... use anchor ?  ... is NUll ? <", e$useAnchorVar, "> ...<", is.null(anc),  ">"))
   dbg(anc)
   dbg(paste("tclvalue(e$useAnchorVar) ", tclvalue(e$useAnchorVar) ))
   dbg("")
@@ -569,20 +569,20 @@ read.surface <- function(content)
 
   for (ii in 1:length(tmpt))
   {
-    print (paste("Template", ii, tmpt[ii]))
+    dbg(paste("Template", ii, tmpt[ii]))
   }
 
 
   for (ii in 1:length(nsurf))
   {
-    print (paste("surf number", ii, nsurf[ii]))
+    dbg(paste("surf number", ii, nsurf[ii]))
   }
 
 
 
   if (0 == length(nsurf))
   {
-    print ("read.surface : length of nsurf is zero - returning NULL")
+    dbg("read.surface : length of nsurf is zero - returning NULL")
     return (NULL)
   }
 
@@ -595,8 +595,8 @@ read.surface <- function(content)
 
   if(0)
   {
-    print (paste("read.surface ... Surfaces from read.vertex"))
-    print ( surfaces)
+    dbg(paste("read.surface ... Surfaces from read.vertex"))
+    dbg( surfaces)
   }
 
   # Surface=0 yields 0-row array; all(is.na()) is vacuously TRUE on empty — not missing data
@@ -608,7 +608,7 @@ read.surface <- function(content)
   }
   else
   {
-    print ("read.surface : have the data ... returning a list")
+    dbg("read.surface : have the data ... returning a list")
     dbg("")
     dbg("")
     return(list( template = tmpt, surfaces = surfaces,   sliderNum = nsurf  ))
@@ -706,7 +706,7 @@ read.template <- function(rawContent)
   startLines <- grep("TemplateNumber=", rawContent, ignore.case)
   if (length(startLines) == 0)
   {
-    print ("read.template : can not locate template tag 'TemplateNumber=' ")
+    dbg("read.template : can not locate template tag 'TemplateNumber=' ")
     return(NULL)
   }
 

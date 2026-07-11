@@ -1,8 +1,8 @@
 # Developers to update this function
 get_main_date <- function()
 {
-  print ("Main 15 August 2020")
-  print ("Expected library compile information is 14 August 2020  07:59 PM")
+  dbg("GUImorph 0.9.0 - main")
+  invisible(NULL)
 }
 
 
@@ -113,8 +113,8 @@ read.vertex.3D <- function(content, key)
   startLines <- grep(key, content, TRUE)
 
   # startlines are the line numbers containing the text "Surface="
-  print ("read.vertex.3D ... line numbers containing 'Surface=' " )
-  print (startLines)
+  dbg("read.vertex.3D ... line numbers containing 'Surface=' " )
+  dbg(startLines)
 
   numbers <- sub(key, "", content[startLines], TRUE)
 
@@ -122,7 +122,7 @@ read.vertex.3D <- function(content, key)
   dbg("These are the number of surface elements per specimen")
   for (ii in 1:length(numbers))
   {
-    print (paste ("Numbers", ii,  numbers[ii] ) )
+    dbg(paste ("Numbers", ii,  numbers[ii] ) )
   }
 
 
@@ -137,7 +137,7 @@ read.vertex.3D <- function(content, key)
   }
 
 
-  print (paste ("x = ", x))
+  dbg(paste ("x = ", x))
 
   # so vetrexs will be ... say [100 by 3 by nSpecimens]
 
@@ -176,7 +176,7 @@ read.vertex.3D <- function(content, key)
 
   if (is.null(vertexs))
   {
-    print ("HOW DID THIS HAPPEN ? vertexs is NULL !! ")
+    dbg("HOW DID THIS HAPPEN ? vertexs is NULL !! ")
   }
 
   dbg("read.vertex.3D ... complete")
@@ -413,8 +413,8 @@ init.main <- function(e)
 #Switch tabs in GUI to display different relevant information
 switchTab <- function(e, id)
 {
-  print (" ")
-  print ("3dDigitize.main ... switch tabs line 139")
+  dbg(" ")
+  dbg("3dDigitize.main ... switch tabs line 139")
 
   numId <- suppressWarnings(as.integer(id))
   if (length(numId) != 1L || is.na(numId)) return(invisible())
@@ -486,12 +486,12 @@ switchTab <- function(e, id)
     if (tclvalue(e$placeAnchorsVar) == "0")
     {
       tkconfigure(e$bt1, state = "disabled")
-      print ("have set 'state' to  disabled")
+      dbg("have set 'state' to  disabled")
     }
     else
     {
       tkconfigure(e$bt1, state = "normal")
-      print ("have set 'state' to  normal")
+      dbg("have set 'state' to  normal")
     }
 
 
@@ -510,20 +510,20 @@ switchTab <- function(e, id)
       vertToDownsample <- as.vector(t(e$activeDataList[[e$currImgId]][[8]]))
 
 
-      print (paste("Calling to add downsample for image id ",   e$currImgId ))
-      print (paste("vertToSample vector length is ", length(vertToDownsample)))
+      dbg(paste("Calling to add downsample for image id ",   e$currImgId ))
+      dbg(paste("vertToSample vector length is ", length(vertToDownsample)))
 
       if(1)
       {
-        print ("--------------------------------------------")
-        print ("vertices to down sample (vertToDownsample) ")
-        print (vertToDownsample)
-        print (paste("$currImgId : ", e$currImgId))
-        print ("--------------------------------------------")
+        dbg("--------------------------------------------")
+        dbg("vertices to down sample (vertToDownsample) ")
+        dbg(vertToDownsample)
+        dbg(paste("$currImgId : ", e$currImgId))
+        dbg("--------------------------------------------")
       }
 
-      print ("3dDigitizeMain line 223 call to add turned off")
-      print ("3dDigitizeMain line 223 call to add turned off")
+      dbg("3dDigitizeMain line 223 call to add turned off")
+      dbg("3dDigitizeMain line 223 call to add turned off")
       # turn this OFF ! it causes repetative reloading od already existing data !
       #add("downsample", vertToDownsample, e$currImgId)
     }
@@ -541,8 +541,8 @@ switchTab <- function(e, id)
 
     if (length(e$activeDataList) > 0) {
     myNumberOfSpecimens <-length(e$activeDataList)
-    print (paste ("Specimen Count :", myNumberOfSpecimens ))
-    print (paste ("Current specimen number :", e$currImgId))
+    dbg(paste ("Specimen Count :", myNumberOfSpecimens ))
+    dbg(paste ("Current specimen number :", e$currImgId))
 
     add("SetLandmarkIndex", e$currImgId, -1, -2)
 
@@ -560,7 +560,7 @@ switchTab <- function(e, id)
     if (0) #  (e$dgtFileName != "")
     {
       dgtfileName <- e$dgtFileName
-      print ("Re-reading and assigning curves")
+      dbg("Re-reading and assigning curves")
       rawContent <- scan( file = dgtfileName, what = "char",  sep = "\n", quiet = TRUE   )
       curves <- read.curve(rawContent)
       draw.curves(curves)
@@ -570,7 +570,7 @@ switchTab <- function(e, id)
 
     class(e) <- "curve"
     showPicture(e)
-    print ("Tab switch to CURVES ... processing complete")
+    dbg("Tab switch to CURVES ... processing complete")
   }
   else if (numId == 4 && e$tabState[4] == 1)
   {
@@ -1155,7 +1155,7 @@ onNext <- function(e)
 {
   if (length(e$activeDataList) == 0)
   {
-    print ("function NEXT 3dDigitizeMain ... length of data list is 0 ... returning")
+    dbg("function NEXT 3dDigitizeMain ... length of data list is 0 ... returning")
     return ()
   }
 
@@ -1170,10 +1170,10 @@ onNext <- function(e)
   if(1)
   {
   dbg(" ")
-  print (paste("function onNEXT 3dDigitizeMain line 658"))
-  print (paste ("e$currImgId : ", e$currImgId))
-  print (paste ("number current anchors      " ,nCurrA))
-  print (paste ("number of current landmarks ", nCurrLM))
+  dbg(paste("function onNEXT 3dDigitizeMain line 658"))
+  dbg(paste ("e$currImgId : ", e$currImgId))
+  dbg(paste ("number current anchors      " ,nCurrA))
+  dbg(paste ("number of current landmarks ", nCurrLM))
   }
 
   if (e$currImgId == length(e$activeDataList))
@@ -1247,17 +1247,17 @@ onNext <- function(e)
 
   tkconfigure(e$bt, state = "disabled")
 
-  print (paste("(NEW ?) current image id is : ",e$currImgId ))
-  print (paste("e$ indicator is  is ",e$indicator ))
+  dbg(paste("(NEW ?) current image id is : ",e$currImgId ))
+  dbg(paste("e$ indicator is  is ",e$indicator ))
 
   if (e$indicator == 1)
   {
     if(0)
     {
-    print ("ready to call draw.digitize : ")
-    print (paste("e$currImgId ", e$currImgId))
-    print (paste("e$activeDataList[[e$currImgId]][[1]]  : ", e$activeDataList[[e$currImgId]][[1]]));
-    print (paste("e$activeDataList[[e$currImgId]][[10]] : ", e$activeDataList[[e$currImgId]][[10]]))
+    dbg("ready to call draw.digitize : ")
+    dbg(paste("e$currImgId ", e$currImgId))
+    dbg(paste("e$activeDataList[[e$currImgId]][[1]]  : ", e$activeDataList[[e$currImgId]][[1]]));
+    dbg(paste("e$activeDataList[[e$currImgId]][[10]] : ", e$activeDataList[[e$currImgId]][[10]]))
     }
 
     draw.digitize(e, e$currImgId, e$activeDataList[[e$currImgId]][[1]], e$activeDataList[[e$currImgId]][[10]])
@@ -1281,11 +1281,11 @@ onNext <- function(e)
     if(0)
     {
       dbg(" ")
-      print (paste("function onNEXT 3dDigitizeMain line 781"))
-      print (paste ("e$currImgId : ", e$currImgId))
-      print (paste ("number current anchors      " ,nCurrA))
-      print (paste ("number of current landmarks ", nCurrLM))
-      print (paste ("Arguments for add specimen ", e$activeDataList[[e$currImgId]][[1]], ":" ,e$currImgId ))
+      dbg(paste("function onNEXT 3dDigitizeMain line 781"))
+      dbg(paste ("e$currImgId : ", e$currImgId))
+      dbg(paste ("number current anchors      " ,nCurrA))
+      dbg(paste ("number of current landmarks ", nCurrLM))
+      dbg(paste ("Arguments for add specimen ", e$activeDataList[[e$currImgId]][[1]], ":" ,e$currImgId ))
     }
     add("specimen", e$activeDataList[[e$currImgId]][[1]], e$currImgId)
   }
@@ -1432,9 +1432,9 @@ loadPly <- function(e)
 
   if(0) # if multiple files selected ... test is concatenated together
   {
-    print (" ")
-    print ("Function loadPly 3dDigitizeMain ... line 1152")
-    print (paste ("Selected file name is :",fileStr ))
+    dbg(" ")
+    dbg("Function loadPly 3dDigitizeMain ... line 1152")
+    dbg(paste ("Selected file name is :",fileStr ))
   }
 
   nSpecimens <- length(imgList)
@@ -1472,7 +1472,7 @@ loadPly <- function(e)
         list(imgList[[i]], 0.01, 0, matrix(nrow = 0, ncol = 3), "NULL", c(0, 0), 0, "NULL", 0) #last 0 for anchor points num
     }
 
-    print (paste("Tested for file existence : there are ", nSpecimens, " specimen files found"))
+    dbg(paste("Tested for file existence : there are ", nSpecimens, " specimen files found"))
 
 
     if (nSpecimens > 0)
@@ -1496,11 +1496,11 @@ loadPly <- function(e)
 
       if (0)
       {
-        print ("loadPly ... 3dDigitize.main ... line 214")
-        print (paste ("length (allocate) :", (length(e$activeDataList  ))))
-        print (paste ("file name         :", e$activeDataList[[1]][[1]]))
+        dbg("loadPly ... 3dDigitize.main ... line 214")
+        dbg(paste ("length (allocate) :", (length(e$activeDataList  ))))
+        dbg(paste ("file name         :", e$activeDataList[[1]][[1]]))
         dbg( paste ("image number      :", (e$currImgId)))
-        print (paste ("Arguments for add function ... load Ply :", e$activeDataList[[1]][[1]], e$currImgId))
+        dbg(paste ("Arguments for add function ... load Ply :", e$activeDataList[[1]][[1]], e$currImgId))
       }
 
       # why are we using the e$ variable here when we know the number as a anumber ?
@@ -1552,7 +1552,7 @@ loadPly <- function(e)
 
   add("rotationAngles", 0, 0)
 
-  print ("End of function load ply ... specimen should be displayed")
+  dbg("End of function load ply ... specimen should be displayed")
 }
 
 
@@ -1573,24 +1573,24 @@ drawElements <-  function(e, digitize, surfaceData, curves, anchors)
   numberOfLandmarkSets <- e$landmarkNum
 if(0)
 {
-  print ("drawElements line 1262")
-  print ("name of the files which contain specimen data")
-  print (specimens)      ## n file names where n is the number of specimens
-  print ("Integer number of specimens")
-  print (nSpecimens)     ## integer number of specimens
-  print ("Number of landmarks")
-  print (e$landmarkNum)  ## number of landmark sets
-  print (numberOfLandmarkSets)
-  print ("Number of anchors")
-  print (e$anchorNum)
-  print (anchorNum)
+  dbg("drawElements line 1262")
+  dbg("name of the files which contain specimen data")
+  dbg(specimens)      ## n file names where n is the number of specimens
+  dbg("Integer number of specimens")
+  dbg(nSpecimens)     ## integer number of specimens
+  dbg("Number of landmarks")
+  dbg(e$landmarkNum)  ## number of landmark sets
+  dbg(numberOfLandmarkSets)
+  dbg("Number of anchors")
+  dbg(e$anchorNum)
+  dbg(anchorNum)
 }
 
 
   #if no anchor data read in, set default values
   if (is.null(e$anchorNum))
   {
-    print ("No anchor data read from .dgt file : setting default values")
+    dbg("No anchor data read from .dgt file : setting default values")
     e$anchorNum <- 5  #maximum number ofanchors to be placed, default to 5 if none
     anchorNum <- 0    # how many anchors are currently placed
   }
@@ -1616,7 +1616,7 @@ if(0)
   }
   else
   {
-    print ("drawElements ... missing anchors detected")
+    dbg("drawElements ... missing anchors detected")
     tclvalue(e$placeAnchorsVar) <- "0"
     tkconfigure(e$bt, state = "normal")
   }
@@ -1627,26 +1627,26 @@ if(0)
 
   if(1)
   {
-    print ("line 1207 .... dgtDataList")
-    print (dgtDataList)
-    print ("specId")
-    print (specId)
+    dbg("line 1207 .... dgtDataList")
+    dbg(dgtDataList)
+    dbg("specId")
+    dbg(specId)
   }
 
 
 
 
 
-  print (paste ("drawElements ... 1409 nSpecimens is ", nSpecimens))
+  dbg(paste ("drawElements ... 1409 nSpecimens is ", nSpecimens))
 
 
   # added this loop as a test to see what is known
-  print ("checking for file existence ... I know the names of the files")
+  dbg("checking for file existence ... I know the names of the files")
   nSpecimensNew = nSpecimens
   for (i in 1:nSpecimens)
   {
-    print (paste ("   i is", i))
-    print (paste ("   checking for file ...", specimens[[i]] ) )
+    dbg(paste ("   i is", i))
+    dbg(paste ("   checking for file ...", specimens[[i]] ) )
     if (!file.exists(specimens[[i]]))
     {
       dbg(paste(specimens[[i]], "doesn't exist. Ignore it!!"))
@@ -1656,14 +1656,14 @@ if(0)
     }
     else
     {
-      print ("   file exists -ok-")
+      dbg("   file exists -ok-")
     }
   }
-  print ("file existence test complete")
-  print (" ")
+  dbg("file existence test complete")
+  dbg(" ")
   if (nSpecimensNew < 1)
   {
-    print ("There are no specimen files found  ! terminating operation.")
+    dbg("There are no specimen files found  ! terminating operation.")
     return();
   }
 
@@ -1692,7 +1692,7 @@ if(0)
   ## COMMAND  allocate memory for nSpecimens
   ##
   set("specimen", "allocate", nSpecimens)
-  print (paste ("Memory allocated in C library for", nSpecimens, "specimens"))
+  dbg(paste ("Memory allocated in C library for", nSpecimens, "specimens"))
 
   e$lmkLoadedInC <- as.list(rep(FALSE, nSpecimens))
   names(e$lmkLoadedInC) <- as.character(seq_len(nSpecimens))
@@ -1703,7 +1703,7 @@ if(0)
 
   # Use first specimen slice for landmark dimensions (R is 1-based; index 0 is empty)
   landmarks <- digitize[, , 1]
-  print ("LINE 1269 landmarks for argument 1 (first specimen)")
+  dbg("LINE 1269 landmarks for argument 1 (first specimen)")
   dbg(landmarks)
 
 
@@ -1734,15 +1734,15 @@ if(0)
 
     landmarks <- digitize[, , id]   # singular set of landmark points
     dbg( paste("landmarks id index ", id))
-    print (landmarks)
+    dbg(landmarks)
     draw.digitize(e, id, fileName , landmarks)
 
 
     if (!anyNA(anchors[, , i]) && !is.null(anchors))
     {
       anchor <- anchors[, , id]
-      print (paste ("anchor id  index",id))
-      print ( anchor)
+      dbg(paste ("anchor id  index",id))
+      dbg( anchor)
       draw.anchors(e, id, anchor)
     }
     else
@@ -1788,9 +1788,9 @@ if(0)
 
 if(0)
 {
-    print (paste ("curves nRows", nrow(curves)))
-    print (paste ("curves nCols", ncol(curves)))
-    print (paste ("nSpecimens  ", nSpecimens))
+    dbg(paste ("curves nRows", nrow(curves)))
+    dbg(paste ("curves nCols", ncol(curves)))
+    dbg(paste ("nSpecimens  ", nSpecimens))
 }
 
 if (!is.null(curves) && length(curves) > 0 && nrow(curves) > 0)
@@ -1882,7 +1882,7 @@ saveToDgt <- function(e)
   ################### write template ####################
   write.template(fileName, e$templOrig)
 
-  print (paste("Writing data for : ", nSpecimen, "specimens"))
+  dbg(paste("Writing data for : ", nSpecimen, "specimens"))
 
   for (i in 1:nSpecimen)
   {
@@ -1892,14 +1892,14 @@ saveToDgt <- function(e)
 
     #this line adds the file name without path specific to a particular computer
     specimenId <- basename(e$activeDataList[[i]][[1]])
-    print (paste("specimen id at line 1585", specimenId))
-    print (paste("integer  i is ", i, " this is the specimen id"))
+    dbg(paste("specimen id at line 1585", specimenId))
+    dbg(paste("integer  i is ", i, " this is the specimen id"))
 
     landmarks <- getLandmark(i)
     anchors <- getAnchor(i)
 
-    print (paste("specimen index & landmarks ", i))
-    print (paste("specimen index & anchors   ", i))
+    dbg(paste("specimen index & landmarks ", i))
+    dbg(paste("specimen index & anchors   ", i))
 
 
 
@@ -1955,7 +1955,7 @@ getLandmark <- function(id)
   }
   else
   {
-    print (paste("getlandmark line 1500 ... landmark data for id ",id," is null"))
+    dbg(paste("getlandmark line 1500 ... landmark data for id ",id," is null"))
     lmk <- NULL
   }
   return(lmk)
@@ -1982,7 +1982,7 @@ getAnchor <- function(id)
   }
   else
   {
-    print (paste("getanchor line 1527 ... anchor  data for id ", id," is null"))
+    dbg(paste("getanchor line 1527 ... anchor  data for id ", id," is null"))
     anc <- NULL
   }
 
@@ -2011,32 +2011,32 @@ convertCoor <- function(e, x, y) {
 # added by Anglea for diagnostics
 startDataLogging <- function(e)
 {
-  print ("starting data logging")
+  dbg("starting data logging")
   add ("openLogFile", -1, 0)
 }
 
 endDataLogging <- function(e)
 {
-  print ("ending data logging")
+  dbg("ending data logging")
   add ("closeLogFile", -4, 0)
 }
 
 sendSignalToLogFile <- function(e)
 {
-  print ("sending signal into the log file")
+  dbg("sending signal into the log file")
   add ("logMessage", -23, 0, 0)
 
 }
 
 startCommandRecording <-function(e)
 {
-  print ("Starting command recording")
+  dbg("Starting command recording")
   add ("startRecording", -24, 0)
 }
 
 endCommandRecording <-function(e)
 {
-  print ("Ending command recording")
+  dbg("Ending command recording")
   add("endRecording", -25, 0)
 }
 
@@ -2050,14 +2050,14 @@ nullFunction <-function(e)
 
 executeShutDownCommandSequence <- function (e)
 {
-  print ("Shut down command sequence")
+  dbg("Shut down command sequence")
   add ("closeLogFile", -4, 0)
   add ("endRecording", -25, 0)
 }
 
 executeStartUpCommandSequence <- function (e)
 {
-  print ("Start up command sequence")
+  dbg("Start up command sequence")
   add ("startRecording", -24, 0)
   add ("openLogFile", -1, 0)
 }
@@ -2065,7 +2065,7 @@ executeStartUpCommandSequence <- function (e)
 
 execueTakeSnapShot <- function(e)
 {
-  print ("Taking snapshot of tcl_if state")
+  dbg("Taking snapshot of tcl_if state")
   add ("snapshot", -1, -2)   # two arguments for use TBD  22 May 2020
 }
 
@@ -2085,7 +2085,7 @@ executePreDefinedCommandSequence <- function (e)
 
 
 
-  print ("Predefined command sequence")
+  dbg("Predefined command sequence")
   if(1)
   {
   add ("startRecording", -24, 0)
@@ -2131,16 +2131,16 @@ executePreDefinedCommandSequence <- function (e)
   {
     # command sequence for load Ply file
     # tested 05 August 2020
-    print ("Executing test_01")
+    dbg("Executing test_01")
     set ("specimen",  "allocate", 1)
     add ("specimen", "C:/home/0_GuiMorph_IO_FILES/INPUT_PLY_FILES/Folsom3D/A6.1.PLY", 1)
     set ("specimen",  "id", 1)
-    print ("test_01 ... complete")
+    dbg("test_01 ... complete")
   }
 
   if(1 == test_02)
   {
-    print ("Executing test_02")
+    dbg("Executing test_02")
     # tested 05 August 2020
     set ("specimen",  "allocate", 1)
     add ("specimen" , "C:/home/0_GuiMorph_IO_FILES/INPUT_PLY_FILES/Folsom3D/A6.1.PLY", 1)
@@ -2156,18 +2156,18 @@ executePreDefinedCommandSequence <- function (e)
     add ("rawdot", - 5.382958, -26.884939, -4.359759);
     add ("rawdot", - 2.109146, -39.252674, -4.167464);
     add ("rawdot", - 3.32168,  -55.985489, -3.792133);
-    print ("NOTE : THE DIGITIZE GUI IS NOT RESPONSIVE !")
-    print ("test_02 ... complete")
+    dbg("NOTE : THE DIGITIZE GUI IS NOT RESPONSIVE !")
+    dbg("test_02 ... complete")
   }
 
   if(1 == test_03)
   {
-    print ("Executing test_03")
+    dbg("Executing test_03")
     # tested 05 August 2020
 
-    print ("-------------------------------------")
-    print ("PICK ONLY Folsom3D/A6.1.PLY   !!")
-    print ("PICK ONLY Folsom3D/A6.1.PLY   !!")
+    dbg("-------------------------------------")
+    dbg("PICK ONLY Folsom3D/A6.1.PLY   !!")
+    dbg("PICK ONLY Folsom3D/A6.1.PLY   !!")
 
     loadPly(e)
 
@@ -2179,13 +2179,13 @@ executePreDefinedCommandSequence <- function (e)
     add ("rawdot", - 5.382958, -26.884939, -4.359759);
     add ("rawdot", - 2.109146, -39.252674, -4.167464);
     add ("rawdot", - 3.32168,  -55.985489, -3.792133);
-    print ("NOTE : THE DIGITIZE GUI IS MUST BE RESPONSIVE !")
-    print ("test_02 ... complete")
+    dbg("NOTE : THE DIGITIZE GUI IS MUST BE RESPONSIVE !")
+    dbg("test_02 ... complete")
   }
 
   if(0) ## 1 == test_03)
   {
-    print ("Executing test_03")
+    dbg("Executing test_03")
     # This is a test of labeling a specimen .. I discovered that
     # dots can have Z components assigned to negative values based
     # based on where the dot is placed. The labels would them appear behind
@@ -2202,7 +2202,7 @@ executePreDefinedCommandSequence <- function (e)
     ##set("window", "mode", "digitize")
 
     e$landmarkNum <- 7
-    print (paste("line 1921 The number of landmarks is set to : ", e$landmarkNum) )
+    dbg(paste("line 1921 The number of landmarks is set to : ", e$landmarkNum) )
 
 
     # these are some points previously digitized on specimen A6.1.PLY
@@ -2217,7 +2217,7 @@ executePreDefinedCommandSequence <- function (e)
     add("dot",   0.168667,  0.183333,-0.015137)
     add("dot",   0.216333,-0.198000,  0.010422)
     add("dot",   0.212667,-0.748000,  0.005068)
-    print ("test_03 complete")
+    dbg("test_03 complete")
   }
 
   if(1 == test_04)
@@ -2228,59 +2228,59 @@ executePreDefinedCommandSequence <- function (e)
     # to return when an operation is other than successful - but not quite and error
     # THIS IS A DEVELOPER FUNCTION : DO NOT EXPECT THIS TOOL TO BEHAVE NICELY
 
-    print ("Predefined sequence test 04 : function returns")
-    print ("DO NOT EXPECT THIS TOOL TO BEHAVE NICELY !! ")
-    print ("DO NOT EXPECT THIS TOOL TO BEHAVE NICELY !! ")
+    dbg("Predefined sequence test 04 : function returns")
+    dbg("DO NOT EXPECT THIS TOOL TO BEHAVE NICELY !! ")
+    dbg("DO NOT EXPECT THIS TOOL TO BEHAVE NICELY !! ")
     result <-     tclvalue(add ("logMessage", -1, -3, 0))
-    print (result)
+    dbg(result)
     result <- tclvalue(add ("logMessage", -2, -2, 0))
-    print (result)
+    dbg(result)
     result <- tclvalue(add ("logMessage", -3, -1, 0))
-    print (result)
+    dbg(result)
     result <- tclvalue(add ("logMessage", -4,  0, 0))
-    print (result)
+    dbg(result)
 
 
     result <- tclvalue(add ("logMessage", -6,  2, 0))
-    print (result)
+    dbg(result)
     result <- tclvalue(add ("logMessage", -7,  3, 0))
-    print (result)
+    dbg(result)
     result <- tclvalue(add ("logMessage", -8,  4, 0))
-    print (result)
+    dbg(result)
     result <- tclvalue(add ("logMessage", -9,  5, 0))
-    print (result)
+    dbg(result)
 
 
     result <- tclvalue(add ("logMessage", -10,  0, 0))
-    print (result)
+    dbg(result)
     result <- tclvalue(add ("logMessage", -11,  0, 1))
-    print (result)
+    dbg(result)
     result <- tclvalue(add ("logMessage", -12,  0, 2))
-    print (result)
+    dbg(result)
     result <- tclvalue(add ("logMessage", -13,  0, 3))
-    print (result)
+    dbg(result)
     result <- tclvalue(add ("logMessage", -14,  0, 4))
-    print (result)
+    dbg(result)
     result <- tclvalue(add ("logMessage", -15,  0, 5))
-    print (result)
+    dbg(result)
     result <- tclvalue(add ("logMessage", -16,  0, 6))
-    print (result)
+    dbg(result)
     result <- tclvalue(add ("logMessage", -17,  0, 7))
-    print (result)
+    dbg(result)
     result <- tclvalue(add ("logMessage", -18,  0, 8))
-    print (result)
+    dbg(result)
 
 
     if(0)
     {
-    print ("This will generate an error ! ")
-    print ("------------------------------")
+    dbg("This will generate an error ! ")
+    dbg("------------------------------")
     result <- tclvalue(add ("logMessage", -5,  1, 0))
-    print (result)
+    dbg(result)
     }
 
-    print ("DO NOT EXPECT THIS TOOL TO BEHAVE NICELY !! ")
-    print ("DO NOT EXPECT THIS TOOL TO BEHAVE NICELY !! ")
+    dbg("DO NOT EXPECT THIS TOOL TO BEHAVE NICELY !! ")
+    dbg("DO NOT EXPECT THIS TOOL TO BEHAVE NICELY !! ")
 
     result <-"WHAT IS THIS ! "
 
@@ -2307,8 +2307,8 @@ executePreDefinedCommandSequence <- function (e)
     # by bypassing the R functions, some state variables in R are NOT assigned.
     # use test 7 instead !
 
-    print ("STOP ! THIS CRASHES THE TOOL ! DEVELOPMENT ITEM 05 AUGUST 2020 ")
-    print ("Executing test_05")
+    dbg("STOP ! THIS CRASHES THE TOOL ! DEVELOPMENT ITEM 05 AUGUST 2020 ")
+    dbg("Executing test_05")
     set("specimen",  "allocate", 2)
     add ("specimen", "C:/home/0_GuiMorph_IO_FILES/INPUT_PLY_FILES/Folsom3D/A6.1.PLY", 1)
     add ("specimen", "C:/home/0_GuiMorph_IO_FILES/INPUT_PLY_FILES/Folsom3D/B7.1.PLY", 2);
@@ -2332,8 +2332,8 @@ executePreDefinedCommandSequence <- function (e)
     add ("rawdot", -10.706311, -40.495575,  0.689502);
 
     set("window", "mode", "digitize")
-    print ("NOTE : THE DIGITIZE GUI IS NOT RESPONSIVE !")
-    print ("test_05 ... complete")
+    dbg("NOTE : THE DIGITIZE GUI IS NOT RESPONSIVE !")
+    dbg("test_05 ... complete")
   }
 
   if(1 == test_06)
@@ -2342,7 +2342,7 @@ executePreDefinedCommandSequence <- function (e)
     # 05 August 2020 !
 
 
-    print ("Executing test_06")
+    dbg("Executing test_06")
   #  set("specimen",  "allocate", 2)
   #  set ("specimen",  "id", 1)
   #  print ("PICK ONLY FILES A6.1.PLY and B7.1.PLY  ! ")
@@ -2376,7 +2376,7 @@ executePreDefinedCommandSequence <- function (e)
     e$landmarkNum <- 5
     set("window", "mode", "digitize")
 
-    print ("test_06 ... complete")
+    dbg("test_06 ... complete")
 
   }
 
@@ -2384,7 +2384,7 @@ executePreDefinedCommandSequence <- function (e)
   {
 
     # tested 05 August 2020
-    print ("Executing test_07 ")
+    dbg("Executing test_07 ")
 
 
     myFileName <- "C:/home/0_GuiMorph_IO_FILES/INPUT_PLY_FILES/Folsom3D/A6.1.PLY"
@@ -2433,24 +2433,24 @@ executePreDefinedCommandSequence <- function (e)
     addAnchor(e, 351, 333)
     switchTab (e,1)
 
-    print ("ENABLE PLACE ANCHORS CHECKBOX AND CHANGE TABS TO ANCHORS")
-    print ("ENABLE PLACE ANCHORS CHECKBOX AND CHANGE TABS TO ANCHORS")
+    dbg("ENABLE PLACE ANCHORS CHECKBOX AND CHANGE TABS TO ANCHORS")
+    dbg("ENABLE PLACE ANCHORS CHECKBOX AND CHANGE TABS TO ANCHORS")
 
-    print ("test_07 ... complete")
+    dbg("test_07 ... complete")
 }
 
   if(1 == test_08)
   {
 
     # tested 05 August 2020
-    print ("Executing test_08 ")
+    dbg("Executing test_08 ")
 
 
 
 
-    print ("-------------------------------------")
-    print ("PICK ONLY Folsom3D/A6.1.PLY   !!")
-    print ("PICK ONLY Folsom3D/A6.1.PLY   !!")
+    dbg("-------------------------------------")
+    dbg("PICK ONLY Folsom3D/A6.1.PLY   !!")
+    dbg("PICK ONLY Folsom3D/A6.1.PLY   !!")
     loadPly(e)
 
 
@@ -2512,17 +2512,17 @@ executePreDefinedCommandSequence <- function (e)
 
     set ("specimen", "angle", 0, 30)
 
-    print ("test_08 ... complete")
+    dbg("test_08 ... complete")
   }
 
   if(1 == test_09)
   {
     # tested 05 August 2020
-    print ("Executing test_09 ")
+    dbg("Executing test_09 ")
     add ("queryFromR", 3, 0,0)
     add ("messageFromR", "I'm sorry Dave, I'm afraid I can't do that", 0,0)
     messageToC ( paste("Good morning dave, would you like a slice of ", 3.14159, "?"))
-    print ("test_09 ... complete")
+    dbg("test_09 ... complete")
   }
 
   if (1 == test_10)
@@ -2556,7 +2556,7 @@ executePreDefinedCommandSequence <- function (e)
     add ("closeLogFile", -4, 0)
     add("endRecording", -25, 0)
   }
-  print ("Predefined command sequence ... end ")
+  dbg("Predefined command sequence ... end ")
 
 }
 
@@ -2590,20 +2590,20 @@ loadPlyTest <- function(e, yourFileName)
 
   if(1)
   {
-    print (" ")
-    print ("Function loadPly 3dDigitizeMain ... line 1020")
-    print (paste ("Selected file name is :",fileStr ))
+    dbg(" ")
+    dbg("Function loadPly 3dDigitizeMain ... line 1020")
+    dbg(paste ("Selected file name is :",fileStr ))
   }
 
   nSpecimens <- length(imgList)
 
   if(1)
   {
-    print (paste ("nSpeciments at line 1028 :",nSpecimens ))
+    dbg(paste ("nSpeciments at line 1028 :",nSpecimens ))
     for (i in 1:length(imgList))
     {
       speciName <- imgList[[i]]
-      print (paste("File name ", i, "is : ",speciName ))
+      dbg(paste("File name ", i, "is : ",speciName ))
     }
   }
 
@@ -2633,7 +2633,7 @@ loadPlyTest <- function(e, yourFileName)
         list(imgList[[i]], 0.01, 0, matrix(nrow = 0, ncol = 3), "NULL", c(0, 0), 0, "NULL", 0) #last 0 for anchor points num
     }
 
-    print (paste("Tested for file existence : there are ", nSpecimens, " specimen files found"))
+    dbg(paste("Tested for file existence : there are ", nSpecimens, " specimen files found"))
 
 
     if (nSpecimens > 0)
@@ -2657,11 +2657,11 @@ loadPlyTest <- function(e, yourFileName)
 
       if (1)
       {
-        print ("loadPly ... 3dDigitize.main ... line 1068")
-        print (paste ("length (allocate) :", (length(e$activeDataList  ))))
-        print (paste ("file name         :", e$activeDataList[[1]][[1]]))
+        dbg("loadPly ... 3dDigitize.main ... line 1068")
+        dbg(paste ("length (allocate) :", (length(e$activeDataList  ))))
+        dbg(paste ("file name         :", e$activeDataList[[1]][[1]]))
         dbg( paste ("image number      :", (e$currImgId)))
-        print (paste ("Arguments for add function ... load Ply :", e$activeDataList[[1]][[1]], e$currImgId))
+        dbg(paste ("Arguments for add function ... load Ply :", e$activeDataList[[1]][[1]], e$currImgId))
       }
 
       set("specimen", "allocate", length(e$activeDataList))
@@ -2670,14 +2670,14 @@ loadPlyTest <- function(e, yourFileName)
   }
 
   add("rotationAngles", 0, 0)
-  print (" ")
-  print ("End of function load ply ... specimen should be displayed")
+  dbg(" ")
+  dbg("End of function load ply ... specimen should be displayed")
 }
 
 messageToC  <- function(theMessage)
 {
   add ("messageFromR", theMessage, 0,0)
-  print (theMessage)
+  dbg(theMessage)
 }
 
 
@@ -2693,7 +2693,7 @@ openDgt <- function(e)
 
   init.main(e)
 
-  print (paste("opendgt :  NO provision is made here for picking more than one .dgt file"))
+  dbg(paste("opendgt :  NO provision is made here for picking more than one .dgt file"))
 
 
 
@@ -2702,8 +2702,8 @@ openDgt <- function(e)
   # if file name is empty ... quit early ....
   if ("" == dgtfileName)
   {
-    print ("")
-    print ("function openDgt ... no file name ...")
+    dbg("")
+    dbg("function openDgt ... no file name ...")
     return(FALSE)
   }
 
@@ -2713,11 +2713,11 @@ openDgt <- function(e)
 
   if (1)
   {
-    print ("")
-    print ("function openDgt ... file name is")
-    print (dgtfileName)
-    print (paste ("e$dgtFileName :", e$dgtFileName))
-    print (paste ("e$dgtPath     :", e$dgtPath ))
+    dbg("")
+    dbg("function openDgt ... file name is")
+    dbg(dgtfileName)
+    dbg(paste ("e$dgtFileName :", e$dgtFileName))
+    dbg(paste ("e$dgtPath     :", e$dgtPath ))
   }
 
 
@@ -2726,10 +2726,10 @@ openDgt <- function(e)
   if (0)
   {
     # The rawContent seems to be the entire file contents
-    print ("function openDgt ... rawContent")
-    print (paste("rawContent length is ", length(rawContent)))
-    print (rawContent)
-    print (".........................................................")
+    dbg("function openDgt ... rawContent")
+    dbg(paste("rawContent length is ", length(rawContent)))
+    dbg(rawContent)
+    dbg(".........................................................")
   }
 
   ################### read digitize data ##################
@@ -2740,8 +2740,8 @@ openDgt <- function(e)
   if (1)
   {
     dbg(".........................................................")
-    print ("olddat")
-    print (olddat)
+    dbg("olddat")
+    dbg(olddat)
     dbg(".........................................................")
   }
 
@@ -2757,7 +2757,7 @@ openDgt <- function(e)
 
   if (nSpecimens < 1)
   {
-    print ("ERROR ... NO SPECIMENS IN OPEN DG FILE ... returning FLASE")
+    dbg("ERROR ... NO SPECIMENS IN OPEN DG FILE ... returning FLASE")
     return (FALSE)
   }
 
@@ -2769,8 +2769,8 @@ openDgt <- function(e)
   if (1)
   {
     dbg(paste("e$templOrig", e$templOrig))
-    print ("template information")
-    print (templOrig)
+    dbg("template information")
+    dbg(templOrig)
     dbg(".........................................................")
   }
 
@@ -2781,22 +2781,22 @@ openDgt <- function(e)
 
   if (0)
   {
-    print ("anchors data")
-    print (anchors)
+    dbg("anchors data")
+    dbg(anchors)
     dbg(".........................................................")
 
     if (!anyNA(anchors))
     {
-      print (anchors)
+      dbg(anchors)
     }
     else
     {
-      print ("there are no anchors")
+      dbg("there are no anchors")
     }
   }
 
 
-  print ("Line 2382  ...   if(1)  for sliders")
+  dbg("Line 2382  ...   if(1)  for sliders")
   sliderNum <- 0
   surfaceData <- NULL
 
@@ -2804,7 +2804,7 @@ openDgt <- function(e)
   {
     ################### read surface data ##################
     surfaceData <- read.surface(rawContent)
-    print (paste ("length of surface data ", length(surfaceData) ))
+    dbg(paste ("length of surface data ", length(surfaceData) ))
 
 
     if (is.null(surfaceData))
@@ -2822,8 +2822,8 @@ openDgt <- function(e)
       {
 
         surfTemp <- surfaceData[ , , ii]
-        print (paste ("surface data rows   ", nrow( surfTemp) ))
-        print (paste ("surface data columns", ncol( surfTemp) ))
+        dbg(paste ("surface data rows   ", nrow( surfTemp) ))
+        dbg(paste ("surface data columns", ncol( surfTemp) ))
       }
 
       # print (surfaceData)
@@ -2835,7 +2835,7 @@ openDgt <- function(e)
     # surface data then sliderNum = 0
     if (length(surfaceData) == 0)
     {
-      print ("ZERO length surface data : setting sliderNum to zero")
+      dbg("ZERO length surface data : setting sliderNum to zero")
       sliderNum <- 0
     }
 
@@ -2867,19 +2867,19 @@ openDgt <- function(e)
 
     if (0)   # debugging only ...
     {
-      print ("")
-      print ("")
-      print ("")
+      dbg("")
+      dbg("")
+      dbg("")
 
-      print ("post processing of surface data")
-      print ("tmpt")
-      print (tmpt)
+      dbg("post processing of surface data")
+      dbg("tmpt")
+      dbg(tmpt)
 
-      print ("surfaces")
-      print (surfaces)
+      dbg("surfaces")
+      dbg(surfaces)
 
-      print ("sliderNum")
-      print (sliderNum)
+      dbg("sliderNum")
+      dbg(sliderNum)
 
       dbg("........................................................")
     }
@@ -2908,7 +2908,7 @@ openDgt <- function(e)
     {
       if(1)
       {
-        print ("curves")
+        dbg("curves")
         dbg(curves)
         dbg(paste ("curve nrows", nrow(curves)))
         dbg(paste ("curve ncols", ncol(curves)))
@@ -2939,28 +2939,28 @@ openDgt <- function(e)
     tkconfigure(e$downsmplEntry, textvariable = e$downsmplVar)
     e$sliderNum <- sliderNum
 
-    print ("file 3dDigitize.main ... function openDgt ... line 2687")
-    print (paste( "number of specimens is ", nSpecimens))
+    dbg("file 3dDigitize.main ... function openDgt ... line 2687")
+    dbg(paste( "number of specimens is ", nSpecimens))
 
     specimens <- dimnames(olddat)[[3]]
-    print (paste("specimens", specimens))
-    print (paste("rows ", nrow(specimens)))
-    print (paste("cols ", ncol(specimens)))
+    dbg(paste("specimens", specimens))
+    dbg(paste("rows ", nrow(specimens)))
+    dbg(paste("cols ", ncol(specimens)))
 
 
 
     messageToC(paste ("openDgt : calling drawElements"))
     drawElements(e, olddat, surfaceData, curves, anchors)
-    print ("file 3dDigitize.main ... function openDgt ... back from drawElements .....")
+    dbg("file 3dDigitize.main ... function openDgt ... back from drawElements .....")
 
     dbg(paste("Image id ",e$currImgId) )
 
-    print ("e$activeDataList")
-    print (e$activeDataList)
+    dbg("e$activeDataList")
+    dbg(e$activeDataList)
     if (0 == length(e$activeDataList))
     {
-      print ("FAIL HERE")
-      print ("FAIL HERE")
+      dbg("FAIL HERE")
+      dbg("FAIL HERE")
       return (FALSE)
     }
 
@@ -2991,8 +2991,8 @@ openDgt <- function(e)
 
     if (1)
     {
-      print ("ready to invoke set ... window / mode /string ...")
-      print (string)
+      dbg("ready to invoke set ... window / mode /string ...")
+      dbg(string)
     }
 
     set("window", "mode", string)

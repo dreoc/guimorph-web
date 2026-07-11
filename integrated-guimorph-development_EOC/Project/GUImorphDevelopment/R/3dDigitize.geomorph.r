@@ -1,8 +1,8 @@
 # Developers to update this function
 get_geomorph_date <- function()
 {
-  print ("geomorph 21 JULY 2020 ")    # NO OTHER CHANGES MADE TO THIS FILE !
-  print ("Other than the above date statement and other than this line - NO CODE CHANGES HAVE BEEN MADE")
+  dbg("GUImorph 0.9.0 - geomorph")    # NO OTHER CHANGES MADE TO THIS FILE !
+  invisible(NULL)
 }
 
 ################# main data structure ##############################
