@@ -2,7 +2,11 @@
 
 GUImorph is an R package with a graphical user interface for **3D geometric morphometrics** — load PLY mesh specimens, digitize landmarks, curves, and anchors, then run `geomorph` analyses and export coordinates.
 
-**Platform:** **Windows only.** The GUI requires Windows R 4.6+ and a native OpenGL DLL (`tkogl2.dll`). Linux and macOS are not supported in v1.0.
+**Platform:** **Windows only.** The GUI requires Windows R 4.6+ and a native OpenGL DLL (`tkogl2.dll`). Linux and macOS are not supported in this beta (v0.9.0).
+
+## Why GUImorph
+
+As of **geomorph 4.1**, the interactive 3D digitizing functions (`digit.fixed`, `digitsurface`, `buildtemplate`) are **deprecated** — rgl/OpenGL is no longer supported on current macOS. GUImorph is an rgl-independent, `geomorph`-native digitizer that keeps that template-based surface-semilandmark workflow available and feeds results straight into `geomorph`.
 
 ---
 
@@ -60,7 +64,8 @@ After `install_github`, you may still need to run `renv::restore()` from the ins
 
 ### First launch checklist
 
-1. Console prints the `tkogl2` load path from `.onLoad` (no `loading tkogl2 failed` warning).
+1. A startup banner shows the version; no `loading tkogl2 failed` warning.
+   The console is quiet by default — run `GUImorph(debug = TRUE)` for verbose diagnostics.
 2. The **3D GUImorph** window opens.
 3. Load a `.ply` specimen — the mesh renders (not blank/black).
 
@@ -87,7 +92,8 @@ A typical end-to-end session looks like this:
 ### 2. Digitize landmarks (3D Digitizing tab)
 
 1. *(Optional)* **Digitize scale** — set a scale factor for the specimen.
-2. **Set number of landmarks** — enter how many landmarks you will place.
+2. **Fixed landmarks** — enter how many fixed landmarks you will place
+   (the labeled box at the top of the tab).
 3. **Double-click** the mesh to drop each landmark in order. The
    **Number of Landmarks** counter increments as you go.
    - Single-click is *pick/select only* — it does not place a point.
@@ -128,11 +134,18 @@ A typical end-to-end session looks like this:
 2. **Compute** to run the Generalized Procrustes Analysis (`geomorph::gpagen`).
 3. **Plot Aligned Specimens** to visualize the aligned configuration
    (you must **Compute** first).
-4. **Save Result** to export the aligned coordinates to a `.csv`.
+4. **PCA (morphospace)** plots PC1/PC2 of the aligned coordinates; **Plot Mean
+   Shape** reconstructs and renders the consensus surface (Radius factor /
+   Wireframe controls adjust the surface).
+5. **Save Result** to export the aligned coordinates to a `.csv`.
 
 ### 7. Save and reload your work
 
 - **File → Save to DGT** writes your digitized data to a `.dgt` file.
+- **File → Add PLY to Current DGT** adds new specimens to an open dataset
+  without dropping the ones already digitized.
+- **File → Merge DGT Files** combines two or more `.dgt` files into one dataset
+  (their template, curves, and per-specimen point counts must match).
 - **File → Load DGT File** restores a session. If the file contains anchors,
   **Place Anchors** is re-checked automatically and locked, and all tabs open.
 
@@ -159,11 +172,11 @@ These are inherent GUImorph behaviors that can look like bugs:
   tabs use **Fit** (Ctrl+F runs the same action everywhere).
 - **GPA order matters:** **Plot Aligned Specimens** and **Save Result** require a
   successful **Compute** first (otherwise you'll see "Run Compute first").
-- **GPA Plot** may need the `rgl` package; if the plot opens behind the Tk window,
-  use **Alt+Tab** to bring it forward.
+- **GPA plots** open in a separate `rgl` window; if it opens behind the Tk
+  window, use **Alt+Tab** to bring it forward.
 - **Load ply** prompt is titled "Select Images to Digitize" and accepts multiple
   files — selecting several creates a specimen set, navigated with Previous/Next.
 
 ---
 
-*Modernized release v1.0 — Windows R 4.6+, MSVC-built `tkogl2.dll`, modular C engine.*
+*GUImorph 0.9.0 (beta) — Windows R 4.6+, MSVC-built `tkogl2.dll`, modular C engine.*
