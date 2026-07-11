@@ -739,9 +739,11 @@ set <- function(shape, attr, arg1, arg2, arg3)
 dbg <- function(...) if (isTRUE(getOption("guimorph.debug", FALSE))) print(...)
 
 .onAttach <- function(libname, pkgname) {
+  gmv <- tryCatch(as.character(utils::packageVersion("geomorph")), error = function(err) "not found")
   packageStartupMessage(
     "GUImorph ", utils::packageVersion(pkgname), " (beta) - Windows only\n",
     "3D geometric morphometric digitizing for the geomorph ecosystem.\n",
+    "Using geomorph ", gmv, "\n",
     "Issues / updates: https://github.com/dreoc/GUImorph"
   )
 }

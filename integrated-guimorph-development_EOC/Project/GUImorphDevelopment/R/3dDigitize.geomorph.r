@@ -24,68 +24,77 @@ init.geomorph <- function(e) {
 #configures gui and initializes values
 ui.geomorph <- function(e, parent) {
   gpagenCtlFrame <- ttkframe(parent)
-  tkgrid(ttklabel(gpagenCtlFrame, text = " "), pady = 6)
 
-  fitBtn <- ttkbutton(gpagenCtlFrame, text = "Fit",command = function() onFit(e))
-  tkgrid(fitBtn)
-
+  tkgrid(ttklabel(gpagenCtlFrame, text = " "), row = 0, column = 0, pady = 2)
+  fitBtn <- ttkbutton(gpagenCtlFrame, text = "Fit", command = function() onFit(e))
+  tkgrid(fitBtn, row = 1, column = 0, pady = 2)
   e$bt2 <- NULL
 
+  ## ---- GPA options ----
+  tkgrid(ttkseparator(gpagenCtlFrame, orient = "horizontal"), row = 2, column = 0, sticky = "ew", pady = 4)
+  tkgrid(tk2label(gpagenCtlFrame, text = "GPA options"), row = 3, column = 0, sticky = "w", padx = 4)
+
+  tkgrid(tk2label(gpagenCtlFrame, text = "Maximum GPA iterations"), row = 4, column = 0, sticky = "w", padx = 20)
   e$maxiter <- tclVar(2)
-  tkgrid(tk2label(gpagenCtlFrame, text = "Maximum GPA iterations"), sticky = "w", padx=20)
-  tkgrid(tk2entry(gpagenCtlFrame, textvariable = e$maxiter, width = "25"), sticky = "w", padx=20)
+  tkgrid(tk2entry(gpagenCtlFrame, textvariable = e$maxiter, width = "8"), row = 5, column = 0, sticky = "w", padx = 20)
+
   e$anchorsSurface <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Use anchors as surface semilandmarks", variable = e$anchorsSurface), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Use anchors as surface semilandmarks", variable = e$anchorsSurface), row = 6, column = 0, sticky = "w")
   e$anchorsCurve <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Use anchors as curve semilandmarks", variable = e$anchorsCurve), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Use anchors as curve semilandmarks", variable = e$anchorsCurve), row = 7, column = 0, sticky = "w")
   e$curves <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Slide semilandmarks on curves", variable = e$curves), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Slide semilandmarks on curves", variable = e$curves), row = 8, column = 0, sticky = "w")
   e$surfaces <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Slide semilandmarks on surfaces", variable = e$surfaces), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Slide semilandmarks on surfaces", variable = e$surfaces), row = 9, column = 0, sticky = "w")
   e$PrinAxes <- tclVar(1)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Align the shape data by principal axes", variable = e$PrinAxes), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Align the shape data by principal axes", variable = e$PrinAxes), row = 10, column = 0, sticky = "w")
   e$ProcD <- tclVar(1)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Procrustes Distance criterion", variable = e$ProcD), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Sliding: Procrustes distance (off = bending energy / TPS)", variable = e$ProcD), row = 11, column = 0, sticky = "w")
   e$Proj <- tclVar(1)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Project into tangent space", variable = e$Proj), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Project into tangent space", variable = e$Proj), row = 12, column = 0, sticky = "w")
   e$printP <- tclVar(1)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Print progress bar", variable = e$printP), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Print progress bar", variable = e$printP), row = 13, column = 0, sticky = "w")
+  e$parallel <- tclVar(0)
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Parallel processing (multi-core sliding)", variable = e$parallel), row = 14, column = 0, sticky = "w")
+  e$approxBE <- tclVar(0)
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Approximate TPS (faster bending-energy)", variable = e$approxBE), row = 15, column = 0, sticky = "w")
 
-  cmputBtn <- ttkbutton(gpagenCtlFrame, text = "Compute",command = function() compute(e))
+  cmputBtn <- ttkbutton(gpagenCtlFrame, text = "Compute", command = function() compute(e))
   assign("bt2", cmputBtn, envir = e)
-  #eoc plot specs btton
-  plotspecsBtn <- ttkbutton(gpagenCtlFrame, text = "Plot Aligned Specimens",command = function() plotspecs(e))
-  saveBtn <- ttkbutton(gpagenCtlFrame, text = "Save Result",command = function() save(e))
-  tkgrid(cmputBtn)
-  tkgrid(saveBtn)
+  tkgrid(cmputBtn, row = 16, column = 0, pady = 4)
 
-  #eoc plotting spin box
-  tkgrid(tk2label(gpagenCtlFrame,text="Point size"), row = 13, column = 0, sticky="w")
-  ##eocpt.cex spinbox
-  e$ptcex<- tclVar(.5)
-  tkgrid(tk2spinbox(gpagenCtlFrame, from = .1, to = 10, increment = .1
-                    ,tip = "Point size", textvariable = e$ptcex, width=5), row = 13, column = 0, sticky="e")
-
-  ##eocmean.cex spinbox
-  tkgrid(tk2label(gpagenCtlFrame,text="Mean Shape size"), row = 14, column = 0, sticky="w")
-  e$meancex<- tclVar(2)
-  tkgrid(tk2spinbox(gpagenCtlFrame, from = .5, to = 10, increment = .1
-                    ,tip = "Mean Shape size", textvariable = e$meancex, width=5), row = 14, column = 0, sticky="e")
-  tkgrid(plotspecsBtn)
-  # PCA morphospace
+  ## ---- Results ----
+  tkgrid(ttkseparator(gpagenCtlFrame, orient = "horizontal"), row = 17, column = 0, sticky = "ew", pady = 4)
+  tkgrid(tk2label(gpagenCtlFrame, text = "Results"), row = 18, column = 0, sticky = "w", padx = 4)
+  saveBtn <- ttkbutton(gpagenCtlFrame, text = "Save Result", command = function() save(e))
+  tkgrid(saveBtn, row = 19, column = 0, pady = 2)
+  plotspecsBtn <- ttkbutton(gpagenCtlFrame, text = "Plot Aligned Specimens", command = function() plotspecs(e))
+  tkgrid(plotspecsBtn, row = 20, column = 0, pady = 2)
   pcaBtn <- ttkbutton(gpagenCtlFrame, text = "PCA (morphospace)", command = function() plotPCA(e))
-  tkgrid(pcaBtn)
-  # mean-shape surface controls
+  tkgrid(pcaBtn, row = 21, column = 0, pady = 2)
+
+  ## ---- Mean-shape plot ----
+  tkgrid(ttkseparator(gpagenCtlFrame, orient = "horizontal"), row = 22, column = 0, sticky = "ew", pady = 4)
+  tkgrid(tk2label(gpagenCtlFrame, text = "Mean-shape plot"), row = 23, column = 0, sticky = "w", padx = 4)
+
+  tkgrid(tk2label(gpagenCtlFrame, text = "Point size"), row = 24, column = 0, sticky = "w", padx = 20)
+  e$ptcex <- tclVar(.5)
+  tkgrid(tk2spinbox(gpagenCtlFrame, from = .1, to = 10, increment = .1, tip = "Point size", textvariable = e$ptcex, width = 5), row = 24, column = 0, sticky = "e")
+
+  tkgrid(tk2label(gpagenCtlFrame, text = "Mean Shape size"), row = 25, column = 0, sticky = "w", padx = 20)
+  e$meancex <- tclVar(2)
+  tkgrid(tk2spinbox(gpagenCtlFrame, from = .5, to = 10, increment = .1, tip = "Mean Shape size", textvariable = e$meancex, width = 5), row = 25, column = 0, sticky = "e")
+
+  tkgrid(tk2label(gpagenCtlFrame, text = "Radius factor (x spacing)"), row = 26, column = 0, sticky = "w", padx = 20)
   e$bpFactor <- tclVar("2")
+  tkgrid(tk2spinbox(gpagenCtlFrame, from = 0.5, to = 10, increment = .1, tip = "Ball-pivot radius = factor x median point spacing. Up for holes, down if faces fuse.", textvariable = e$bpFactor, width = 6), row = 26, column = 0, sticky = "e")
+
   e$meshWire <- tclVar("0")
-  tkgrid(tk2label(gpagenCtlFrame, text = "Radius factor (x spacing)"), sticky = "w")
-  tkgrid(tk2spinbox(gpagenCtlFrame, from = 0.5, to = 10, increment = .1,
-                    tip = "Ball-pivot radius = factor x median point spacing. Up for holes, down if faces fuse.",
-                    textvariable = e$bpFactor, width = 6), sticky = "w")
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Wireframe (off = surface)", variable = e$meshWire), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Wireframe (off = surface)", variable = e$meshWire), row = 27, column = 0, sticky = "w")
   meanBtn <- ttkbutton(gpagenCtlFrame, text = "Plot Mean Shape", command = function() plotMeanShape(e))
-  tkgrid(meanBtn)
-  return (gpagenCtlFrame)
+  tkgrid(meanBtn, row = 28, column = 0, pady = 4)
+
+  return(gpagenCtlFrame)
 }
 
 #configures user button actions
@@ -256,7 +265,9 @@ compute <- function(e) {
                          PrinAxes = itob(tclvalue(e$PrinAxes)),
                          ProcD = itob(tclvalue(e$ProcD)),
                          Proj = itob(tclvalue(e$Proj)),
-                         print.progress = itob(tclvalue(e$printP)))
+                         print.progress = itob(tclvalue(e$printP)),
+                         approxBE = itob(tclvalue(e$approxBE)),
+                         Parallel = itob(tclvalue(e$parallel)))
 
 
   pos<-1
