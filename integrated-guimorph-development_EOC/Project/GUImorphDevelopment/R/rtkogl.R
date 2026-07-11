@@ -471,7 +471,7 @@ loadDgt <- function(fileName)
 
   if (is.character(.Platform$r_arch) && .Platform$r_arch != "")
   {
-    path <- file.path("libs", .Platform$r_arc, dlname)
+    path <- file.path("libs", .Platform$r_arch, dlname)
   }
   else
   {
