@@ -500,12 +500,12 @@ switchTab <- function(e, id)
     if (length(e$activeDataList) > 0) {
     if (!is.matrix(e$activeDataList[[e$currImgId]][[8]])) e$activeDataList[[e$currImgId]][[8]] <- 0
 
-    if (e$activeDataList[[e$currImgId]][[8]] == "NULL")
+    if (!is.matrix(e$activeDataList[[e$currImgId]][[8]]))
     {
       e$activeDataList[[e$currImgId]][[8]] <- 0
     }
 
-    if (e$activeDataList[[e$currImgId]][[8]] != "NULL")
+    if (is.matrix(e$activeDataList[[e$currImgId]][[8]]))
     {
       vertToDownsample <- as.vector(t(e$activeDataList[[e$currImgId]][[8]]))
 

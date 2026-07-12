@@ -32,6 +32,9 @@ ui.geomorph <- function(e, parent) {
   tkpack(canvas, side = "left", fill = "both", expand = TRUE)
 
   gpagenCtlFrame <- ttkframe(canvas)
+  .cbg <- tryCatch(as.character(tkcget(gpagenCtlFrame, "-background")), error = function(err) "")
+  if (length(.cbg) == 0 || !nzchar(.cbg[1])) .cbg <- "#f0f0f0"
+  tkconfigure(canvas, background = .cbg)
   tkcreate(canvas, "window", 0, 0, anchor = "nw", window = gpagenCtlFrame)
   tkbind(gpagenCtlFrame, "<Configure>", function() tkconfigure(canvas, scrollregion = tkbbox(canvas, "all")))
   tkbind(canvas, "<MouseWheel>", function(D = 0) tkyview(canvas, "scroll", as.integer(-as.numeric(D) / 120), "units"))
