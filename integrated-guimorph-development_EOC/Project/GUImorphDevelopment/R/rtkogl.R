@@ -469,26 +469,31 @@ loadDgt <- function(fileName)
   file.ext <- .Platform$dynlib.ext #dll file
   dlname <- paste(chname, file.ext, sep = "")
 
-  if (is.character(.Platform$r_arch) && .Platform$r_arch != "")
-  {
-    path <- file.path("libs", .Platform$r_arch, dlname)
+  candidates <- c(
+    if (is.character(.Platform$r_arch) && .Platform$r_arch != "") file.path("libs", .Platform$r_arch, dlname),
+    file.path("libs", "x64", dlname),
+    file.path("libs", dlname)
+  )
+  file <- ""
+  for (cand in candidates) {
+    full <- system.file(cand, package = pkgname, lib.loc = libname)
+    if (nzchar(full) && file.exists(full)) { file <- full; break }
   }
-  else
-  {
-    path <- file.path("libs", dlname)
-  }
-
-  file <-
-    system.file(path, package = pkgname, lib.loc = libname)[1] #grabs full file name
 
   dbg("File 3dDigitize.main ... function .onload")
   dbg(file)
   dbg("-----------------")
+
+  if (!nzchar(file)) {
+    warning("GUImorph: tkogl2 engine DLL not found in the installed package ",
+            "(expected libs/x64/tkogl2.dll). 3D rendering will not work.", call. = FALSE)
+    return(invisible())
+  }
   tryCatch(
     tcl("load", file, "Tkogl2"),
     error = function(e)
-      warning("loading tkogl2 failed", call. = FALSE)
-  ) #replace directory with file
+      warning("loading tkogl2 failed: ", conditionMessage(e), call. = FALSE)
+  )
 }
 
 
