@@ -193,23 +193,122 @@ float absd(float a, float b)
 	return tmp > 0.0 ? tmp : -1.0 * tmp;
 }
 
+
+/* ---- spatial bucket grid for getRealZ ---- */
+#define GRZ_N 96                     /* grid resolution per axis */
+static float* grz_vptr   = NULL;     /* cached vertex array (detect mesh change) */
+static int    grz_vcount = 0;        /* cached vertex count */
+static int*   grz_start  = NULL;     /* GRZ_N*GRZ_N + 1 cell offsets */
+static int*   grz_idx    = NULL;     /* vertex indices, bucketed */
+static float  grz_minx = 0.0f, grz_miny = 0.0f, grz_cw = 1.0f, grz_ch = 1.0f;
+
+static void grz_free(void)
+{
+    if (grz_start) { free(grz_start); grz_start = NULL; }
+    if (grz_idx)   { free(grz_idx);   grz_idx   = NULL; }
+    grz_vptr = NULL; grz_vcount = 0;
+}
+
+static void grz_build(void)
+{
+    int    n = models->count;
+    float* v = models->vertex;
+    int    cells = GRZ_N * GRZ_N;
+    int    i, c, vi;
+    float  minx, maxx, miny, maxy;
+    int*   cursor;
+
+    grz_free();
+    if (n <= 0 || v == NULL) return;
+
+    minx = maxx = v[0];
+    miny = maxy = v[1];
+    for (i = 0; i < n * 3; i += 3) {
+        if (v[i]     < minx) minx = v[i];
+        if (v[i]     > maxx) maxx = v[i];
+        if (v[i + 1] < miny) miny = v[i + 1];
+        if (v[i + 1] > maxy) maxy = v[i + 1];
+    }
+    grz_minx = minx;
+    grz_miny = miny;
+    grz_cw = (maxx - minx) / (float)GRZ_N; if (grz_cw <= 1e-9f) grz_cw = 1e-6f;
+    grz_ch = (maxy - miny) / (float)GRZ_N; if (grz_ch <= 1e-9f) grz_ch = 1e-6f;
+
+    grz_start = (int*)malloc(sizeof(int) * (cells + 1));
+    grz_idx   = (int*)malloc(sizeof(int) * n);
+    if (!grz_start || !grz_idx) { grz_free(); return; }   /* -> linear fallback */
+
+    for (c = 0; c <= cells; c++) grz_start[c] = 0;
+
+    /* count vertices per cell (into [cell+1] for the prefix sum) */
+    for (i = 0, vi = 0; i < n * 3; i += 3, vi++) {
+        int ix = (int)((v[i]     - grz_minx) / grz_cw);
+        int iy = (int)((v[i + 1] - grz_miny) / grz_ch);
+        if (ix < 0) ix = 0; if (ix >= GRZ_N) ix = GRZ_N - 1;
+        if (iy < 0) iy = 0; if (iy >= GRZ_N) iy = GRZ_N - 1;
+        grz_start[iy * GRZ_N + ix + 1]++;
+    }
+    for (c = 0; c < cells; c++) grz_start[c + 1] += grz_start[c];
+
+    cursor = (int*)malloc(sizeof(int) * cells);
+    if (!cursor) { grz_free(); return; }
+    for (c = 0; c < cells; c++) cursor[c] = grz_start[c];
+    for (i = 0, vi = 0; i < n * 3; i += 3, vi++) {
+        int ix = (int)((v[i]     - grz_minx) / grz_cw);
+        int iy = (int)((v[i + 1] - grz_miny) / grz_ch);
+        if (ix < 0) ix = 0; if (ix >= GRZ_N) ix = GRZ_N - 1;
+        if (iy < 0) iy = 0; if (iy >= GRZ_N) iy = GRZ_N - 1;
+        grz_idx[cursor[iy * GRZ_N + ix]++] = vi;
+    }
+    free(cursor);
+
+    grz_vptr = v; grz_vcount = n;
+}
+
 float getRealZ(float x, float y, float z)
 {
-	if (0 == model_amount)
-	{
-		return 0.0;
-	}
+    float* v;
+    int cix, ciy, rx, ry, dx, dy;
 
-	for (int i = 0; i < models->count * 3; i += 3)
-	{
-		if (absd(models->vertex[i], x) < 0.01
-			&& absd(models->vertex[i + 1], y) < 0.01
-			&& absd(models->vertex[i + 2], z) < 0.01)
-		{
-			return models->vertex[i + 2];
-		}
-	}
-	return 0.0;
+    if (0 == model_amount || models == NULL || models->count <= 0 || models->vertex == NULL)
+        return 0.0f;
+
+    /* (re)build the grid whenever the mesh changes */
+    if (grz_vptr != models->vertex || grz_vcount != models->count || grz_start == NULL)
+        grz_build();
+
+    v = models->vertex;
+
+    /* linear fallback if the grid is unavailable -- identical to the original */
+    if (grz_start == NULL || grz_idx == NULL) {
+        int i;
+        for (i = 0; i < models->count * 3; i += 3)
+            if (absd(v[i], x) < 0.01f && absd(v[i + 1], y) < 0.01f && absd(v[i + 2], z) < 0.01f)
+                return v[i + 2];
+        return 0.0f;
+    }
+
+    /* grid lookup: scan only the local cells that could hold a match within 0.01 */
+    cix = (int)((x - grz_minx) / grz_cw);
+    ciy = (int)((y - grz_miny) / grz_ch);
+    rx  = (int)(0.01f / grz_cw) + 1;
+    ry  = (int)(0.01f / grz_ch) + 1;
+
+    for (dy = -ry; dy <= ry; dy++) {
+        int iy = ciy + dy;
+        if (iy < 0 || iy >= GRZ_N) continue;
+        for (dx = -rx; dx <= rx; dx++) {
+            int ix = cix + dx, c, k;
+            if (ix < 0 || ix >= GRZ_N) continue;
+            c = iy * GRZ_N + ix;
+            for (k = grz_start[c]; k < grz_start[c + 1]; k++) {
+                int p = grz_idx[k] * 3;
+                if (absd(v[p], x) < 0.01f && absd(v[p + 1], y) < 0.01f && absd(v[p + 2], z) < 0.01f)
+                    return v[p + 2];
+            }
+        }
+    }
+    return 0.0f;
 }
 
 //displays dots to GUI screen
@@ -277,7 +376,9 @@ void drawDots()
 			if (thisDotColor.b != c->b) { otherColorPointer = &thisDotColor; }
 		}
 
-		rv = ogl_drawDot(&n->p, otherColorPointer, dotRadius);    //uses ogl to draw dot at point p with color c and radius dotRadius
+		GLdouble sliderDotRadius = dotRadius;
+		if (n->c.r == 0.0 && n->c.g == 0.0 && n->c.b == 1.0) { sliderDotRadius = dotRadius * 2.0; } /* enlarge slider (blue) dots */
+		rv = ogl_drawDot(&n->p, otherColorPointer, sliderDotRadius);    //uses ogl to draw dot at point p with color c and radius dotRadius
 		if (0 != rv)
 		{
 			simpleLog("ERROR : negative return from ogl_drawDot");
@@ -417,12 +518,19 @@ void drawCurves()
 	// we need at least 3 dots to build a curve, so keep drawing curve until we reach 
 	// no more points or we dont have enough dots to build curve
 
+	glEnable(GL_LINE_SMOOTH);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+	glDisable(GL_DEPTH_TEST); /* draw curves on top -> no occluded 'brick' gaps */
 	while (p != NULL && p->pointNum >= 3)
 	{
 		ogl_drawLine(p->lines1, p->line1Size);
 		ogl_drawLine(p->lines2, p->line2Size);
 		p = p->next;
 	}
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
 	simpleLog("INFO : drawCurves end");
 }
 

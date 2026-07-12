@@ -2,7 +2,7 @@
 # Developers to update this function
 get_curve_date <- function()
 {
-  print ("curve 15 August 2020")
+  dbg("GUImorph 0.9.0 - curve")
 }
 ################# main data structure ##############################
 #dgtDataList
@@ -90,7 +90,7 @@ read.curve <- function(content)
 
 	if (is.na(num) || num == 0L)
 	{
-	  print ("No curve data to process")
+	  dbg("No curve data to process")
 		return (NULL)
 	}
 
@@ -134,19 +134,19 @@ write.curve <- function(fileName, curves)
 #display curves to GUI
 draw.curves <- function(curves)
 {
-	print("file 3dDigitize.curve ... function draw.curves line 164")
-  print (paste ("curves ... nrows",nrow(curves)))
-  print (paste ("curves ... ncols",ncol(curves)))
+	dbg("file 3dDigitize.curve ... function draw.curves line 164")
+  dbg(paste ("curves ... nrows",nrow(curves)))
+  dbg(paste ("curves ... ncols",ncol(curves)))
 
-  print ("This may take a while to compete ! ")
+  dbg("This may take a while to compete ! ")
    ## R code shall be 1 based !
 	for (j in 1:nrow(curves))
 	{
-	  print (paste("setting curve number to", j))
+	  dbg(paste("setting curve number to", j))
 	  add ("SetCurveIndex", j, -1,-1)
 	  add("curve", curves[j,1], curves[j,2], curves[j,3])
 	}
-  print("file 3dDigitize.curve ... function draw.curves ... complete")
+  dbg("file 3dDigitize.curve ... function draw.curves ... complete")
 }
 
 
@@ -159,7 +159,7 @@ updateWidgets.curve <- function(e) {
 #changes rgb values of selected dot to desired color
 changeDotColor<-function(e)
 {
-  print("changeDotColor")
+  dbg("changeDotColor")
   for(i in 1:3)
   {
     x  <- e$curveDots[[(i - 1) * 3 + 1]]
@@ -186,16 +186,16 @@ onSelectCurve <- function(e, x, y)
 {
   if (e$tab != 3) return(invisible())
 
-  print("file 3dDigitize.curve ... function onSelectCurve line 165")
+  dbg("file 3dDigitize.curve ... function onSelectCurve line 165")
 
-  print (paste  ("onSelectCurve argument x", x))
-  print (paste  ("onSelectCurve argument y", y))
+  dbg(paste  ("onSelectCurve argument x", x))
+  dbg(paste  ("onSelectCurve argument y", y))
 
   if (TRUE == set("dot", "selected", x, y))
   {
     id <- -1
     id <- tclvalue(shows("landmark", "id"))
-    print (paste("this is the id returned from shows landmark id ", id))
+    dbg(paste("this is the id returned from shows landmark id ", id))
 
     if (id %in% e$curveLine)
     {
@@ -212,13 +212,13 @@ onSelectCurve <- function(e, x, y)
     e$curveLine <- c(e$curveLine, as.numeric(id))
     e$curveDots <- c(e$curveDots, c(x, y, id))
 
-    print ("onSelectCurve ... e$curveDots ...")
-    print (e$curveDots)
+    dbg("onSelectCurve ... e$curveDots ...")
+    dbg(e$curveDots)
 
 
-    print (paste("line 247 ... e$curveDotNum is ",e$curveDotNum ))
+    dbg(paste("line 247 ... e$curveDotNum is ",e$curveDotNum ))
     e$curveDotNum <- e$curveDotNum + 1
-    print (paste("line 250 ... e$curveDotNum is ",e$curveDotNum ))
+    dbg(paste("line 250 ... e$curveDotNum is ",e$curveDotNum ))
 
 
 
@@ -227,14 +227,14 @@ onSelectCurve <- function(e, x, y)
 
     if (e$curveDotNum == 2)
     {
-      print ("e$curveDotNum is 2 line 258")
+      dbg("e$curveDotNum is 2 line 258")
       e$sliders <- c(e$sliders, id)
-      print(e$sliders)
+      dbg(e$sliders)
     }
     else if (e$curveDotNum == 3)
     {
 
-      print ("e$curveDotNum is 3 line 265")
+      dbg("e$curveDotNum is 3 line 265")
 
       #why is this done ??
       set("window", "mode", "digitize")
@@ -250,15 +250,15 @@ onSelectCurve <- function(e, x, y)
       curves <- rbind(curves, newCurve)
       e$activeDataList[[1]][[4]] <- curves
 
-      print ("existing landmark indices for call to add curve")
-      print (paste("e$curveLine[1] ",e$curveLine[1]))
-      print (paste("e$curveLine[2] ",e$curveLine[2]))
-      print (paste("e$curveLine[3] ",e$curveLine[3]))
+      dbg("existing landmark indices for call to add curve")
+      dbg(paste("e$curveLine[1] ",e$curveLine[1]))
+      dbg(paste("e$curveLine[2] ",e$curveLine[2]))
+      dbg(paste("e$curveLine[3] ",e$curveLine[3]))
 
 
 
       messageToC(paste("Curve points from R", e$curveLine[1], e$curveLine[2], e$curveLine[3]))
-      print ("Calling add curve ... ")
+      dbg("Calling add curve ... ")
       add("curve", e$curveLine[1], e$curveLine[2], e$curveLine[3])
       pushUndo(e, list(action = "curve_place", row = as.integer(newCurve[1, ])))
 
@@ -269,10 +269,10 @@ onSelectCurve <- function(e, x, y)
   }
   else
   {
-    print ("file 3dDigitize curve line 296 : else clause ... false return from set dot selected at line 258")
+    dbg("file 3dDigitize curve line 296 : else clause ... false return from set dot selected at line 258")
   }
 
-  print("file 3dDigitize.curve ... function onSelectCurve ... end")
+  dbg("file 3dDigitize.curve ... function onSelectCurve ... end")
 }
 
 

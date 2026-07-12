@@ -1,8 +1,8 @@
 # Developers to update this function
 get_geomorph_date <- function()
 {
-  print ("geomorph 21 JULY 2020 ")    # NO OTHER CHANGES MADE TO THIS FILE !
-  print ("Other than the above date statement and other than this line - NO CODE CHANGES HAVE BEEN MADE")
+  dbg("GUImorph 0.9.0 - geomorph")    # NO OTHER CHANGES MADE TO THIS FILE !
+  invisible(NULL)
 }
 
 ################# main data structure ##############################
@@ -23,69 +23,91 @@ init.geomorph <- function(e) {
 
 #configures gui and initializes values
 ui.geomorph <- function(e, parent) {
-  gpagenCtlFrame <- ttkframe(parent)
-  tkgrid(ttklabel(gpagenCtlFrame, text = " "), pady = 6)
+  ## scrollable container: canvas + vertical scrollbar hosting the control frame
+  outer  <- ttkframe(parent)
+  canvas <- tkcanvas(outer, borderwidth = 0, highlightthickness = 0)
+  vsb    <- ttkscrollbar(outer, orient = "vertical", command = function(...) tkyview(canvas, ...))
+  tkconfigure(canvas, yscrollcommand = function(...) tkset(vsb, ...))
+  tkpack(vsb, side = "right", fill = "y")
+  tkpack(canvas, side = "left", fill = "both", expand = TRUE)
 
-  fitBtn <- ttkbutton(gpagenCtlFrame, text = "Fit",command = function() onFit(e))
-  tkgrid(fitBtn)
+  gpagenCtlFrame <- ttkframe(canvas)
+  .cbg <- tryCatch(as.character(tkcget(gpagenCtlFrame, "-background")), error = function(err) "")
+  if (length(.cbg) == 0 || !nzchar(.cbg[1])) .cbg <- "#f0f0f0"
+  tkconfigure(canvas, background = .cbg)
+  tkcreate(canvas, "window", 0, 0, anchor = "nw", window = gpagenCtlFrame)
+  tkbind(gpagenCtlFrame, "<Configure>", function() tkconfigure(canvas, scrollregion = tkbbox(canvas, "all")))
+  tkbind(canvas, "<MouseWheel>", function(D = 0) tkyview(canvas, "scroll", as.integer(-as.numeric(D) / 120), "units"))
 
+  fitBtn <- ttkbutton(gpagenCtlFrame, text = "Fit", command = function() onFit(e))
+  tkgrid(fitBtn, row = 0, column = 0, pady = 2)
   e$bt2 <- NULL
 
+  ## ---- GPA options ----
+  tkgrid(ttkseparator(gpagenCtlFrame, orient = "horizontal"), row = 1, column = 0, sticky = "ew", pady = 2)
+  tkgrid(tk2label(gpagenCtlFrame, text = "GPA options"), row = 2, column = 0, sticky = "w", padx = 4)
+
+  tkgrid(tk2label(gpagenCtlFrame, text = "Maximum GPA iterations"), row = 3, column = 0, sticky = "w", padx = 20)
   e$maxiter <- tclVar(2)
-  tkgrid(tk2label(gpagenCtlFrame, text = "Maximum GPA iterations"), sticky = "w", padx=20)
-  tkgrid(tk2entry(gpagenCtlFrame, textvariable = e$maxiter, width = "25"), sticky = "w", padx=20)
+  tkgrid(tk2entry(gpagenCtlFrame, textvariable = e$maxiter, width = "8"), row = 4, column = 0, sticky = "w", padx = 20)
+
   e$anchorsSurface <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Use anchors as surface semilandmarks", variable = e$anchorsSurface), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Use anchors as surface semilandmarks", variable = e$anchorsSurface), row = 5, column = 0, sticky = "w")
   e$anchorsCurve <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Use anchors as curve semilandmarks", variable = e$anchorsCurve), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Use anchors as curve semilandmarks", variable = e$anchorsCurve), row = 6, column = 0, sticky = "w")
   e$curves <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Slide semilandmarks on curves", variable = e$curves), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Slide semilandmarks on curves", variable = e$curves), row = 7, column = 0, sticky = "w")
   e$surfaces <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Slide semilandmarks on surfaces", variable = e$surfaces), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Slide semilandmarks on surfaces", variable = e$surfaces), row = 8, column = 0, sticky = "w")
   e$PrinAxes <- tclVar(1)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Align the shape data by principal axes", variable = e$PrinAxes), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Align the shape data by principal axes", variable = e$PrinAxes), row = 9, column = 0, sticky = "w")
   e$ProcD <- tclVar(1)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Procrustes Distance criterion", variable = e$ProcD), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Sliding: Procrustes distance (off = bending energy / TPS)", variable = e$ProcD), row = 10, column = 0, sticky = "w")
   e$Proj <- tclVar(1)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Project into tangent space", variable = e$Proj), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Project into tangent space", variable = e$Proj), row = 11, column = 0, sticky = "w")
   e$printP <- tclVar(1)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Print progress bar", variable = e$printP), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Print progress bar", variable = e$printP), row = 12, column = 0, sticky = "w")
+  e$parallel <- tclVar(0)
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Parallel processing (multi-core sliding)", variable = e$parallel), row = 13, column = 0, sticky = "w")
+  e$approxBE <- tclVar(0)
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Approximate TPS (faster bending-energy)", variable = e$approxBE), row = 14, column = 0, sticky = "w")
 
-  cmputBtn <- ttkbutton(gpagenCtlFrame, text = "Compute",command = function() compute(e))
+  cmputBtn <- ttkbutton(gpagenCtlFrame, text = "Compute", command = function() compute(e))
   assign("bt2", cmputBtn, envir = e)
-  #eoc plot specs btton
-  plotspecsBtn <- ttkbutton(gpagenCtlFrame, text = "Plot Aligned Specimens",command = function() plotspecs(e))
-  saveBtn <- ttkbutton(gpagenCtlFrame, text = "Save Result",command = function() save(e))
-  tkgrid(cmputBtn)
-  tkgrid(saveBtn)
+  tkgrid(cmputBtn, row = 15, column = 0, pady = 2)
 
-  #eoc plotting spin box
-  tkgrid(tk2label(gpagenCtlFrame,text="Point size"), row = 13, column = 0, sticky="w")
-  ##eocpt.cex spinbox
-  e$ptcex<- tclVar(.5)
-  tkgrid(tk2spinbox(gpagenCtlFrame, from = .1, to = 10, increment = .1
-                    ,tip = "Point size", textvariable = e$ptcex, width=5), row = 13, column = 0, sticky="e")
-
-  ##eocmean.cex spinbox
-  tkgrid(tk2label(gpagenCtlFrame,text="Mean Shape size"), row = 14, column = 0, sticky="w")
-  e$meancex<- tclVar(2)
-  tkgrid(tk2spinbox(gpagenCtlFrame, from = .5, to = 10, increment = .1
-                    ,tip = "Mean Shape size", textvariable = e$meancex, width=5), row = 14, column = 0, sticky="e")
-  tkgrid(plotspecsBtn)
-  # PCA morphospace
+  ## ---- Results ----
+  tkgrid(ttkseparator(gpagenCtlFrame, orient = "horizontal"), row = 16, column = 0, sticky = "ew", pady = 2)
+  tkgrid(tk2label(gpagenCtlFrame, text = "Results"), row = 17, column = 0, sticky = "w", padx = 4)
+  saveBtn <- ttkbutton(gpagenCtlFrame, text = "Save Result", command = function() save(e))
+  tkgrid(saveBtn, row = 18, column = 0, pady = 2)
+  plotspecsBtn <- ttkbutton(gpagenCtlFrame, text = "Plot Aligned Specimens", command = function() plotspecs(e))
+  tkgrid(plotspecsBtn, row = 19, column = 0, pady = 2)
   pcaBtn <- ttkbutton(gpagenCtlFrame, text = "PCA (morphospace)", command = function() plotPCA(e))
-  tkgrid(pcaBtn)
-  # mean-shape surface controls
+  tkgrid(pcaBtn, row = 20, column = 0, pady = 2)
+
+  ## ---- Mean-shape plot ----
+  tkgrid(ttkseparator(gpagenCtlFrame, orient = "horizontal"), row = 21, column = 0, sticky = "ew", pady = 2)
+  tkgrid(tk2label(gpagenCtlFrame, text = "Mean-shape plot"), row = 22, column = 0, sticky = "w", padx = 4)
+
+  tkgrid(tk2label(gpagenCtlFrame, text = "Point size"), row = 23, column = 0, sticky = "w", padx = 20)
+  e$ptcex <- tclVar(.5)
+  tkgrid(tk2spinbox(gpagenCtlFrame, from = .1, to = 10, increment = .1, tip = "Point size", textvariable = e$ptcex, width = 5), row = 23, column = 0, sticky = "e")
+
+  tkgrid(tk2label(gpagenCtlFrame, text = "Mean Shape size"), row = 24, column = 0, sticky = "w", padx = 20)
+  e$meancex <- tclVar(2)
+  tkgrid(tk2spinbox(gpagenCtlFrame, from = .5, to = 10, increment = .1, tip = "Mean Shape size", textvariable = e$meancex, width = 5), row = 24, column = 0, sticky = "e")
+
+  tkgrid(tk2label(gpagenCtlFrame, text = "Radius factor (x spacing)"), row = 25, column = 0, sticky = "w", padx = 20)
   e$bpFactor <- tclVar("2")
+  tkgrid(tk2spinbox(gpagenCtlFrame, from = 0.5, to = 10, increment = .1, tip = "Ball-pivot radius = factor x median point spacing. Up for holes, down if faces fuse.", textvariable = e$bpFactor, width = 6), row = 25, column = 0, sticky = "e")
+
   e$meshWire <- tclVar("0")
-  tkgrid(tk2label(gpagenCtlFrame, text = "Radius factor (x spacing)"), sticky = "w")
-  tkgrid(tk2spinbox(gpagenCtlFrame, from = 0.5, to = 10, increment = .1,
-                    tip = "Ball-pivot radius = factor x median point spacing. Up for holes, down if faces fuse.",
-                    textvariable = e$bpFactor, width = 6), sticky = "w")
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Wireframe (off = surface)", variable = e$meshWire), sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Wireframe (off = surface)", variable = e$meshWire), row = 26, column = 0, sticky = "w")
   meanBtn <- ttkbutton(gpagenCtlFrame, text = "Plot Mean Shape", command = function() plotMeanShape(e))
-  tkgrid(meanBtn)
-  return (gpagenCtlFrame)
+  tkgrid(meanBtn, row = 27, column = 0, pady = 2)
+
+  return(outer)
 }
 
 #configures user button actions
@@ -164,9 +186,11 @@ itob <- function(int) {
 }
 
 #computes shape object data and performs analysis
-compute <- function(e) {
+# shared data assembly: builds the p x k x n array + curve/surface defs.
+# Returns NULL if a specimen has the wrong point counts (message already shown).
+.build_geomorph_data <- function(e) {
   if (!is.null(e$activeDataList[[1]][[8]]) && !is.null(nrow(e$activeDataList[[1]][[8]]))) e$sliderNum <- nrow(e$activeDataList[[1]][[8]])
-  print("compute")
+  dbg("compute")
   nSpecimen <- length(e$activeDataList)
 
   coords.lmk <- c()
@@ -201,7 +225,7 @@ compute <- function(e) {
       for(i in 1:nSpecimen){
         anchors <- getAnchor(i)
         if(length(anchors) == 0) {
-          print("No anchors present, cannot use for GPA analysis")
+          dbg("No anchors present, cannot use for GPA analysis")
           return()
         }
         if(nrow(anchors) != as.numeric(e$anchorNum)) {
@@ -248,7 +272,53 @@ compute <- function(e) {
       coords.A <- array(coords.lmk,dim = c(as.numeric(e$landmarkNum),3,nSpecimen))
   }
 
-  print("before gpagen")
+  list(land = coords.A, curves = curves, surfaces = surfaces)
+}
+
+# geomorph-native export: a plethodon-style list saved as .rds
+exportGeomorph <- function(e) {
+  if (is.null(e$activeDataList) || length(e$activeDataList) == 0) {
+    tkmessageBox(title = "Information", message = "No specimens to export.", icon = "info", type = "ok"); return(invisible())
+  }
+  gd <- .build_geomorph_data(e)
+  if (is.null(gd)) return(invisible())
+  n  <- dim(gd$land)[3]
+  nm <- tryCatch(names(e$activeDataList), error = function(err) NULL)
+  if (is.null(nm) || length(nm) != n || any(!nzchar(nm))) nm <- paste0("specimen_", seq_len(n))
+  dimnames(gd$land) <- list(NULL, c("x", "y", "z"), nm)
+  gmData <- list(land = gd$land, curves = gd$curves, surfaces = gd$surfaces, specimen.names = nm)
+
+  ## ask for the file first, so the workspace object can take the file's name
+  fileName <- tclvalue(tkgetSaveFile(filetypes = "{{geomorph RDS} {.rds}}",
+                                     title = "Save .rds (Cancel = keep in workspace as gmData)"))
+  objName <- "gmData"
+  if (nchar(fileName) > 0) {
+    if (length(grep("\\.rds$", fileName, ignore.case = TRUE)) == 0) fileName <- paste0(fileName, ".rds")
+    saveRDS(gmData, file = fileName)
+    objName <- make.names(tools::file_path_sans_ext(basename(fileName)))
+  }
+
+  ## put it into the R workspace (same mechanism compute() uses for gm.results)
+  assign(objName, gmData, envir = as.environment(1))
+
+  cat(sprintf("\n# GUImorph -> geomorph : object '%s' is now in your workspace\n", objName))
+  cat(sprintf("#   %d specimens, %d points, %d dims  (curves: %s, surfaces: %s)\n",
+              n, dim(gd$land)[1], dim(gd$land)[2],
+              if (is.null(gd$curves)) "none" else nrow(gd$curves),
+              if (is.null(gd$surfaces)) "none" else length(gd$surfaces)))
+  if (nchar(fileName) > 0) cat("saved:", fileName, "\n")
+  cat(sprintf("Y <- geomorph::gpagen(%s$land, curves = %s$curves, surfaces = %s$surfaces)\n\n", objName, objName, objName))
+  invisible(gmData)
+}
+
+compute <- function(e) {
+  gd <- .build_geomorph_data(e)
+  if (is.null(gd)) return(invisible())
+  coords.A <- gd$land
+  curves   <- gd$curves
+  surfaces <- gd$surfaces
+
+  dbg("before gpagen")
   e$gm.results <- geomorph::gpagen(A=coords.A,
                          curves = curves,
                          surfaces = surfaces,
@@ -256,7 +326,9 @@ compute <- function(e) {
                          PrinAxes = itob(tclvalue(e$PrinAxes)),
                          ProcD = itob(tclvalue(e$ProcD)),
                          Proj = itob(tclvalue(e$Proj)),
-                         print.progress = itob(tclvalue(e$printP)))
+                         print.progress = itob(tclvalue(e$printP)),
+                         approxBE = itob(tclvalue(e$approxBE)),
+                         Parallel = itob(tclvalue(e$parallel)))
 
 
   pos<-1

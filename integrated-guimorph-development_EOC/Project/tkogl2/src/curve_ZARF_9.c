@@ -427,7 +427,7 @@ int curve_buildLine(point_t* p1, point_t* p2, point_t** line)
 
 
 
-	const float precision = 0.002;      // loop execution time below is sensitive to this parameter
+	const float precision = 0.01;      // loop execution time below is sensitive to this parameter
 	if (absf(p2->x, p1->x) < precision) /*points are already close together, skip incrementation process*/
 	{
 		// build the line
@@ -627,4 +627,3 @@ int curve_buildLine(point_t* p1, point_t* p2, point_t** line)
 	simpleLog("ERROR : unsuccessful processing curve_buildLine ... INVESTIGATE ");
 	return -1;
 }
-
