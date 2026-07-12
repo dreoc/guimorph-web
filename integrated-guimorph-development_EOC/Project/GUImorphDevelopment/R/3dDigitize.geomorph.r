@@ -186,7 +186,9 @@ itob <- function(int) {
 }
 
 #computes shape object data and performs analysis
-compute <- function(e) {
+# shared data assembly: builds the p x k x n array + curve/surface defs.
+# Returns NULL if a specimen has the wrong point counts (message already shown).
+.build_geomorph_data <- function(e) {
   if (!is.null(e$activeDataList[[1]][[8]]) && !is.null(nrow(e$activeDataList[[1]][[8]]))) e$sliderNum <- nrow(e$activeDataList[[1]][[8]])
   dbg("compute")
   nSpecimen <- length(e$activeDataList)
@@ -269,6 +271,52 @@ compute <- function(e) {
   } else {
       coords.A <- array(coords.lmk,dim = c(as.numeric(e$landmarkNum),3,nSpecimen))
   }
+
+  list(land = coords.A, curves = curves, surfaces = surfaces)
+}
+
+# geomorph-native export: a plethodon-style list saved as .rds
+exportGeomorph <- function(e) {
+  if (is.null(e$activeDataList) || length(e$activeDataList) == 0) {
+    tkmessageBox(title = "Information", message = "No specimens to export.", icon = "info", type = "ok"); return(invisible())
+  }
+  gd <- .build_geomorph_data(e)
+  if (is.null(gd)) return(invisible())
+  n  <- dim(gd$land)[3]
+  nm <- tryCatch(names(e$activeDataList), error = function(err) NULL)
+  if (is.null(nm) || length(nm) != n || any(!nzchar(nm))) nm <- paste0("specimen_", seq_len(n))
+  dimnames(gd$land) <- list(NULL, c("x", "y", "z"), nm)
+  gmData <- list(land = gd$land, curves = gd$curves, surfaces = gd$surfaces, specimen.names = nm)
+
+  ## ask for the file first, so the workspace object can take the file's name
+  fileName <- tclvalue(tkgetSaveFile(filetypes = "{{geomorph RDS} {.rds}}",
+                                     title = "Save .rds (Cancel = keep in workspace as gmData)"))
+  objName <- "gmData"
+  if (nchar(fileName) > 0) {
+    if (length(grep("\\.rds$", fileName, ignore.case = TRUE)) == 0) fileName <- paste0(fileName, ".rds")
+    saveRDS(gmData, file = fileName)
+    objName <- make.names(tools::file_path_sans_ext(basename(fileName)))
+  }
+
+  ## put it into the R workspace (same mechanism compute() uses for gm.results)
+  assign(objName, gmData, envir = as.environment(1))
+
+  cat(sprintf("\n# GUImorph -> geomorph : object '%s' is now in your workspace\n", objName))
+  cat(sprintf("#   %d specimens, %d points, %d dims  (curves: %s, surfaces: %s)\n",
+              n, dim(gd$land)[1], dim(gd$land)[2],
+              if (is.null(gd$curves)) "none" else nrow(gd$curves),
+              if (is.null(gd$surfaces)) "none" else length(gd$surfaces)))
+  if (nchar(fileName) > 0) cat("saved:", fileName, "\n")
+  cat(sprintf("Y <- geomorph::gpagen(%s$land, curves = %s$curves, surfaces = %s$surfaces)\n\n", objName, objName, objName))
+  invisible(gmData)
+}
+
+compute <- function(e) {
+  gd <- .build_geomorph_data(e)
+  if (is.null(gd)) return(invisible())
+  coords.A <- gd$land
+  curves   <- gd$curves
+  surfaces <- gd$surfaces
 
   dbg("before gpagen")
   e$gm.results <- geomorph::gpagen(A=coords.A,

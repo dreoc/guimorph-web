@@ -868,6 +868,14 @@ createMenu <- function(e)
       saveToDgt(e)
   )
 
+  tkadd(
+    fileMenu,
+    "command",
+    label = "Export to geomorph (.rds)\u2026",
+    command = function()
+      exportGeomorph(e)
+  )
+
   tkadd(fileMenu, "separator")
 
   tkadd(
