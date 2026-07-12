@@ -471,7 +471,7 @@ int ogl_drawLine(point_t* line, int size)
 		simpleLog("ERROR ogl_drawLine ... size argument non-positive");
 	}
 
-	glLineWidth(5);/*specify width of rasterized line*/
+	glLineWidth(2.5f);/*thinner curve line (smoothing/blend set in drawCurves)*/
 	glColor3f(1.0f, 0.0f, 0.0f); /*set to red*/
 	/*begin line drawing*/
 	glBegin(GL_LINE_STRIP);

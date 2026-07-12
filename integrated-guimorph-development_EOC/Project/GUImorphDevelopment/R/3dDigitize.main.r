@@ -841,6 +841,17 @@ createMenu <- function(e)
     command = function()
       loadPly(e)
   )
+
+  tkadd(
+    fileMenu,
+    "command",
+    label = "Load DGT File\u2026",
+    command = function()
+      openDgt(e)
+  )
+
+  tkadd(fileMenu, "separator")
+
   tkadd(
     fileMenu,
     "command",
@@ -852,18 +863,12 @@ createMenu <- function(e)
   tkadd(
     fileMenu,
     "command",
-    label = "Load DGT File\u2026",
-    command = function()
-      openDgt(e)
-  )
-
-  tkadd(
-    fileMenu,
-    "command",
     label = "Save to DGT\u2026",
     command = function()
       saveToDgt(e)
   )
+
+  tkadd(fileMenu, "separator")
 
   tkadd(
     fileMenu,
@@ -2012,7 +2017,7 @@ convertCoor <- function(e, x, y) {
 startDataLogging <- function(e)
 {
   dbg("starting data logging")
-  add ("openLogFile", -1, 0)
+  if (isTRUE(getOption("guimorph.debug", FALSE))) add ("openLogFile", -1, 0)
 }
 
 endDataLogging <- function(e)
@@ -2031,7 +2036,7 @@ sendSignalToLogFile <- function(e)
 startCommandRecording <-function(e)
 {
   dbg("Starting command recording")
-  add ("startRecording", -24, 0)
+  if (isTRUE(getOption("guimorph.debug", FALSE))) add ("startRecording", -24, 0)
 }
 
 endCommandRecording <-function(e)
@@ -2058,8 +2063,8 @@ executeShutDownCommandSequence <- function (e)
 executeStartUpCommandSequence <- function (e)
 {
   dbg("Start up command sequence")
-  add ("startRecording", -24, 0)
-  add ("openLogFile", -1, 0)
+  if (isTRUE(getOption("guimorph.debug", FALSE))) add ("startRecording", -24, 0)
+  if (isTRUE(getOption("guimorph.debug", FALSE))) add ("openLogFile", -1, 0)
 }
 
 
@@ -2088,8 +2093,8 @@ executePreDefinedCommandSequence <- function (e)
   dbg("Predefined command sequence")
   if(1)
   {
-  add ("startRecording", -24, 0)
-  add ("openLogFile", -1, 0)
+  if (isTRUE(getOption("guimorph.debug", FALSE))) add ("startRecording", -24, 0)
+  if (isTRUE(getOption("guimorph.debug", FALSE))) add ("openLogFile", -1, 0)
   }
 
   nna <- -1;
