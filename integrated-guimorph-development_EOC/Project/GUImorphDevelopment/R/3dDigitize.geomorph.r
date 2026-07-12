@@ -23,78 +23,88 @@ init.geomorph <- function(e) {
 
 #configures gui and initializes values
 ui.geomorph <- function(e, parent) {
-  gpagenCtlFrame <- ttkframe(parent)
+  ## scrollable container: canvas + vertical scrollbar hosting the control frame
+  outer  <- ttkframe(parent)
+  canvas <- tkcanvas(outer, borderwidth = 0, highlightthickness = 0)
+  vsb    <- ttkscrollbar(outer, orient = "vertical", command = function(...) tkyview(canvas, ...))
+  tkconfigure(canvas, yscrollcommand = function(...) tkset(vsb, ...))
+  tkpack(vsb, side = "right", fill = "y")
+  tkpack(canvas, side = "left", fill = "both", expand = TRUE)
 
-  tkgrid(ttklabel(gpagenCtlFrame, text = " "), row = 0, column = 0, pady = 2)
+  gpagenCtlFrame <- ttkframe(canvas)
+  tkcreate(canvas, "window", 0, 0, anchor = "nw", window = gpagenCtlFrame)
+  tkbind(gpagenCtlFrame, "<Configure>", function() tkconfigure(canvas, scrollregion = tkbbox(canvas, "all")))
+  tkbind(canvas, "<MouseWheel>", function(D = 0) tkyview(canvas, "scroll", as.integer(-as.numeric(D) / 120), "units"))
+
   fitBtn <- ttkbutton(gpagenCtlFrame, text = "Fit", command = function() onFit(e))
-  tkgrid(fitBtn, row = 1, column = 0, pady = 2)
+  tkgrid(fitBtn, row = 0, column = 0, pady = 2)
   e$bt2 <- NULL
 
   ## ---- GPA options ----
-  tkgrid(ttkseparator(gpagenCtlFrame, orient = "horizontal"), row = 2, column = 0, sticky = "ew", pady = 4)
-  tkgrid(tk2label(gpagenCtlFrame, text = "GPA options"), row = 3, column = 0, sticky = "w", padx = 4)
+  tkgrid(ttkseparator(gpagenCtlFrame, orient = "horizontal"), row = 1, column = 0, sticky = "ew", pady = 2)
+  tkgrid(tk2label(gpagenCtlFrame, text = "GPA options"), row = 2, column = 0, sticky = "w", padx = 4)
 
-  tkgrid(tk2label(gpagenCtlFrame, text = "Maximum GPA iterations"), row = 4, column = 0, sticky = "w", padx = 20)
+  tkgrid(tk2label(gpagenCtlFrame, text = "Maximum GPA iterations"), row = 3, column = 0, sticky = "w", padx = 20)
   e$maxiter <- tclVar(2)
-  tkgrid(tk2entry(gpagenCtlFrame, textvariable = e$maxiter, width = "8"), row = 5, column = 0, sticky = "w", padx = 20)
+  tkgrid(tk2entry(gpagenCtlFrame, textvariable = e$maxiter, width = "8"), row = 4, column = 0, sticky = "w", padx = 20)
 
   e$anchorsSurface <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Use anchors as surface semilandmarks", variable = e$anchorsSurface), row = 6, column = 0, sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Use anchors as surface semilandmarks", variable = e$anchorsSurface), row = 5, column = 0, sticky = "w")
   e$anchorsCurve <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Use anchors as curve semilandmarks", variable = e$anchorsCurve), row = 7, column = 0, sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Use anchors as curve semilandmarks", variable = e$anchorsCurve), row = 6, column = 0, sticky = "w")
   e$curves <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Slide semilandmarks on curves", variable = e$curves), row = 8, column = 0, sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Slide semilandmarks on curves", variable = e$curves), row = 7, column = 0, sticky = "w")
   e$surfaces <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Slide semilandmarks on surfaces", variable = e$surfaces), row = 9, column = 0, sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Slide semilandmarks on surfaces", variable = e$surfaces), row = 8, column = 0, sticky = "w")
   e$PrinAxes <- tclVar(1)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Align the shape data by principal axes", variable = e$PrinAxes), row = 10, column = 0, sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Align the shape data by principal axes", variable = e$PrinAxes), row = 9, column = 0, sticky = "w")
   e$ProcD <- tclVar(1)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Sliding: Procrustes distance (off = bending energy / TPS)", variable = e$ProcD), row = 11, column = 0, sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Sliding: Procrustes distance (off = bending energy / TPS)", variable = e$ProcD), row = 10, column = 0, sticky = "w")
   e$Proj <- tclVar(1)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Project into tangent space", variable = e$Proj), row = 12, column = 0, sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Project into tangent space", variable = e$Proj), row = 11, column = 0, sticky = "w")
   e$printP <- tclVar(1)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Print progress bar", variable = e$printP), row = 13, column = 0, sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Print progress bar", variable = e$printP), row = 12, column = 0, sticky = "w")
   e$parallel <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Parallel processing (multi-core sliding)", variable = e$parallel), row = 14, column = 0, sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Parallel processing (multi-core sliding)", variable = e$parallel), row = 13, column = 0, sticky = "w")
   e$approxBE <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Approximate TPS (faster bending-energy)", variable = e$approxBE), row = 15, column = 0, sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Approximate TPS (faster bending-energy)", variable = e$approxBE), row = 14, column = 0, sticky = "w")
 
   cmputBtn <- ttkbutton(gpagenCtlFrame, text = "Compute", command = function() compute(e))
   assign("bt2", cmputBtn, envir = e)
-  tkgrid(cmputBtn, row = 16, column = 0, pady = 4)
+  tkgrid(cmputBtn, row = 15, column = 0, pady = 2)
 
   ## ---- Results ----
-  tkgrid(ttkseparator(gpagenCtlFrame, orient = "horizontal"), row = 17, column = 0, sticky = "ew", pady = 4)
-  tkgrid(tk2label(gpagenCtlFrame, text = "Results"), row = 18, column = 0, sticky = "w", padx = 4)
+  tkgrid(ttkseparator(gpagenCtlFrame, orient = "horizontal"), row = 16, column = 0, sticky = "ew", pady = 2)
+  tkgrid(tk2label(gpagenCtlFrame, text = "Results"), row = 17, column = 0, sticky = "w", padx = 4)
   saveBtn <- ttkbutton(gpagenCtlFrame, text = "Save Result", command = function() save(e))
-  tkgrid(saveBtn, row = 19, column = 0, pady = 2)
+  tkgrid(saveBtn, row = 18, column = 0, pady = 2)
   plotspecsBtn <- ttkbutton(gpagenCtlFrame, text = "Plot Aligned Specimens", command = function() plotspecs(e))
-  tkgrid(plotspecsBtn, row = 20, column = 0, pady = 2)
+  tkgrid(plotspecsBtn, row = 19, column = 0, pady = 2)
   pcaBtn <- ttkbutton(gpagenCtlFrame, text = "PCA (morphospace)", command = function() plotPCA(e))
-  tkgrid(pcaBtn, row = 21, column = 0, pady = 2)
+  tkgrid(pcaBtn, row = 20, column = 0, pady = 2)
 
   ## ---- Mean-shape plot ----
-  tkgrid(ttkseparator(gpagenCtlFrame, orient = "horizontal"), row = 22, column = 0, sticky = "ew", pady = 4)
-  tkgrid(tk2label(gpagenCtlFrame, text = "Mean-shape plot"), row = 23, column = 0, sticky = "w", padx = 4)
+  tkgrid(ttkseparator(gpagenCtlFrame, orient = "horizontal"), row = 21, column = 0, sticky = "ew", pady = 2)
+  tkgrid(tk2label(gpagenCtlFrame, text = "Mean-shape plot"), row = 22, column = 0, sticky = "w", padx = 4)
 
-  tkgrid(tk2label(gpagenCtlFrame, text = "Point size"), row = 24, column = 0, sticky = "w", padx = 20)
+  tkgrid(tk2label(gpagenCtlFrame, text = "Point size"), row = 23, column = 0, sticky = "w", padx = 20)
   e$ptcex <- tclVar(.5)
-  tkgrid(tk2spinbox(gpagenCtlFrame, from = .1, to = 10, increment = .1, tip = "Point size", textvariable = e$ptcex, width = 5), row = 24, column = 0, sticky = "e")
+  tkgrid(tk2spinbox(gpagenCtlFrame, from = .1, to = 10, increment = .1, tip = "Point size", textvariable = e$ptcex, width = 5), row = 23, column = 0, sticky = "e")
 
-  tkgrid(tk2label(gpagenCtlFrame, text = "Mean Shape size"), row = 25, column = 0, sticky = "w", padx = 20)
+  tkgrid(tk2label(gpagenCtlFrame, text = "Mean Shape size"), row = 24, column = 0, sticky = "w", padx = 20)
   e$meancex <- tclVar(2)
-  tkgrid(tk2spinbox(gpagenCtlFrame, from = .5, to = 10, increment = .1, tip = "Mean Shape size", textvariable = e$meancex, width = 5), row = 25, column = 0, sticky = "e")
+  tkgrid(tk2spinbox(gpagenCtlFrame, from = .5, to = 10, increment = .1, tip = "Mean Shape size", textvariable = e$meancex, width = 5), row = 24, column = 0, sticky = "e")
 
-  tkgrid(tk2label(gpagenCtlFrame, text = "Radius factor (x spacing)"), row = 26, column = 0, sticky = "w", padx = 20)
+  tkgrid(tk2label(gpagenCtlFrame, text = "Radius factor (x spacing)"), row = 25, column = 0, sticky = "w", padx = 20)
   e$bpFactor <- tclVar("2")
-  tkgrid(tk2spinbox(gpagenCtlFrame, from = 0.5, to = 10, increment = .1, tip = "Ball-pivot radius = factor x median point spacing. Up for holes, down if faces fuse.", textvariable = e$bpFactor, width = 6), row = 26, column = 0, sticky = "e")
+  tkgrid(tk2spinbox(gpagenCtlFrame, from = 0.5, to = 10, increment = .1, tip = "Ball-pivot radius = factor x median point spacing. Up for holes, down if faces fuse.", textvariable = e$bpFactor, width = 6), row = 25, column = 0, sticky = "e")
 
   e$meshWire <- tclVar("0")
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Wireframe (off = surface)", variable = e$meshWire), row = 27, column = 0, sticky = "w")
+  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Wireframe (off = surface)", variable = e$meshWire), row = 26, column = 0, sticky = "w")
   meanBtn <- ttkbutton(gpagenCtlFrame, text = "Plot Mean Shape", command = function() plotMeanShape(e))
-  tkgrid(meanBtn, row = 28, column = 0, pady = 4)
+  tkgrid(meanBtn, row = 27, column = 0, pady = 2)
 
-  return(gpagenCtlFrame)
+  return(outer)
 }
 
 #configures user button actions
