@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <memory.h>
 
 #include "def_ZARF_9.h"
@@ -33,9 +34,9 @@ int height;
 	Tcl_SetResult(interp, msg, TCL_DYNAMIC);
 #endif
 
-int setWindowId(HWND hwnd)
+int setWindowId(void *native_drawable)
 {
-	g_surface = gfx_create(hwnd);
+	g_surface = gfx_create(native_drawable);
 	gfx_make_current(g_surface);
 	ogl_init();  // this function returns an integer - but I have yet to investigate what to do on  failure
 	return TCL_OK;
@@ -72,15 +73,15 @@ TCL_CMD(setWindow)
 		simpleLog((const char*)"object 2");
 		simpleLog_Obj(objv[2]);
 
-		// The Tk window id arrives as a 32-bit Tcl int, but HWND is 64-bit on
-		// Win64. Writing only the low 32 bits via (int*)&hwnd leaves the upper
-		// 32 bits uninitialized — stack garbage that can make context setup
-		// fail under some toolchains (MSVC Release), producing a blank viewport.
-		// Zero-initialize first so the handle is the clean zero-extended id.
-		HWND hwnd = NULL;
+		// The Tk window id arrives as a 32-bit Tcl int, but the native drawable
+		// handle is pointer-sized (64-bit on LP64/Win64 builds). Widen the id to
+		// a pointer-sized integer before reinterpreting it as the seam-neutral
+		// native drawable so zero/sign-extension is well defined on 64-bit
+		// builds (partial writes would leave upper bits as stack garbage, which
+		// can make context setup fail and produce a blank viewport).
 		int hwndId = 0;
 		Wrapper_GetIntFromObj(interp, objv[2], &hwndId);
-		hwnd = (HWND)(INT_PTR)hwndId;
+		void *native_drawable = (void *)(intptr_t)hwndId;
 		if (models != NULL)
 		{
 			FREE_WRAPPER((void*)models);
@@ -112,7 +113,7 @@ TCL_CMD(setWindow)
 			UT_MY_INTEGER_VALUE = GBL_RTN_ERROR;
 		}
 
-		setWindowId(hwnd);
+		setWindowId(native_drawable);
 		simpleLog((const char*)"function setWindow id ... end");
 	}
 	else if (strcmp(attr, "size") == 0) // constructs drawing space for specimen

@@ -7,7 +7,7 @@
 extern int width;
 extern int height;
 
-int setWindowId(HWND hwnd);
+int setWindowId(void *native_drawable);
 int setWindow(ClientData, Tcl_Interp*, int, Tcl_Obj* const[]);
 
 #endif
