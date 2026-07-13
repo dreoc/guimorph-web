@@ -109,8 +109,6 @@ void FREE_WRAPPER(void* pointer);
 
 #define FREE(p) if (p != NULL) {free(p); p = NULL;}
 
-extern HDC dc;
-
 float getRealZ(float x, float y, float z);
 
 

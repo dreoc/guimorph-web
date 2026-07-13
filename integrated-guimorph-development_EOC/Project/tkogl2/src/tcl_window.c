@@ -8,6 +8,7 @@
 
 #include "def_ZARF_9.h"
 #include "RunTime_Defines_ZARF_9.h"
+#include "gfx_backend.h"
 #include "tcl_window.h"
 #include "tcl_dispatch.h"
 #include "tcl_state.h"
@@ -16,8 +17,7 @@
 const char WINDOW_VERSION_INFORMATION[] = "File tcl_window : Phase 7 window extraction 2026-06-21";
 const char* windowVersionPtr = WINDOW_VERSION_INFORMATION;
 
-/* dc declared extern in def_ZARF_9.h */
-HDC dc;
+gfx_surface *g_surface = NULL;
 
 int width;
 int height;
@@ -35,30 +35,8 @@ int height;
 
 int setWindowId(HWND hwnd)
 {
-	//////#ifdef _WIN32
-		/* Grab the HWND from Tcl. */
-
-		/* Setup OpenGL. */
-	dc = GetDC(hwnd);
-
-
-	/* Windows code, setup OpenGL. */
-	PIXELFORMATDESCRIPTOR pfd;
-	memset(&pfd, 0, sizeof(pfd));
-	pfd.nVersion = 1;
-	pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-	pfd.iPixelType = PFD_TYPE_RGBA;
-	pfd.cColorBits = 24;
-	pfd.cDepthBits = 16;
-	pfd.iLayerType = PFD_MAIN_PLANE;
-
-	GLuint pixelFormat = ChoosePixelFormat(dc, &pfd);
-	SetPixelFormat(dc, pixelFormat, &pfd);
-
-	HGLRC rc = wglCreateContext(dc);
-
-	wglMakeCurrent(dc, rc);
-
+	g_surface = gfx_create(hwnd);
+	gfx_make_current(g_surface);
 	ogl_init();  // this function returns an integer - but I have yet to investigate what to do on  failure
 	return TCL_OK;
 }
@@ -96,7 +74,7 @@ TCL_CMD(setWindow)
 
 		// The Tk window id arrives as a 32-bit Tcl int, but HWND is 64-bit on
 		// Win64. Writing only the low 32 bits via (int*)&hwnd leaves the upper
-		// 32 bits uninitialized — stack garbage that makes GetDC()/wglCreateContext
+		// 32 bits uninitialized — stack garbage that can make context setup
 		// fail under some toolchains (MSVC Release), producing a blank viewport.
 		// Zero-initialize first so the handle is the clean zero-extended id.
 		HWND hwnd = NULL;

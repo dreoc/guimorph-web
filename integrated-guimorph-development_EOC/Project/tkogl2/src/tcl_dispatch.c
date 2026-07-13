@@ -11,6 +11,7 @@
 
 #include "def_ZARF_9.h"
 #include "RunTime_Defines_ZARF_9.h"
+#include "gfx_backend.h"
 #include "tcl_dispatch.h"
 #include "tcl_state.h"
 #include "tcl_log.h"
@@ -3594,13 +3595,7 @@ void onDisplay()
 	glPopMatrix();
 	glFlush();
 
-#ifdef _WIN32
-	{
-		SwapBuffers(dc); //throw that sucker on the main screen
-	}
-#elif __linux__
-	glXSwapBuffers(__glDisplay__, __glWindow__);
-#endif
+	gfx_swap(g_surface);
 
 
 }

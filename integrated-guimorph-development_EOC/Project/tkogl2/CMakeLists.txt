@@ -45,6 +45,7 @@ add_library(tkogl2 SHARED
     ${SRC}/tcl_init.c
     ${SRC}/tcl_dispatch.c
     ${SRC}/tcl_window.c
+    ${SRC}/gfx_backend_wgl.c
     ${SRC}/tcl_state.c
     ${SRC}/tcl_log.c
     ${SRC}/ogl_ZARF9.c
