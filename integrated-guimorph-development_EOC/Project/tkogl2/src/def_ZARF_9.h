@@ -47,7 +47,7 @@ typedef struct model_t
 	float* color;
 	float* normal;
 	float* dsVertex; //down sample vertex
-	int count;       // TBD ?? 
+	int count;       // vertex count passed to glDrawArrays(GL_TRIANGLES, 0, count): three vertices per triangle (incremented by 3 per emitted triangle at PLY load), distinct from vertexCountActual and dsCount
 	int vertexCountActual;
 	int dsCount;      //the number of down sample vertices
 	float max[3];
