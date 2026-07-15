@@ -14,7 +14,7 @@ This milestone ports GUImorph's native Win32/WGL OpenGL digitizing engine to mac
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Aqua-Tk Deployment Gate + Windows Rendering Seam** - Prove R+Aqua-Tk on macOS and isolate WGL behind a platform seam (Windows CMP-01 validation deferred) (completed 2026-07-13)
-- [ ] **Phase 2: Pathname-Based Tk Drawable Resolution** - Reach the native drawable by widget pathname through Tk stubs
+- [~] **Phase 2: Pathname-Based Tk Drawable Resolution** - Reach the native drawable by widget pathname through Tk stubs (code implemented Plan 02-01; Windows build+render verification deferred off-box)
 - [ ] **Phase 3: Tri-Platform Build + Generalized Load + Drop GLUT** - CMake `.dylib` toolchain, extension-aware `.onLoad`, remove GLUT
 - [ ] **Phase 4: macOS NSGL Backend — First Light** - Render a PLY mesh in the embedded macOS viewport (universal2, distributable)
 - [ ] **Phase 5: Retina Picking, Input Fixes & Digitizing/Analysis/Data Parity** - Pixel-accurate picking + macOS input + full workflow parity
@@ -62,7 +62,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. `Tk_InitStubs` + `tkstub` linkage is in place and the R bridge passes the frame pathname instead of `winfo id`.
   3. Windows build still works: the pathname-based resolution reaches the HWND and renders a PLY mesh with no regression (removing the fragile int→HWND cast previously blamed for blank viewports).
 
-**Plans**: TBD
+**Plans**: 1/1 code-complete (criteria 1–2 met + statically verified; criterion 3 deferred off-box)
+
+- [~] 02-01-PLAN.md — RND-02: R bridge passes frame pathname; `tcl_window.c` resolves `Tk_NameToWindow` → `Tk_MakeWindowExist` → `Tk_WindowId` → per-platform accessor (`Tk_GetHWND` / `Tk_MacOSXGetNSWindowForDrawable`); `Tk_InitStubs` + `USE_TK_STUBS` + `tkstub86.lib`. Static pass; Windows build+render verification deferred to `.planning/todos/pending/phase-02-windows-validation.md`.
+
+**Note**: Criterion 3 (Windows renders unchanged) is the recurring CMP-01 checkpoint and is off-box (no MSVC/Windows host available). Introducing `<tk.h>` adds one on-box build dependency — the Tk `X11/` shim on the include path (`TKOGL2_TK_XLIB_INCLUDE`) — captured in the pending todo.
 
 ### Phase 3: Tri-Platform Build + Generalized Load + Drop GLUT
 
@@ -130,7 +134,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Aqua-Tk Gate + Rendering Seam | 5/5 | Complete   | 2026-07-13 |
-| 2. Pathname Drawable Resolution | 0/TBD | Not started | - |
+| 2. Pathname Drawable Resolution | 1/1 | Code-complete; Win verify pending | 2026-07-15 |
 | 3. Tri-Platform Build + Load + Drop GLUT | 0/TBD | Not started | - |
 | 4. macOS NSGL Backend — First Light | 0/TBD | Not started | - |
 | 5. Retina Picking, Input & Parity | 0/TBD | Not started | - |

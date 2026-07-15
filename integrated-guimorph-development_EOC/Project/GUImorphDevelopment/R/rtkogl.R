@@ -592,10 +592,15 @@ set <- function(shape, attr, arg1, arg2, arg3)
   {
     if (attr == "id")
     {
-      id <- tkwinfo("id", arg1)
-      ##print (paste("id is : ", id))
-      result <- tcl("setWindow", attr, id, -1, -2, -3)
-      ##print(paste("set window id ... result : <", result,">"))
+      # RND-02 (Phase 2): pass the Tk widget PATHNAME, not `winfo id`. The C side
+      # resolves it via Tk_NameToWindow -> Tk_WindowId and branches to the
+      # platform drawable accessor (Tk_GetHWND on Windows,
+      # Tk_MacOSXGetNSWindowForDrawable on macOS). This replaces the 32-bit
+      # int->pointer cast, which truncated the 64-bit NSView/Drawable pointer on
+      # macOS (and was fragile on Win64).
+      framePath <- if (is.character(arg1)) arg1 else arg1$ID
+      dbg(paste("set window id ... frame pathname :", framePath))
+      result <- tcl("setWindow", attr, framePath, -1, -2, -3)
       return (TRUE)
 
     }

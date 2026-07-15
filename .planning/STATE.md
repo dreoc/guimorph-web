@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 01
-current_phase_name: aqua-tk-deployment-gate-windows-rendering-seam
-status: verifying
-stopped_at: Verification in progress (GATE-01 passed; CMP-01 deferred)
-last_updated: "2026-07-13T04:09:30Z"
-last_activity: 2026-07-13
-last_activity_desc: Phase 01 execution started
+current_phase: 02
+current_phase_name: pathname-based-tk-drawable-resolution
+status: implemented-pending-verification
+stopped_at: Phase 02 Plan 01 (RND-02) code-complete + statically verified; Windows build+render verification deferred off-box
+last_updated: "2026-07-15T00:00:00Z"
+last_activity: 2026-07-15
+last_activity_desc: Phase 02 Plan 01 (RND-02 pathname drawable resolution) implemented off-box
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 5
-  completed_plans: 5
-  percent: 17
+  total_plans: 6
+  completed_plans: 6
+  percent: 28
 ---
 
 # Project State
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-12)
 
 **Core value:** A researcher can digitize a 3D specimen and feed the result straight into `geomorph` — the interactive digitizing viewport must render the mesh and place landmarks correctly.
-**Current focus:** Phase 01 — aqua-tk-deployment-gate-windows-rendering-seam
+**Current focus:** Phase 02 — pathname-based-tk-drawable-resolution
 
 ## Current Position
 
-Phase: 01 (aqua-tk-deployment-gate-windows-rendering-seam) — EXECUTING
-Plan: 4 of 4
-Status: Plan execution complete; CMP-01 validation deferred to pending backlog
-Last activity: 2026-07-13 — Phase 01 verification updated (GATE-01 pass recorded)
+Phase: 02 (pathname-based-tk-drawable-resolution) — CODE-COMPLETE (verification pending)
+Plan: 1 of 1
+Status: RND-02 implemented + statically verified; Windows build+render (CMP-01 recurrence) deferred off-box to pending backlog
+Last activity: 2026-07-15 — Phase 02 Plan 01 (RND-02) implemented off-box
 
-Progress: [██████████] 100% plans executed (phase verification pending)
+Progress: [██████████] Phase 02 plan code-complete (on-target Windows verification pending)
 
 ## Performance Metrics
 
@@ -87,6 +87,7 @@ Recent decisions affecting current work:
 [From .planning/todos/pending/ — ideas captured during sessions]
 
 - `phase-01-windows-validation.md` — pending Windows MSVC rebuild + D-06 render parity verification for CMP-01.
+- `phase-02-windows-validation.md` — pending Windows MSVC build+render for RND-02; also captures the new on-box step of putting Tk's `X11/` shim on the include path (`TKOGL2_TK_XLIB_INCLUDE`).
 
 ### Blockers/Concerns
 

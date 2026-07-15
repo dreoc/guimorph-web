@@ -9,6 +9,7 @@
 
 #include "def_ZARF_9.h"
 #include "RunTime_Defines_ZARF_9.h"
+#include <tk.h>
 #include "gfx_backend.h"
 #include "tcl_window.h"
 #include "tcl_dispatch.h"
@@ -73,15 +74,44 @@ TCL_CMD(setWindow)
 		simpleLog((const char*)"object 2");
 		simpleLog_Obj(objv[2]);
 
-		// The Tk window id arrives as a 32-bit Tcl int, but the native drawable
-		// handle is pointer-sized (64-bit on LP64/Win64 builds). Widen the id to
-		// a pointer-sized integer before reinterpreting it as the seam-neutral
-		// native drawable so zero/sign-extension is well defined on 64-bit
-		// builds (partial writes would leave upper bits as stack garbage, which
-		// can make context setup fail and produce a blank viewport).
-		int hwndId = 0;
-		Wrapper_GetIntFromObj(interp, objv[2], &hwndId);
-		void *native_drawable = (void *)(intptr_t)hwndId;
+		// RND-02 (Phase 2): the R bridge now passes the Tk widget PATHNAME
+		// (e.g. ".1.canvasframe"), not `winfo id`. Resolve the pathname to a
+		// Tk_Window, realize its native window, read the platform-neutral Tk
+		// window id, then branch to the per-platform drawable accessor. The
+		// resulting native drawable (HWND on Windows, NSWindow* on macOS)
+		// crosses the gfx seam unchanged. This removes the 32-bit int->pointer
+		// cast, which truncated the 64-bit macOS Drawable/NSView pointer and was
+		// fragile on Win64 (previously blamed for blank viewports).
+		const char *framePath = Wrapper_GetStringFromObj(objv[2], NULL);
+		Tk_Window tkwin = Tk_NameToWindow(interp, framePath, Tk_MainWindow(interp));
+		if (tkwin == NULL)
+		{
+			sprintf(buffer, "ERROR : setWindow id ... Tk_NameToWindow returned NULL for pathname <%s>", framePath ? framePath : "(null)");
+			simpleLog(buffer);
+			// Preserve the historical "always TCL_OK" contract for GUI/tab ops.
+			return TCL_OK;
+		}
+		// Force native window creation so Tk_WindowId returns a valid drawable
+		// (the id is None until the widget is realized; the old winfo-id path
+		// realized it as a side effect on the R side).
+		Tk_MakeWindowExist(tkwin);
+
+		void *native_drawable = NULL;
+#if defined(_WIN32)
+		native_drawable = (void *)Tk_GetHWND(Tk_WindowId(tkwin));
+#elif defined(MAC_OSX_TK) || defined(__APPLE__)
+		// Requires Tk >= 8.7/9.0 headers (Homebrew tcl-tk on macOS provides the
+		// public Tk_ prefix). The Phase 4 NSGL backend derives the NSView from
+		// this NSWindow.
+		native_drawable = (void *)Tk_MacOSXGetNSWindowForDrawable(Tk_WindowId(tkwin));
+#else
+		// X11 fallback for a future Linux backend: hand the raw Window id across.
+		native_drawable = (void *)(intptr_t)Tk_WindowId(tkwin);
+#endif
+		if (native_drawable == NULL)
+		{
+			simpleLog("ERROR : setWindow id ... platform drawable accessor returned NULL");
+		}
 		if (models != NULL)
 		{
 			FREE_WRAPPER((void*)models);

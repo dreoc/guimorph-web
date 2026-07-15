@@ -5,6 +5,7 @@
 #include "RunTime_Defines_ZARF_9.h"
 #include "tcl_dispatch.h"
 #include "tcl_window.h"
+#include <tk.h>
 
 #ifdef CODE_FOR_LIBRARY 
 
@@ -14,6 +15,15 @@
 int DLLEXPORT Tkogl2_Init(Tcl_Interp* interp)
 {
 	if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+		return TCL_ERROR;
+	}
+
+	/* RND-02 (Phase 2): bind Tk's stub tables so Tk_NameToWindow / Tk_WindowId
+	 * and the platform drawable accessors (Tk_GetHWND on Windows,
+	 * Tk_MacOSXGetNSWindowForDrawable on macOS) are callable. These are stub
+	 * macros that dereference tkStubsPtr / tkPlatStubsPtr; without Tk_InitStubs
+	 * those pointers are NULL and the calls crash. */
+	if (Tk_InitStubs(interp, TK_VERSION, 0) == NULL) {
 		return TCL_ERROR;
 	}
 

@@ -73,6 +73,7 @@ set_target_properties(tkogl2 PROPERTIES
 
 target_compile_definitions(tkogl2 PRIVATE
     USE_TCL_STUBS
+    USE_TK_STUBS   # RND-02 (Phase 2): route Tk_* and Tk platform accessors through the stub tables
     _CRT_SECURE_NO_WARNINGS
     # CODE_FOR_LIBRARY is hard-#defined in RunTime_Defines_ZARF_9.h.
 )
@@ -83,11 +84,22 @@ if(NOT MSVC)
     target_compile_options(tkogl2 PRIVATE -Wno-unknown-pragmas)
 endif()
 
+# RND-02 (Phase 2): introducing <tk.h> pulls Tk's <X11/Xlib.h> shim. The
+# vendored include/tk_include/ ships tk.h/tkDecls.h/tkPlatDecls.h but NOT the
+# X11/ shim subdir, so the Tk X11 headers must be reachable on the include path.
+# Point this at a Tcl/Tk install's include dir that contains X11/ (e.g. the
+# Tcl/Tk that ships with R, or a standalone Tcl/Tk 8.6), OR drop the Tk 8.6
+# xlib/X11/*.h headers into include/tk_include/X11/ to keep the build
+# self-contained. Default assumes the self-contained vendored location.
+set(TKOGL2_TK_XLIB_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include/tk_include"
+    CACHE PATH "Include dir containing Tk's X11/ shim headers (X11/Xlib.h, X11/X.h, ...)")
+
 target_include_directories(tkogl2 PRIVATE
     ${SRC}
     ${CMAKE_CURRENT_SOURCE_DIR}/include/tcl_include
     ${CMAKE_CURRENT_SOURCE_DIR}/include/tk_include
     ${CMAKE_CURRENT_SOURCE_DIR}/include/tk_include/ttk
+    ${TKOGL2_TK_XLIB_INCLUDE}
     # GL/glut.h shim (MinGW has GL/gl.h + GL/glu.h but not GL/glut.h):
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/glut_shim
 )
@@ -108,6 +120,7 @@ if(MSVC)
     target_link_libraries(tkogl2 PRIVATE
         ${VENDOR_LIB}/glut64.lib
         ${VENDOR_LIB}/tclstub86_64.lib
+        ${VENDOR_LIB}/tkstub86.lib   # RND-02 (Phase 2): Tk stub table for Tk_NameToWindow / Tk_GetHWND / Tk_InitStubs
         opengl32
         glu32
         gdi32
@@ -117,6 +130,11 @@ else()
     set(TKOGL2_GLUT_LIB "${VENDOR_LIB}/glut64.dll"
         CACHE FILEPATH "GLUT library (or DLL) to link against")
 
+    # NOTE (RND-02): GNU ld cannot read the COFF tkstub86.lib (same limitation
+    # as tclstub86_64.lib, handled via tcl_stub_bootstrap.c). Tk-stub linkage
+    # for the non-MSVC path is deferred to Phase 3's tri-platform build; the
+    # MinGW path is already flagged non-distributable (black-mesh render), so
+    # the new Tk_* symbols are expected to be unresolved here until then.
     target_link_libraries(tkogl2 PRIVATE
         ${TKOGL2_GLUT_LIB}
         opengl32
