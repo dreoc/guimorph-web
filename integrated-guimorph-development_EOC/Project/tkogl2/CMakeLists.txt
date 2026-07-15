@@ -94,6 +94,14 @@ endif()
 set(TKOGL2_TK_XLIB_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include/tk_include"
     CACHE PATH "Include dir containing Tk's X11/ shim headers (X11/Xlib.h, X11/X.h, ...)")
 
+# RND-02: the Tk stub lib MUST match the target architecture. The vendored
+# lib/tkstub86.lib is x86 (i386) and is IGNORED by the x64 linker, which leaves
+# tkStubsPtr / tkPlatStubsPtr / Tk_InitStubs unresolved. Point this at an x64
+# tkstub86.lib (e.g. the Tk that ships with x64 R at %R_HOME%\Tcl\lib\, or a
+# Tcl/Tk 8.6 x64 SDK). Same source as the working x64 tclstub86_64.lib.
+set(TKOGL2_TK_STUB_LIB "${VENDOR_LIB}/tkstub86.lib"
+    CACHE FILEPATH "Tk stub import lib matching the target arch (x64 for the x64 build)")
+
 target_include_directories(tkogl2 PRIVATE
     ${SRC}
     ${CMAKE_CURRENT_SOURCE_DIR}/include/tcl_include
@@ -120,7 +128,7 @@ if(MSVC)
     target_link_libraries(tkogl2 PRIVATE
         ${VENDOR_LIB}/glut64.lib
         ${VENDOR_LIB}/tclstub86_64.lib
-        ${VENDOR_LIB}/tkstub86.lib   # RND-02 (Phase 2): Tk stub table for Tk_NameToWindow / Tk_GetHWND / Tk_InitStubs
+        ${TKOGL2_TK_STUB_LIB}   # RND-02 (Phase 2): Tk stub table; MUST be x64 (vendored tkstub86.lib is x86 -> override via -DTKOGL2_TK_STUB_LIB)
         opengl32
         glu32
         gdi32

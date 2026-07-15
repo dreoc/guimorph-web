@@ -10,6 +10,10 @@
 #include "def_ZARF_9.h"
 #include "RunTime_Defines_ZARF_9.h"
 #include <tk.h>
+// The vendored tk.h includes only tkDecls.h, not tkPlatDecls.h, so the platform
+// accessors (Tk_GetHWND on Windows / the macOS NS accessor) and tkPlatStubsPtr
+// are undeclared without this. Must follow tk.h and (on Windows) windows.h.
+#include <tkPlatDecls.h>
 #include "gfx_backend.h"
 #include "tcl_window.h"
 #include "tcl_dispatch.h"
