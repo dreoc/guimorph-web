@@ -43,8 +43,7 @@ key-decisions:
 patterns-established:
   - "Per-platform drawable accessor branch keyed off _WIN32 / MAC_OSX_TK|__APPLE__, feeding a seam-neutral void* to gfx_create"
 
-requirements-completed: []
-requirements-implemented-pending-verification: [RND-02]
+requirements-completed: [RND-02]
 
 coverage:
   - id: D1
@@ -72,16 +71,19 @@ coverage:
         status: pass
     human_judgment: false
   - id: D4
-    description: "MSVC tkogl2.dll builds + links with the Tk X11 shim on the include path, and regression.ply renders unchanged on Windows R (CMP-01 recurrence, behavior preservation on-target)"
+    description: "MSVC tkogl2.dll builds + links with the Tk X11 shim on the include path, and a PLY renders unchanged on Windows R (CMP-01 recurrence, behavior preservation on-target)"
     requirement: "RND-02, CMP-01"
-    verification: []
+    verification:
+      - kind: human
+        ref: "2026-07-15 Windows R 4.6.1 run: FRESH BUILD dll loaded; 'set window id ... frame pathname : .1.2.3' resolved via Tk_NameToWindow to a valid HWND; B12_1_clean.ply rendered; live surface picks tracked the cursor; 6 landmarks placed (add dot TRUE), off-mesh click correctly rejected by the inside-specimen guard."
+        status: pass
     human_judgment: true
-    rationale: "Off-box: no MSVC/Windows host available on this Linux box, and <tk.h> introduces a new Tk X11-shim include dependency (set TKOGL2_TK_XLIB_INCLUDE) that only an on-target build can confirm. Tracked in .planning/todos/pending/phase-02-windows-validation.md."
+    rationale: "Verified on target after switching to direct Tk linkage (TKOGL2_TK_USE_STUBS=OFF) against an import lib generated from x64 R's tk86.dll, since the vendored tkstub86.lib is x86 and R ships no x64 tk stub."
 
 # Metrics
-duration: n/a (off-box code authoring)
+duration: n/a (off-box authoring; verified on Windows 2026-07-15)
 completed: 2026-07-15
-status: implemented-pending-verification
+status: complete
 ---
 
 # Phase 2 Plan 01: Pathname-Based Tk Drawable Resolution Summary

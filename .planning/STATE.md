@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 02
-current_phase_name: pathname-based-tk-drawable-resolution
-status: implemented-pending-verification
-stopped_at: Phase 02 Plan 01 (RND-02) code-complete + statically verified; Windows build+render verification deferred off-box
+current_phase: 03
+current_phase_name: tri-platform-build-generalized-load-drop-glut
+status: ready
+stopped_at: Phase 02 complete (RND-02 verified on Windows 2026-07-15); Phase 03 not started
 last_updated: "2026-07-15T00:00:00Z"
 last_activity: 2026-07-15
-last_activity_desc: Phase 02 Plan 01 (RND-02 pathname drawable resolution) implemented off-box
+last_activity_desc: Phase 02 verified on Windows (render + picking + digitizing); RND-02 complete
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
   completed_plans: 6
-  percent: 28
+  percent: 33
 ---
 
 # Project State
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-12)
 
 **Core value:** A researcher can digitize a 3D specimen and feed the result straight into `geomorph` — the interactive digitizing viewport must render the mesh and place landmarks correctly.
-**Current focus:** Phase 02 — pathname-based-tk-drawable-resolution
+**Current focus:** Phase 03 — tri-platform-build-generalized-load-drop-glut
 
 ## Current Position
 
-Phase: 02 (pathname-based-tk-drawable-resolution) — CODE-COMPLETE (verification pending)
-Plan: 1 of 1
-Status: RND-02 implemented + statically verified; Windows build+render (CMP-01 recurrence) deferred off-box to pending backlog
-Last activity: 2026-07-15 — Phase 02 Plan 01 (RND-02) implemented off-box
+Phase: 02 (pathname-based-tk-drawable-resolution) — COMPLETE (verified on Windows 2026-07-15)
+Next: Phase 03 (tri-platform-build-generalized-load-drop-glut) — not started
+Status: RND-02 verified on Windows R 4.6.1 (render + picking + 6 landmarks, no regression). Built in direct Tk-link mode (import lib from R's tk86.dll).
+Last activity: 2026-07-15 — Phase 02 verified on Windows
 
-Progress: [██████████] Phase 02 plan code-complete (on-target Windows verification pending)
+Progress: [██████████] Phase 02 complete; Phase 03 pending
 
 ## Performance Metrics
 
@@ -87,7 +87,7 @@ Recent decisions affecting current work:
 [From .planning/todos/pending/ — ideas captured during sessions]
 
 - `phase-01-windows-validation.md` — pending Windows MSVC rebuild + D-06 render parity verification for CMP-01.
-- `phase-02-windows-validation.md` — pending Windows MSVC build+render for RND-02; also captures the new on-box step of putting Tk's `X11/` shim on the include path (`TKOGL2_TK_XLIB_INCLUDE`).
+- `phase-02-windows-validation.md` — RESOLVED 2026-07-15 (windows-render-ok). Records the Windows build recipe: vendored Tk X11 shim + direct Tk-link mode via an import lib from R's tk86.dll.
 
 ### Blockers/Concerns
 

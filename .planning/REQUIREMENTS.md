@@ -16,7 +16,7 @@
 ### Rendering Backend (window + context)
 
 - [x] **RND-01**: The native engine's window/context creation is isolated behind a platform seam (`gfx_backend.h`: create / make_current / swap / resize / destroy) with the existing Win32/WGL code moved behind it unchanged
-- [~] **RND-02**: The R↔C bridge resolves the Tk drawable by frame **pathname** (not `winfo id`) so the macOS `NSView` is reachable via `Tk_MacOSXGetNSWindowForDrawable` — *code implemented (Plan 02-01); on-box Windows build+render verification pending (see .planning/todos/pending/phase-02-windows-validation.md)*
+- [x] **RND-02**: The R↔C bridge resolves the Tk drawable by frame **pathname** (not `winfo id`) so the macOS `NSView` is reachable via `Tk_MacOSXGetNSWindowForDrawable` — *verified on Windows R 4.6.1, 2026-07-15 (render + picking + digitizing, no regression)*
 - [ ] **RND-03**: A macOS backend creates an `NSOpenGLContext` on Tk's embedded `NSView` using a **legacy 2.1 GL profile** and presents via `[NSOpenGLContext flushBuffer]`
 - [ ] **RND-04**: Loading a PLY specimen renders the mesh in the embedded macOS viewport (not blank/black) — "first light"
 
@@ -76,7 +76,7 @@
 | GATE-01 | Phase 1 | Complete |
 | GATE-02 | Phase 1 | Complete |
 | RND-01 | Phase 1 | Complete |
-| RND-02 | Phase 2 | Implemented (code); Windows build+render verify pending (off-box) |
+| RND-02 | Phase 2 | Complete (verified on Windows 2026-07-15) |
 | RND-03 | Phase 4 | Pending |
 | RND-04 | Phase 4 | Pending |
 | BLD-01 | Phase 3 | Pending |

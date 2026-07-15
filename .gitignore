@@ -73,6 +73,13 @@ tkogl2.exp
 tkogl2.pdb
 *.pdb
 
+# RND-02 direct-mode Tk import lib, generated on Windows from R's tk86.dll.
+# Regenerable via lib /def:tk86.def (recipe in
+# .planning/todos/pending/phase-02-windows-validation.md); not tracked.
+tk86.lib
+tk86.def
+tk86.exp
+
 # ===========================================================================
 # R / RStudio session cruft
 # ===========================================================================
