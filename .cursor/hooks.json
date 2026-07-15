@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "command": "\"/opt/homebrew/bin/node\" \"/Users/austinlutterback/Documents/Personal-Projects/GUImorph/.cursor/hooks/gsd-cursor-session-start.js\"",
+        "gsd-managed": true
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "command": "\"/opt/homebrew/bin/node\" \"/Users/austinlutterback/Documents/Personal-Projects/GUImorph/.cursor/hooks/gsd-cursor-post-tool.js\"",
+        "gsd-managed": true
+      }
+    ]
+  },
+  "version": 1
+}
