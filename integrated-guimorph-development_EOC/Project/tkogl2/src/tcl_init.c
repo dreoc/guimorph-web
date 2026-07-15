@@ -18,14 +18,18 @@ int DLLEXPORT Tkogl2_Init(Tcl_Interp* interp)
 		return TCL_ERROR;
 	}
 
-	/* RND-02 (Phase 2): bind Tk's stub tables so Tk_NameToWindow / Tk_WindowId
-	 * and the platform drawable accessors (Tk_GetHWND on Windows,
+	/* RND-02 (Phase 2): in stubs mode, bind Tk's stub tables so Tk_NameToWindow /
+	 * Tk_WindowId and the platform drawable accessors (Tk_GetHWND on Windows,
 	 * Tk_MacOSXGetNSWindowForDrawable on macOS) are callable. These are stub
 	 * macros that dereference tkStubsPtr / tkPlatStubsPtr; without Tk_InitStubs
-	 * those pointers are NULL and the calls crash. */
+	 * those pointers are NULL and the calls crash. When Tk is linked directly
+	 * (USE_TK_STUBS off, e.g. against an import lib for R's tk86.dll), the
+	 * functions resolve as ordinary imports and no stub init is needed. */
+#ifdef USE_TK_STUBS
 	if (Tk_InitStubs(interp, TK_VERSION, 0) == NULL) {
 		return TCL_ERROR;
 	}
+#endif
 
 	if (Tcl_PkgProvide(interp, "Tkogl2", "1.0") == TCL_ERROR) {
 		return TCL_ERROR;

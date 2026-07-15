@@ -73,10 +73,15 @@ set_target_properties(tkogl2 PROPERTIES
 
 target_compile_definitions(tkogl2 PRIVATE
     USE_TCL_STUBS
-    USE_TK_STUBS   # RND-02 (Phase 2): route Tk_* and Tk platform accessors through the stub tables
     _CRT_SECURE_NO_WARNINGS
     # CODE_FOR_LIBRARY is hard-#defined in RunTime_Defines_ZARF_9.h.
 )
+
+# RND-02: only define USE_TK_STUBS in stubs mode. In direct mode the Tk headers
+# use the plain EXTERN prototypes and the Tk_* calls bind to the import lib.
+if(TKOGL2_TK_USE_STUBS)
+    target_compile_definitions(tkogl2 PRIVATE USE_TK_STUBS)
+endif()
 
 # MSVC understands the in-source `#pragma warning(...)` lines natively; gcc does
 # not, so silence the resulting noise only under non-MSVC toolchains.
@@ -94,13 +99,20 @@ endif()
 set(TKOGL2_TK_XLIB_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/include/tk_include"
     CACHE PATH "Include dir containing Tk's X11/ shim headers (X11/Xlib.h, X11/X.h, ...)")
 
-# RND-02: the Tk stub lib MUST match the target architecture. The vendored
-# lib/tkstub86.lib is x86 (i386) and is IGNORED by the x64 linker, which leaves
-# tkStubsPtr / tkPlatStubsPtr / Tk_InitStubs unresolved. Point this at an x64
-# tkstub86.lib (e.g. the Tk that ships with x64 R at %R_HOME%\Tcl\lib\, or a
-# Tcl/Tk 8.6 x64 SDK). Same source as the working x64 tclstub86_64.lib.
+# RND-02: how Tk is linked.
+#  ON  (default) = stubs mode: link an arch-matched tkstub lib and call
+#                  Tk_InitStubs. Robust, version-portable, no load-time tk DLL
+#                  dependency. Needs an x64 tkstub (the vendored lib/tkstub86.lib
+#                  is x86 and is IGNORED by the x64 linker).
+#  OFF           = direct mode: link a Tk import lib (e.g. one generated from the
+#                  tk86.dll that ships with x64 R) and skip Tk_InitStubs; the
+#                  Tk_* calls resolve as ordinary imports at load time.
+option(TKOGL2_TK_USE_STUBS "Link Tk via stubs (ON) or a direct import lib (OFF)" ON)
+
+# The Tk lib to link: an arch-matched tkstub lib when TKOGL2_TK_USE_STUBS=ON, or
+# a Tk import lib (tk86.lib, x64) when OFF. Same arch as the target (x64).
 set(TKOGL2_TK_STUB_LIB "${VENDOR_LIB}/tkstub86.lib"
-    CACHE FILEPATH "Tk stub import lib matching the target arch (x64 for the x64 build)")
+    CACHE FILEPATH "Tk lib to link (x64): tkstub86.lib in stubs mode, or tk86.lib import lib in direct mode")
 
 target_include_directories(tkogl2 PRIVATE
     ${SRC}
