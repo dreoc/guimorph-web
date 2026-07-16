@@ -51,7 +51,7 @@ patterns-established:
   - "gfx seam extended to a second real backend (NSGL stub) with g_surface still defined once in the shared tcl_window.c"
 
 requirements-implemented: [BLD-01, BLD-02, BLD-04]
-requirements-completed: []
+requirements-completed: [BLD-02, BLD-04]
 
 coverage:
   - id: D1
@@ -91,10 +91,10 @@ coverage:
     requirement: "BLD-01, CMP-01"
     verification:
       - kind: human
-        ref: "PENDING: reconfigure MSVC (build-msvc wiped; CMakeLists changed) with -DTKOGL2_TK_USE_STUBS=OFF -DTKOGL2_TK_STUB_LIB=<abs>\\tk86.lib, rebuild, redeploy inst/libs/x64/, confirm a PLY renders and landmarks place. Tracked in .planning/todos/pending/phase-03-windows-validation.md"
-        status: pending
+        ref: "2026-07-16 Windows R 4.6.1: restructured CMake rebuilt tkogl2.dll clean via cmake --build (cached direct-Tk-link config; gfx_backend_wgl.c compiled, gfx_backend_nsgl.m correctly skipped; no unresolved Tk symbols). Deployed DLL renders: mesh non-blank, gluSphere landmark dots draw on-click, Windows-guarded numeric labels show, gluSphere downsample markers draw, picks land on-target. Also loaded a 6-specimen .dgt through the rewritten .onLoad (multi-specimen load + per-specimen surface restore + tab switching all fine)."
+        status: pass
     human_judgment: true
-    rationale: "The whole CMakeLists, def_ZARF_9.h, and the sphere/label draw path changed, so the Windows regression risk is higher than Phase 2. Must be confirmed on Erik's Windows host before shipping the rebuilt DLL."
+    rationale: "The whole CMakeLists, def_ZARF_9.h, and the sphere/label draw path changed, so the Windows regression risk was higher than Phase 2. Confirmed on Erik's Windows host, including the stronger 6-specimen .dgt path."
   - id: D6
     description: "macOS tkogl2.dylib compiles + links (Mach-O -dynamiclib) against the frameworks and mac Tcl/Tk stubs"
     requirement: "BLD-01"
@@ -106,9 +106,9 @@ coverage:
     rationale: "The macOS accessor (Tk_MacOSXGetNSWindowForDrawable) and the NSGL backend only compile against the Mac's own Tk 8.7/9.0 aqua headers at build time, not the vendored Windows headers; this cannot be exercised on the Linux authoring host."
 
 # Metrics
-duration: n/a (off-box authoring; Windows verification pending, macOS build deferred to Phase 4)
-completed: 2026-07-15 (code)
-status: implemented-pending-verification
+duration: n/a (off-box authoring; Windows-verified 2026-07-16, macOS .dylib build deferred to Phase 4)
+completed: 2026-07-16 (Windows-verified; BLD-01 macOS build in Phase 4)
+status: windows-verified
 ---
 
 # Phase 3 Plan 01: Tri-Platform Build + Generalized Load + Drop GLUT Summary

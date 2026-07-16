@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Aqua-Tk Deployment Gate + Windows Rendering Seam** - Prove R+Aqua-Tk on macOS and isolate WGL behind a platform seam (Windows CMP-01 validation deferred) (completed 2026-07-13)
 - [x] **Phase 2: Pathname-Based Tk Drawable Resolution** - Reach the native drawable by widget pathname through Tk stubs (verified on Windows 2026-07-15) (completed 2026-07-15)
-- [ ] **Phase 3: Tri-Platform Build + Generalized Load + Drop GLUT** - CMake `.dylib` toolchain, extension-aware `.onLoad`, remove GLUT
+- [x] **Phase 3: Tri-Platform Build + Generalized Load + Drop GLUT** - CMake `.dylib` toolchain, extension-aware `.onLoad`, remove GLUT *(Windows verified 2026-07-16; macOS `.dylib` build in Phase 4)*
 - [ ] **Phase 4: macOS NSGL Backend — First Light** - Render a PLY mesh in the embedded macOS viewport (universal2, distributable)
 - [ ] **Phase 5: Retina Picking, Input Fixes & Digitizing/Analysis/Data Parity** - Pixel-accurate picking + macOS input + full workflow parity
 - [ ] **Phase 6: rgl Result-Plot Fallback on macOS** - GPA/PCA/mean-shape plots via rgl NULL/`rglwidget`
@@ -81,7 +81,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Windows build still works: the MSVC `tkogl2.dll` builds under the unified CMake and renders unchanged.
 
 **Plans**:
-- [~] 03-01-PLAN.md — BLD-01/BLD-02/BLD-04: tri-platform CMake (WIN32/APPLE/else) emitting `tkogl2.dylib` against `-framework OpenGL/AppKit/Foundation`; compiling NSGL stub (`gfx_backend_nsgl.m`, real context in Phase 4); extension-aware, loud-failing `.onLoad` (`[info sharedlibextension]` + `stop()`); GLUT dropped from the draw path (`gluSphere`, vestige removed, labels Windows-guarded). Code complete + statically verified; Windows render regression pending, macOS `.dylib` build deferred to Phase 4.
+- [x] 03-01-PLAN.md — BLD-01/BLD-02/BLD-04: tri-platform CMake (WIN32/APPLE/else) emitting `tkogl2.dylib` against `-framework OpenGL/AppKit/Foundation`; compiling NSGL stub (`gfx_backend_nsgl.m`, real context in Phase 4); extension-aware, loud-failing `.onLoad` (`[info sharedlibextension]` + `stop()`); GLUT dropped from the draw path (`gluSphere`, vestige removed, labels Windows-guarded). **Windows verified 2026-07-16** (rebuild renders unchanged incl. 6-specimen `.dgt`); macOS `.dylib` build lands in Phase 4 (first Mac build).
 
 ### Phase 4: macOS NSGL Backend — First Light
 
@@ -136,7 +136,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Aqua-Tk Gate + Rendering Seam | 5/5 | Complete   | 2026-07-13 |
 | 2. Pathname Drawable Resolution | 1/1 | Complete   | 2026-07-15 |
-| 3. Tri-Platform Build + Load + Drop GLUT | 1/1 code | Implemented (Windows regression pending; macOS build Phase 4) | code 2026-07-15 |
+| 3. Tri-Platform Build + Load + Drop GLUT | 1/1 | Complete (Windows verified; macOS `.dylib` build in Phase 4) | 2026-07-16 |
 | 4. macOS NSGL Backend — First Light | 0/TBD | Not started | - |
 | 5. Retina Picking, Input & Parity | 0/TBD | Not started | - |
 | 6. rgl Result-Plot Fallback | 0/TBD | Not started | - |

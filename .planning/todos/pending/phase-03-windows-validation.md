@@ -1,15 +1,33 @@
 ---
 title: "Run Windows MSVC rebuild + render regression for Plan 03-01 (BLD-01/BLD-02/BLD-04)"
-status: pending
+status: done
 priority: high
 resolves_phase: 3
 created: 2026-07-15
-updated: 2026-07-15
+updated: 2026-07-16
+resolved: 2026-07-16
 owner: eoc
 source_plan: 03-01
 ---
 
-## Context
+## Resolution (2026-07-16) — windows-render-ok
+
+Verified on Windows R 4.6.1. `cmake --build build-msvc` re-ran configure itself
+off the changed CMakeLists (using the cached direct-Tk-link settings from Phase 2,
+so no manual reconfigure was needed) and rebuilt `tkogl2.dll` clean: every source
+compiled, `gfx_backend_wgl.c` built, `gfx_backend_nsgl.m` was correctly skipped on
+Windows, no unresolved Tk symbols. The deployed DLL renders — mesh non-blank,
+`gluSphere` landmark dots draw on-click, Windows-guarded numeric labels show,
+`gluSphere` downsample markers draw, picks land on-target. A 6-specimen `.dgt` also
+loaded through the rewritten `.onLoad` (multi-specimen load + per-specimen surface
+restore + tab switching all fine) — a stronger path than a single PLY.
+
+BLD-02 and BLD-04 are complete. BLD-01's Windows half (builds + renders unchanged)
+is verified; the macOS `.dylib` actually building is the remaining piece and moves
+to Phase 4 (the first Mac build). The loud `.onLoad` `stop()` did not interfere
+with `devtools::load_all` (the engine was deployed), so no softening was needed.
+
+## Context (original)
 
 Plan `03-01` reworked the whole `CMakeLists.txt` (tri-platform WIN32/APPLE/else),
 `def_ZARF_9.h` (platform-guarded `windows.h` + GL headers, dropped `<GL/glut.h>`),

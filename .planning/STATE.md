@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 03
-current_phase_name: tri-platform-build-generalized-load-drop-glut
-status: implemented-pending-verification
-stopped_at: Phase 03 code-complete + statically verified (BLD-01/BLD-02/BLD-04); Windows render regression pending on-box, macOS .dylib build deferred to Phase 04
-last_updated: "2026-07-15T00:00:00Z"
-last_activity: 2026-07-15
-last_activity_desc: Phase 03 authored (tri-platform CMake + NSGL stub + extension-aware .onLoad + GLUT dropped from draw path); static-verified, not yet target-verified
+current_phase: 04
+current_phase_name: macos-nsgl-backend-first-light
+status: ready
+stopped_at: Phase 03 VERIFIED on Windows 2026-07-16 (BLD-02/BLD-04 complete; BLD-01 Windows half verified, macOS .dylib build carries into Phase 04). Phase 04 not started; it needs a macOS host (first Mac build + NSGL first light).
+last_updated: "2026-07-16T00:00:00Z"
+last_activity: 2026-07-16
+last_activity_desc: Phase 03 verified on Windows (restructured CMake rebuilt clean; gluSphere dots + downsample markers + Windows labels render; 6-specimen .dgt loaded through the rewritten .onLoad)
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 7
-  completed_plans: 6
-  percent: 33
+  completed_plans: 7
+  percent: 50
 ---
 
 # Project State
@@ -28,13 +28,13 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 
 ## Current Position
 
-Phase: 03 (tri-platform-build-generalized-load-drop-glut) — CODE-COMPLETE + statically verified; NOT yet target-verified
-Prior: Phase 02 (pathname-based-tk-drawable-resolution) — COMPLETE (verified on Windows 2026-07-15)
-Status: BLD-01/BLD-02/BLD-04 authored — tri-platform CMake (WIN32/APPLE/else) emitting tkogl2.dylib against the frameworks; compiling NSGL stub (gfx_backend_nsgl.m; real context Phase 4); extension-aware, loud-failing .onLoad; GLUT dropped from the draw path (gluSphere, vestige removed, labels Windows-guarded). Windows render regression PENDING on-box (whole CMake + draw path changed → higher regression risk); macOS .dylib build DEFERRED to Phase 04 (no Mac host).
-Next: (1) Erik rebuilds MSVC tkogl2.dll (reconfigure -DTKOGL2_TK_USE_STUBS=OFF -DTKOGL2_TK_STUB_LIB=...tk86.lib) + render regression → flip BLD-01/02/04 to Complete; then (2) Phase 04 NSGL first light + first macOS build.
-Last activity: 2026-07-15 — Phase 03 code authored + static-verified
+Phase: 03 (tri-platform-build-generalized-load-drop-glut) — COMPLETE, verified on Windows 2026-07-16
+Next: Phase 04 (macos-nsgl-backend-first-light) — NOT started; **requires a macOS host** (first Mac build + live NSGL render)
+Status: Phase 03 Windows-verified. Restructured CMake rebuilt tkogl2.dll clean (no unresolved Tk symbols); gluSphere landmark dots + downsample markers render identically to the old glutSolidSphere; Windows-guarded numeric labels intact; a 6-specimen .dgt loaded through the rewritten extension-aware .onLoad (multi-specimen load + per-specimen surface restore + tab switching all fine). BLD-02 and BLD-04 complete. BLD-01: Windows half verified; the macOS .dylib actually building is the one unverified piece, and it lands in Phase 04 (the first Mac build).
+Blocker: Phase 04 cannot be built or verified without a macOS machine (NSOpenGLContext on Tk's NSView). Code can be authored on the Linux box but not compiled/run until a Mac is available.
+Last activity: 2026-07-16 — Phase 03 verified on Windows
 
-Progress: [██████████] Phase 02 complete; Phase 03 code-complete (verification pending)
+Progress: [██████████] Phases 01-03 complete (50%); Phase 04 pending a Mac host
 
 ## Performance Metrics
 
@@ -95,7 +95,7 @@ Recent decisions affecting current work:
 
 - `phase-01-windows-validation.md` — pending Windows MSVC rebuild + D-06 render parity verification for CMP-01.
 - `phase-02-windows-validation.md` — RESOLVED 2026-07-15 (windows-render-ok). Records the Windows build recipe: vendored Tk X11 shim + direct Tk-link mode via an import lib from R's tk86.dll.
-- `phase-03-windows-validation.md` — PENDING. Windows MSVC rebuild (reconfigure required; CMakeLists changed) + render regression across the reworked draw path (gluSphere dots, Windows-guarded labels, downsample markers). macOS .dylib build is a separate deferred check (Phase 4).
+- `phase-03-windows-validation.md` — RESOLVED 2026-07-16 (windows-render-ok). Restructured CMake rebuilt tkogl2.dll clean; gluSphere dots + downsample markers + Windows labels render; 6-specimen .dgt loaded through the rewritten .onLoad. macOS .dylib build remains a separate Phase 4 check (no Mac host).
 
 ### Blockers/Concerns
 
