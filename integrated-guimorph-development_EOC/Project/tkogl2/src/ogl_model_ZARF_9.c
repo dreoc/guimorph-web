@@ -4,6 +4,9 @@
 #include <math.h>
 #include "def_ZARF_9.h"
 #include "RunTime_Defines_ZARF_9.h"
+#if defined(_WIN32)
+#include <GL/glut.h>   /* BLD-04: GLUT retained on Windows only, for glutBitmapCharacter numeric labels */
+#endif
 static char  oglBuffer[128];
 const char OGL_MODEL_VERSION_INFORMATION[] = "File ogl_model Edit revision date is 15 August 2020 4:22 PM";
 
@@ -184,10 +187,17 @@ int ogl_drawLabel(point_t* p, color_t* c, int id, GLdouble dotRadius, float z)
 	glColor3f(c->r, c->g, c->b); /*sets the color*/
 	glRasterPos3f(dotRadius * 2, 0.0, p->z); /*Specifies raster position for pixel operations*/
 	/*draw text*/
+#if defined(_WIN32)
 	if (id >= 10) {
 		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, '0' + (id / 10));
 	}
 	glutBitmapCharacter(GLUT_BITMAP_9_BY_15, '0' + (id % 10));
+#else
+	/* BLD-04 (Phase 3): GLUT bitmap fonts are unavailable off Windows. Numeric
+	 * landmark labels on macOS are deferred to Phase 4/5 (portable text via a
+	 * GL bitmap font or a textured glyph atlas). The dot itself still draws. */
+	(void)id;
+#endif
 	glPopMatrix(); /*removes matrix 1 from stack (i.e. stop doing transformations)*/
 	return 0;
 }
@@ -236,8 +246,9 @@ int ogl_drawDot(point_t* p, color_t* c, GLdouble radius)
 	glColor3f(c->r, c->g, c->b);    /*color of dot*/
 
 
-	glutSolidSphere(radius, 10, 10); /*construct dot*/
+	gluSphere(qobj, radius, 10, 10); /*construct dot (BLD-04: gluSphere replaces glutSolidSphere and reuses the qobj created above, which the original code allocated then leaked)*/
 	glPopMatrix();/*remove transformation matrix*/
+	gluDeleteQuadric(qobj);
 	return 0;
 }
 
@@ -348,6 +359,8 @@ int ogl_drawDownSampleModel(model_t* model, GLdouble radius, point_t* downSample
 
 	// the below tests are redundant now due to above iteration test loop
 	int breakFlag = 0;
+	GLUquadric* dsQobj = gluNewQuadric();          /* BLD-04: gluSphere replaces glutSolidSphere; one quadric reused for all downsample dots */
+	gluQuadricNormals(dsQobj, GLU_SMOOTH);
 
 	if (0 == breakFlag)
 	{
@@ -377,14 +390,16 @@ int ogl_drawDownSampleModel(model_t* model, GLdouble radius, point_t* downSample
 			/*slices - number of subidvisions around the Z axis (similar to lines of longitude)*/
 			/*stacks - number of subdivisions along the Z axis (similar to lines of latitude)*/
 
-			//simpleLog("DEBUG : calling  glutSolidSphere");
-			glutSolidSphere(radius, 10, 10);
+			//simpleLog("DEBUG : calling  gluSphere");
+			gluSphere(dsQobj, radius, 10, 10);
 
 			//simpleLog("DEBUG : calling glTranslate");
 			glTranslatef(0 - tx, 0 - ty, 0 - tz);
 		}
 
 	}
+
+	gluDeleteQuadric(dsQobj);
 
 
 	if (1 == breakFlag)

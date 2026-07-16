@@ -466,34 +466,73 @@ loadDgt <- function(fileName)
 .onLoad <- function(libname, pkgname)
 {
   chname <- "tkogl2"
-  file.ext <- .Platform$dynlib.ext #dll file
-  dlname <- paste(chname, file.ext, sep = "")
 
-  candidates <- c(
-    if (is.character(.Platform$r_arch) && .Platform$r_arch != "") file.path("libs", .Platform$r_arch, dlname),
-    file.path("libs", "x64", dlname),
-    file.path("libs", dlname)
-  )
+  # BLD-02 (Phase 3): compute the platform's Tcl loadable-library extension
+  # (.dll / .dylib / .so) from Tcl itself instead of hardcoding ".dll", so the
+  # engine is located correctly on macOS and Linux, not just Windows.
+  # tcl("load", <full path>, ...) loads the file at the given path verbatim, so
+  # the extension is only used to FIND the shipped engine under libs/<arch>/.
+  tcl.ext <- tryCatch(tclvalue(tcl("info", "sharedlibextension")),
+                      error = function(e) "")
+
+  # Search a few extensions for robustness: Tcl's answer first, then R's own
+  # dynlib.ext, then the known platform names. On macOS `info sharedlibextension`
+  # may report ".dylib" or ".so" depending on the Tcl build, while the file we
+  # ship is a .dylib; trying both avoids a naming mismatch breaking the load.
+  exts <- unique(c(tcl.ext, .Platform$dynlib.ext, ".dll", ".dylib", ".so"))
+  exts <- exts[nzchar(exts)]
+
+  archs <- unique(c(
+    if (is.character(.Platform$r_arch) && .Platform$r_arch != "") .Platform$r_arch,
+    "x64", ""
+  ))
+
+  candidates <- character(0)
+  for (ext in exts) {
+    dlname <- paste0(chname, ext)
+    for (arch in archs) {
+      candidates <- c(candidates,
+        if (nzchar(arch)) file.path("libs", arch, dlname) else file.path("libs", dlname))
+    }
+  }
+
   file <- ""
   for (cand in candidates) {
     full <- system.file(cand, package = pkgname, lib.loc = libname)
     if (nzchar(full) && file.exists(full)) { file <- full; break }
   }
 
-  dbg("File 3dDigitize.main ... function .onload")
+  dbg("File rtkogl ... function .onLoad")
+  dbg(paste("tcl sharedlibextension:", tcl.ext))
   dbg(file)
   dbg("-----------------")
 
   if (!nzchar(file)) {
-    warning("GUImorph: tkogl2 engine DLL not found in the installed package ",
-            "(expected libs/x64/tkogl2.dll). 3D rendering will not work.", call. = FALSE)
-    return(invisible())
+    # BLD-02: fail loudly and specifically. Without the engine there is no 3D
+    # viewport at all, so a quiet warning would leave the user with a silently
+    # dead GUI and a Windows-only hint. Abort with an accurate, actionable message.
+    stop("GUImorph: the tkogl2 rendering engine was not found in the installed ",
+         "package. Looked for '", chname, "' with extension(s) ",
+         paste(exts, collapse = " / "), " under libs/",
+         paste(c(archs[nzchar(archs)], "(root)"), collapse = " | "), ". ",
+         "3D digitizing cannot work without it. If you built from source, deploy ",
+         "the engine (", chname, tcl.ext, ") into inst/libs/", 
+         if (any(nzchar(archs))) paste0(archs[nzchar(archs)][1], "/") else "",
+         " and reinstall.", call. = FALSE)
   }
+
   tryCatch(
     tcl("load", file, "Tkogl2"),
     error = function(e)
-      warning("loading tkogl2 failed: ", conditionMessage(e), call. = FALSE)
+      # BLD-02: the file exists but Tcl could not load it. Surface the real
+      # reason instead of degrading to a broken viewport.
+      stop("GUImorph: loading the tkogl2 engine at '", file, "' failed: ",
+           conditionMessage(e), ". This usually means an architecture mismatch ",
+           "(e.g. a 32-bit engine under 64-bit R) or a missing runtime dependency ",
+           "the engine links against (such as the platform Tk library).",
+           call. = FALSE)
   )
+  invisible()
 }
 
 

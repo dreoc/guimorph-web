@@ -22,10 +22,10 @@
 
 ### Build & Load
 
-- [ ] **BLD-01**: A tri-platform CMake build produces `tkogl2.dylib` on macOS (Mach-O `-dynamiclib`), linking `-framework OpenGL/AppKit/Foundation`, without breaking the Windows MSVC build
-- [ ] **BLD-02**: `.onLoad` computes the platform library extension (`.dll`/`.dylib`/`.so`) instead of hardcoding `.dll`, and surfaces load failure clearly instead of silently degrading
+- [ ] **BLD-01**: A tri-platform CMake build produces `tkogl2.dylib` on macOS (Mach-O `-dynamiclib`), linking `-framework OpenGL/AppKit/Foundation`, without breaking the Windows MSVC build — *implemented 2026-07-15 (code complete, statically verified: WIN32/APPLE/else CMake + NSGL stub); pending Windows rebuild+regression; macOS `.dylib` build deferred to Phase 4 (no Mac host)*
+- [ ] **BLD-02**: `.onLoad` computes the platform library extension (`.dll`/`.dylib`/`.so`) instead of hardcoding `.dll`, and surfaces load failure clearly instead of silently degrading — *implemented 2026-07-15 (code complete, statically verified: `[info sharedlibextension]` + loud `stop()`); pending Windows rebuild*
 - [ ] **BLD-03**: The macOS library is built `universal2` (arm64 + x86_64) and the distribution path handles quarantine/library-validation (sign+notarize, or documented `xattr` workaround)
-- [ ] **BLD-04**: GLUT dependency removed from the draw path (`glutSolidSphere` → `gluSphere`) so no GLUT is required on macOS
+- [ ] **BLD-04**: GLUT dependency removed from the draw path (`glutSolidSphere` → `gluSphere`) so no GLUT is required on macOS — *implemented 2026-07-15 (code complete, statically verified: both spheres → `gluSphere`, glut vestige removed, labels Windows-guarded); pending Windows render regression*
 
 ### Input & Picking (macOS behavior)
 
@@ -79,10 +79,10 @@
 | RND-02 | Phase 2 | Complete (verified on Windows 2026-07-15) |
 | RND-03 | Phase 4 | Pending |
 | RND-04 | Phase 4 | Pending |
-| BLD-01 | Phase 3 | Pending |
-| BLD-02 | Phase 3 | Pending |
+| BLD-01 | Phase 3 | Implemented (code complete 2026-07-15; Windows regression pending, macOS build Phase 4) |
+| BLD-02 | Phase 3 | Implemented (code complete 2026-07-15; Windows rebuild pending) |
 | BLD-03 | Phase 4 | Pending |
-| BLD-04 | Phase 3 | Pending |
+| BLD-04 | Phase 3 | Implemented (code complete 2026-07-15; Windows render regression pending) |
 | PICK-01 | Phase 5 | Pending |
 | PICK-02 | Phase 5 | Pending |
 | PICK-03 | Phase 5 | Pending |

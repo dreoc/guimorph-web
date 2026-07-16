@@ -80,7 +80,8 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. GLUT is removed from the draw path (`glutSolidSphere` → `gluSphere`), so no GLUT dependency is required on macOS.
   4. Windows build still works: the MSVC `tkogl2.dll` builds under the unified CMake and renders unchanged.
 
-**Plans**: TBD
+**Plans**:
+- [~] 03-01-PLAN.md — BLD-01/BLD-02/BLD-04: tri-platform CMake (WIN32/APPLE/else) emitting `tkogl2.dylib` against `-framework OpenGL/AppKit/Foundation`; compiling NSGL stub (`gfx_backend_nsgl.m`, real context in Phase 4); extension-aware, loud-failing `.onLoad` (`[info sharedlibextension]` + `stop()`); GLUT dropped from the draw path (`gluSphere`, vestige removed, labels Windows-guarded). Code complete + statically verified; Windows render regression pending, macOS `.dylib` build deferred to Phase 4.
 
 ### Phase 4: macOS NSGL Backend — First Light
 
@@ -135,7 +136,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Aqua-Tk Gate + Rendering Seam | 5/5 | Complete   | 2026-07-13 |
 | 2. Pathname Drawable Resolution | 1/1 | Complete   | 2026-07-15 |
-| 3. Tri-Platform Build + Load + Drop GLUT | 0/TBD | Not started | - |
+| 3. Tri-Platform Build + Load + Drop GLUT | 1/1 code | Implemented (Windows regression pending; macOS build Phase 4) | code 2026-07-15 |
 | 4. macOS NSGL Backend — First Light | 0/TBD | Not started | - |
 | 5. Retina Picking, Input & Parity | 0/TBD | Not started | - |
 | 6. rgl Result-Plot Fallback | 0/TBD | Not started | - |

@@ -5,12 +5,23 @@
 // NOTE: header names use canonical casing. Windows is case-insensitive, but a
 // MinGW-w64 cross-compile on a case-sensitive (Linux/WSL) filesystem requires
 // the exact case: <windows.h> and the <GL/...> directory.
-#include <windows.h>
+//
+// BLD-01 (Phase 3): platform-guard the Windows-only and GL headers so this
+// shared header compiles on macOS (Cocoa/NSGL) as well as Windows. GLUT is no
+// longer included here (BLD-04); the one remaining GLUT user (numeric labels)
+// includes it locally, Windows-only.
+#if defined(_WIN32)
+#include <windows.h>   // must precede the GL headers on Windows
+#endif
 #include <tcl.h>
 #include <tclDecls.h>
-#include <GL/glut.h>
+#if defined(__APPLE__)
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#else
 #include <GL/gl.h>
 #include <GL/glu.h>
+#endif
 #include "RunTime_Defines_ZARF_9.h"
 #include "main.h"
 

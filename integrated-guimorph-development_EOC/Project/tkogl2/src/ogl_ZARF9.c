@@ -11,7 +11,10 @@ const char* oglVersionPtr = OGL_VERSION_INFORMATION;
 
 int  ogl_init()
 {
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);  // Display Mode
+	/* BLD-04 (Phase 3): glutInitDisplayMode removed. It was vestigial - the
+	 * engine never creates a GLUT window (the drawable is a Tk widget via the
+	 * gfx seam), so this only set an unused GLUT display-mode flag. Buffering /
+	 * depth / RGBA are established by the platform pixel format in the backend. */
 	glEnable(GL_BLEND); /*Blend the computed fragment color values with the values in the color buffers*/
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);/*defines the operation of blending for all draw buffers when it is enabled*/
 	glClearDepth(1.0f); /*clear value for depth buffer*/

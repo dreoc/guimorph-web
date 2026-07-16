@@ -4,15 +4,15 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 03
 current_phase_name: tri-platform-build-generalized-load-drop-glut
-status: ready
-stopped_at: Phase 02 complete (RND-02 verified on Windows 2026-07-15); Phase 03 not started
+status: implemented-pending-verification
+stopped_at: Phase 03 code-complete + statically verified (BLD-01/BLD-02/BLD-04); Windows render regression pending on-box, macOS .dylib build deferred to Phase 04
 last_updated: "2026-07-15T00:00:00Z"
 last_activity: 2026-07-15
-last_activity_desc: Phase 02 verified on Windows (render + picking + digitizing); RND-02 complete
+last_activity_desc: Phase 03 authored (tri-platform CMake + NSGL stub + extension-aware .onLoad + GLUT dropped from draw path); static-verified, not yet target-verified
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 6
+  total_plans: 7
   completed_plans: 6
   percent: 33
 ---
@@ -28,12 +28,13 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 
 ## Current Position
 
-Phase: 02 (pathname-based-tk-drawable-resolution) — COMPLETE (verified on Windows 2026-07-15)
-Next: Phase 03 (tri-platform-build-generalized-load-drop-glut) — not started
-Status: RND-02 verified on Windows R 4.6.1 (render + picking + 6 landmarks, no regression). Built in direct Tk-link mode (import lib from R's tk86.dll).
-Last activity: 2026-07-15 — Phase 02 verified on Windows
+Phase: 03 (tri-platform-build-generalized-load-drop-glut) — CODE-COMPLETE + statically verified; NOT yet target-verified
+Prior: Phase 02 (pathname-based-tk-drawable-resolution) — COMPLETE (verified on Windows 2026-07-15)
+Status: BLD-01/BLD-02/BLD-04 authored — tri-platform CMake (WIN32/APPLE/else) emitting tkogl2.dylib against the frameworks; compiling NSGL stub (gfx_backend_nsgl.m; real context Phase 4); extension-aware, loud-failing .onLoad; GLUT dropped from the draw path (gluSphere, vestige removed, labels Windows-guarded). Windows render regression PENDING on-box (whole CMake + draw path changed → higher regression risk); macOS .dylib build DEFERRED to Phase 04 (no Mac host).
+Next: (1) Erik rebuilds MSVC tkogl2.dll (reconfigure -DTKOGL2_TK_USE_STUBS=OFF -DTKOGL2_TK_STUB_LIB=...tk86.lib) + render regression → flip BLD-01/02/04 to Complete; then (2) Phase 04 NSGL first light + first macOS build.
+Last activity: 2026-07-15 — Phase 03 code authored + static-verified
 
-Progress: [██████████] Phase 02 complete; Phase 03 pending
+Progress: [██████████] Phase 02 complete; Phase 03 code-complete (verification pending)
 
 ## Performance Metrics
 
@@ -81,6 +82,12 @@ Recent decisions affecting current work:
 - [Phase 01]: Phase 01 Plan 04 deferred Windows MSVC render validation to backlog when macOS host could not execute D-06 check. — Continuation accepted from checkpoint: user cannot run Windows validation now; defer tracked in .planning/todos/pending/phase-01-windows-validation.md
 - [Phase ?]: [Phase 01 Plan 05]: Use standard-C intptr_t (via <stdint.h>) for the int->native-drawable cast so no Win32 token remains in core; seam boundary complete (RND-01).
 - [Phase ?]: [Phase 01 Plan 05]: Resolved model_t.count TBD debt marker with a concrete definition (vertex count for glDrawArrays, three per triangle).
+- [Phase 03 Plan 01]: Phase 3 is build scaffolding only — the macOS NSGL backend is a compiling stub (stores contentView, no GL context); first light is Phase 4. Keeps BLD-01 (build) separate from RND-03/RND-04 (render).
+- [Phase 03 Plan 01]: Emit .dylib via SHARED (-dynamiclib) per the ROADMAP, not a .so MODULE bundle; tcl('load', <abs path>) loads by path, so the extension only has to match what the now-extension-aware .onLoad searches for.
+- [Phase 03 Plan 01]: Swap glutSolidSphere → gluSphere on BOTH platforms (one code path, visually identical at 10/10) rather than #ifdef the sphere; this also fixed a latent quadric leak in ogl_drawDot. Keep GLUT on Windows only for glutBitmapCharacter labels (guarded #if _WIN32) — criterion 3 only requires no-GLUT on macOS, and dropping labels would change Windows behavior.
+- [Phase 03 Plan 01]: Hold macOS ObjC object pointers as void* (+__bridge) in gfx_backend_nsgl.m so it compiles under MRC or ARC (ARC forbids strong ObjC pointers in C structs); no memory model is pinned.
+- [Phase 03 Plan 01]: macOS Tcl/Tk via cache var TKOGL2_MACOS_TCLTK_PREFIX (default /opt/homebrew/opt/tcl-tk) + find_library over versioned stub names, mirroring the Windows TKOGL2_TK_* approach. Watch item: [info sharedlibextension] may report .so vs the emitted .dylib; mitigated by the multi-extension search in .onLoad.
+- [Phase 03 Plan 01]: .onLoad now stop()s loudly on both not-found and tcl-load-failure (was warning-and-continue). If this proves too aggressive for dev tooling, soften the not-found path to packageStartupMessage while keeping the load-failure a stop() (noted in the pending todo).
 
 ### Pending Todos
 
@@ -88,6 +95,7 @@ Recent decisions affecting current work:
 
 - `phase-01-windows-validation.md` — pending Windows MSVC rebuild + D-06 render parity verification for CMP-01.
 - `phase-02-windows-validation.md` — RESOLVED 2026-07-15 (windows-render-ok). Records the Windows build recipe: vendored Tk X11 shim + direct Tk-link mode via an import lib from R's tk86.dll.
+- `phase-03-windows-validation.md` — PENDING. Windows MSVC rebuild (reconfigure required; CMakeLists changed) + render regression across the reworked draw path (gluSphere dots, Windows-guarded labels, downsample markers). macOS .dylib build is a separate deferred check (Phase 4).
 
 ### Blockers/Concerns
 
