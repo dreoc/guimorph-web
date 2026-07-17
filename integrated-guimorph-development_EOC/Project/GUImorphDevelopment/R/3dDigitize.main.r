@@ -235,7 +235,7 @@ busyStop <- function(e, text = NULL, state = "neutral") {
 
 # Single source of truth for Previous/Next availability. Enable/disable is based
 # ONLY on whether a neighbouring specimen exists, never on landmark/anchor
-# completeness — incomplete counts are surfaced as an inline status warning when
+# completeness - incomplete counts are surfaced as an inline status warning when
 # the user attempts to navigate, so the buttons can never get stuck disabled.
 refreshNavButtons <- function(e) {
   if (is.null(e$nextBtn) || is.null(e$prevBtn)) return(invisible())
@@ -721,7 +721,7 @@ ui.main <- function(e)
   # viewport + ghosted sibling widgets).
   # Full update (not just idletasks) so the resizable, expand/fill canvas reaches
   # its real on-screen pixel size before the GL context binds. The C engine never
-  # calls glViewport — the pick path (ogl_getObjCoordinate) flips winY = viewport[3] - y
+  # calls glViewport - the pick path (ogl_getObjCoordinate) flips winY = viewport[3] - y
   # against the viewport frozen at context-creation time. If we bind while the canvas
   # is still at its requested 600x600, placed landmarks land offset (lower) from the
   # cursor once the window expands. Measure the true size and push THAT.
@@ -754,7 +754,7 @@ ui.main <- function(e)
   tkbind(canvasFrame, "<Configure>", onCanvasConfigure)
 
   # Force one size sync after the window is fully mapped/laid out, so the engine
-  # viewport is correct before the first landmark placement — not only after a
+  # viewport is correct before the first landmark placement - not only after a
   # manual resize fires <Configure>.
   tcl("after", "idle", pushCanvasSize)
 

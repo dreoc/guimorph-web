@@ -599,7 +599,7 @@ read.surface <- function(content)
     dbg( surfaces)
   }
 
-  # Surface=0 yields 0-row array; all(is.na()) is vacuously TRUE on empty — not missing data
+  # Surface=0 yields 0-row array; all(is.na()) is vacuously TRUE on empty - not missing data
   if (!is.null(surfaces) && length(surfaces) > 0 && nrow(surfaces) > 0 &&
       all(is.na(surfaces)))
   {
