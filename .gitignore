@@ -112,6 +112,7 @@ desktop.ini
 # MSVC CMake build tree (build/ is ignored above; this is the VS generator path)
 # ===========================================================================
 build-msvc/
+.r-lib/
 
 # ===========================================================================
 # DLL / source backups and ad-hoc test deploys

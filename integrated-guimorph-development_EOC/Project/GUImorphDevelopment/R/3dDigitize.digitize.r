@@ -416,7 +416,7 @@ ui.anchor <- function(e, parent)
 bind.digitize <- function(e)
 {
   tkbind(e$canvasFrame, "<MouseWheel>", function(D) {
-    zoom(e, D)
+    zoom(e, normalizeWheelDelta(D))
   })
 
   tkbind(e$canvasFrame, "<ButtonPress-1>", function(x, y) {
@@ -427,7 +427,7 @@ bind.digitize <- function(e)
     onLeftBtnRelease(e, x, y)
   })
 
-  tkbind(e$canvasFrame, "<ButtonPress-3>", function(x, y) {
+  bindDeleteGesture(e$canvasFrame, function(x, y) {
     deleteLandmark(e, x, y)
   })
 
@@ -447,7 +447,7 @@ bind.digitize <- function(e)
 bind.anchor <- function(e)
 {
   tkbind(e$canvasFrame, "<MouseWheel>", function(D) {
-    zoom(e, D)
+    zoom(e, normalizeWheelDelta(D))
   })
 
   tkbind(e$canvasFrame, "<ButtonPress-1>", function(x, y) {
@@ -458,7 +458,7 @@ bind.anchor <- function(e)
     onLeftBtnRelease(e, x, y)
   })
 
-  tkbind(e$canvasFrame, "<ButtonPress-3>", function(x, y) {
+  bindDeleteGesture(e$canvasFrame, function(x, y) {
     deleteAnchor(e, x, y)
   })
 

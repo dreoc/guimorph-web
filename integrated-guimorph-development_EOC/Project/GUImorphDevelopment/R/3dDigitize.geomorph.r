@@ -37,7 +37,11 @@ ui.geomorph <- function(e, parent) {
   tkconfigure(canvas, background = .cbg)
   tkcreate(canvas, "window", 0, 0, anchor = "nw", window = gpagenCtlFrame)
   tkbind(gpagenCtlFrame, "<Configure>", function() tkconfigure(canvas, scrollregion = tkbbox(canvas, "all")))
-  tkbind(canvas, "<MouseWheel>", function(D = 0) tkyview(canvas, "scroll", as.integer(-as.numeric(D) / 120), "units"))
+  tkbind(canvas, "<MouseWheel>", function(D = 0) {
+    delta <- normalizeWheelDelta(D)
+    if (delta == 0) return(invisible())
+    tkyview(canvas, "scroll", as.integer(-sign(delta)), "units")
+  })
 
   fitBtn <- ttkbutton(gpagenCtlFrame, text = "Fit", command = function() onFit(e))
   tkgrid(fitBtn, row = 0, column = 0, pady = 2)

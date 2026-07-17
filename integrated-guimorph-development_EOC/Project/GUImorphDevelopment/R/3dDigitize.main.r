@@ -1075,15 +1075,25 @@ zoom <- function(e, D)
   {
     imgId <- e$currImgId
     zoomValue <- e$activeDataList[[imgId]][[7]]
-    if (D > 0)
-    {
-      set("specimen", "scale", "in")
-      zoomValue <- zoomValue + 1
+    delta <- suppressWarnings(as.numeric(D))
+    if (is.na(delta) || delta == 0) {
+      return(invisible())
     }
-    else
-    {
-      set("specimen", "scale", "out")
-      zoomValue <- zoomValue - 1
+
+    if (is.null(e$wheelResidual)) {
+      e$wheelResidual <- 0
+    }
+    e$wheelResidual <- e$wheelResidual + delta
+    while (abs(e$wheelResidual) >= 0.25) {
+      if (e$wheelResidual > 0) {
+        set("specimen", "scale", "in")
+        zoomValue <- zoomValue + 1
+        e$wheelResidual <- e$wheelResidual - 0.25
+      } else {
+        set("specimen", "scale", "out")
+        zoomValue <- zoomValue - 1
+        e$wheelResidual <- e$wheelResidual + 0.25
+      }
     }
     e$activeDataList[[imgId]][[7]] <- zoomValue
   }
