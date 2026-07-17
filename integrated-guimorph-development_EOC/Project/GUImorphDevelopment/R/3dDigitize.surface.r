@@ -84,6 +84,10 @@ ui.surface <- function(e, parent)
 #configures button press for surface component
 bind.surface <-function(e)
   {
+  tkbind(e$canvasFrame, "<MouseWheel>", function(D) {
+    zoom(e, normalizeWheelDelta(D))
+  })
+
 	tkbind(e$canvasFrame, "<ButtonPress-1>", function(x, y) {
 		if(length(e$activeDataList) > 0) {
 			e$dragX <- as.integer(x)

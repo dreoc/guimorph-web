@@ -32,7 +32,11 @@ ui.curve <- function(e, parent)
 
   e$curveDescLabel <- ttklabel(
     curveCtlFrame,
-    text = "Define curves by selecting 3 landmarks per segment"
+    text = paste0(
+      "Define curves by selecting 3 landmarks per segment (",
+      shortcutLabel("["), "/", shortcutLabel("]"),
+      " changes specimen)"
+    )
   )
   tkconfigure(e$curveDescLabel, foreground = "#505050")
 

@@ -33,3 +33,13 @@ test_that("tab gating function remains centralized", {
   expect_true(any(grepl("^refreshTabGating <- function\\(e\\)", src)))
   expect_true(any(grepl("Surface Sliders and Curves unlocked.", src, fixed = TRUE)))
 })
+
+test_that("curve and surface tabs consume shared shortcut and wheel helpers", {
+  curve_file <- file.path(pkg_root, "R", "3dDigitize.curve.r")
+  curve_src <- readLines(curve_file, warn = FALSE)
+  surface_file <- file.path(pkg_root, "R", "3dDigitize.surface.r")
+  surface_src <- readLines(surface_file, warn = FALSE)
+
+  expect_true(any(grepl("shortcutLabel\\(\"\\[\"\\)", curve_src)))
+  expect_true(any(grepl("zoom\\(e, normalizeWheelDelta\\(D\\)\\)", surface_src)))
+})
