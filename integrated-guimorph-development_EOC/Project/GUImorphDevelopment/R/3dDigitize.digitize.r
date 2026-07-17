@@ -935,6 +935,8 @@ deleteLandmark <- function(e, x, y)
       coord = coord,
       screen = c(as.integer(x), as.integer(y))
     ))
+  } else {
+    .setMissStatus(e, "Landmark delete")
   }
 }
 
@@ -957,6 +959,8 @@ deleteAnchor <- function(e, x, y)
       coord = coord,
       screen = c(as.integer(x), as.integer(y))
     ))
+  } else {
+    .setMissStatus(e, "Anchor delete")
   }
 }
 
@@ -987,6 +991,18 @@ deleteAnchor <- function(e, x, y)
   }
   e$lastPlace <- list(t = now, x = xi, y = yi)
   dup
+}
+
+.setMissStatus <- function(e, action)
+{
+  if (is.null(e$statusLabel))
+    return(invisible(FALSE))
+  setStatus(
+    e,
+    paste0(action, " missed the specimen surface; no changes were applied."),
+    "warning"
+  )
+  invisible(TRUE)
 }
 
 
@@ -1032,6 +1048,7 @@ addDot <- function(e, x, y)
       else
       {
         dbg("WARNING : add dot : not inside the specimen")
+        .setMissStatus(e, "Landmark placement")
       }
     }
   }
@@ -1083,6 +1100,7 @@ addAnchor <- function(e, x, y)
       else
       {
         dbg("WARNING : place anchor : not inside the specimen")
+        .setMissStatus(e, "Anchor placement")
       }
     }
   }

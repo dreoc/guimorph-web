@@ -219,6 +219,10 @@ buildTemplate <- function(e)
 	if(is.null(lmk))
 	{
 	  dbg("No landmarks. Downsampling is not allowed.")
+    disableOper(e, F)
+    if (!is.null(e$statusLabel)) {
+      setStatus(e, "Build template requires landmarks on the specimen.", "warning")
+    }
 	  return ()
 	}
 
@@ -231,13 +235,21 @@ buildTemplate <- function(e)
 	if(is.null(anc))
 	{
 	    dbg("No anchors. Cannot use in downsampling process.")
-	    if(tclvalue(e$useAnchorVar) == "1")
+	    if(tclvalue(e$useAnchorVar) == "1") {
+        disableOper(e, F)
+        if (!is.null(e$statusLabel)) {
+          setStatus(e, "Build template requested anchors, but no anchors are defined.", "warning")
+        }
 	        return()
+      }
 	}
-
-
-	e$aDimR <- dim(anc)[1]
-	e$aDimC <- dim(anc)[2]
+  if (!is.null(anc)) {
+	  e$aDimR <- dim(anc)[1]
+	  e$aDimC <- dim(anc)[2]
+  } else {
+    e$aDimR <- 0
+    e$aDimC <- 0
+  }
 
 	fileName <- e$activeDataList[[e$currImgId]][[1]]
   dbg(paste("Build template (233) ... file name is <", fileName, ">"))
@@ -396,6 +408,10 @@ downSample <- function(e)
   if(is.null(lmk))
   {
     dbg("No landmarks. Downsampling is not allowed.")
+    disableOper(e, F)
+    if (!is.null(e$statusLabel)) {
+      setStatus(e, "Downsample requires landmarks on the specimen.", "warning")
+    }
     return ()
   }
 
@@ -471,6 +487,10 @@ downSample <- function(e)
   if(tclvalue(e$useAnchorVar) == 1 && is.null(anc))
   {
       dbg("No anchors placed, cannot use in downsampling process")
+      disableOper(e, F)
+      if (!is.null(e$statusLabel)) {
+        setStatus(e, "Downsample requested anchors, but no anchors are defined.", "warning")
+      }
       return()
   }
   else if(tclvalue(e$useAnchorVar) == 1)

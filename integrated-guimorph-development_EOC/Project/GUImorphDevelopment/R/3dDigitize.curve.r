@@ -274,6 +274,9 @@ onSelectCurve <- function(e, x, y)
   else
   {
     dbg("file 3dDigitize curve line 296 : else clause ... false return from set dot selected at line 258")
+    if (!is.null(e$statusLabel)) {
+      setStatus(e, "Curve selection missed a landmark; no segment changes were made.", "warning")
+    }
   }
 
   dbg("file 3dDigitize.curve ... function onSelectCurve ... end")
