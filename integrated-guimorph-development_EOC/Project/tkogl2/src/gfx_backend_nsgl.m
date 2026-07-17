@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "gfx_backend.h"
 
 /*
@@ -243,18 +244,45 @@ void gfx_resize(gfx_surface *s, int w, int h)
         [ctx update];   /* NSOpenGL must be told the view geometry changed */
 
         /*
-         * The GL surface on this layer-backed view is POINT-sized (see gfx_create:
-         * wantsBestResolutionOpenGLSurface is ignored under layer-backing). Drive
-         * glViewport from the view's point-space bounds so viewport == surface and
-         * the mesh fills the whole canvas. Using convertRectToBacking: here (2x)
-         * would exceed the point-sized surface and clip into the bottom-left.
-         * Pixel-perfect Retina (backing-sized surface + backing viewport) is
-         * deferred with the non-layer-backed-child follow-up (Phase 5 / PICK-01
-         * also needs the backing path for picking).
+         * Phase 5 / PICK-01: use backing-pixel viewport dimensions so render-space
+         * and pick-space share one coordinate authority on Retina displays.
          */
-        NSRect b = [view bounds];
-        glViewport(0, 0, (GLsizei)b.size.width, (GLsizei)b.size.height);
+        NSRect backing = [view convertRectToBacking:[view bounds]];
+        glViewport(0, 0, (GLsizei)backing.size.width, (GLsizei)backing.size.height);
     }
+}
+
+int gfx_point_to_backing(gfx_surface *s, int x_pt, int y_pt, int *x_px, int *y_px)
+{
+    if (s == NULL || s->view == NULL || x_px == NULL || y_px == NULL) {
+        return -1;
+    }
+
+    @autoreleasepool {
+        NSView *view = (__bridge NSView *)s->view;
+        NSRect pt = NSMakeRect((CGFloat)x_pt, (CGFloat)y_pt, 0.0, 0.0);
+        NSRect px = [view convertRectToBacking:pt];
+        *x_px = (int)lround((double)px.origin.x);
+        *y_px = (int)lround((double)px.origin.y);
+    }
+
+    return 0;
+}
+
+int gfx_get_viewport_size(gfx_surface *s, int *w_px, int *h_px)
+{
+    if (s == NULL || s->view == NULL || w_px == NULL || h_px == NULL) {
+        return -1;
+    }
+
+    @autoreleasepool {
+        NSView *view = (__bridge NSView *)s->view;
+        NSRect backing = [view convertRectToBacking:[view bounds]];
+        *w_px = (int)lround((double)backing.size.width);
+        *h_px = (int)lround((double)backing.size.height);
+    }
+
+    return 0;
 }
 
 void gfx_destroy(gfx_surface *s)

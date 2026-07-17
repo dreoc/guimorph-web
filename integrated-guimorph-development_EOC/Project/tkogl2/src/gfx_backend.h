@@ -8,6 +8,8 @@ int gfx_make_current(gfx_surface *s);
 void gfx_swap(gfx_surface *s);
 void gfx_resize(gfx_surface *s, int w, int h);
 void gfx_destroy(gfx_surface *s);
+int gfx_point_to_backing(gfx_surface *s, int x_pt, int y_pt, int *x_px, int *y_px);
+int gfx_get_viewport_size(gfx_surface *s, int *w_px, int *h_px);
 
 #if defined(__APPLE__)
 /*
