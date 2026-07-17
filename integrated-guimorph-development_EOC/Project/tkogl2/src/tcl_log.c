@@ -480,7 +480,11 @@ int TclIf_LogCommands(int objc, Tcl_Obj* const objv[])
 
 int simpleLogWriteModelToFile(model_t* m)
 {
-	char buffer[128];
+	/* Must hold "file name :   <%s>" where %s is a full filesystem path. A
+	 * 128-byte buffer overflowed on macOS (fortified sprintf -> SIGTRAP) for
+	 * deep specimen paths; size for a realistic path and bound the path write
+	 * with snprintf so an even longer path truncates safely instead of crashing. */
+	char buffer[1024];
 	buffer[0] = '\0';
 	if (NULL == m)
 	{
@@ -541,7 +545,7 @@ int simpleLogWriteModelToFile(model_t* m)
 	}
 	else
 	{
-		sprintf(buffer, "file name :   <%s>", m->fileName);
+		snprintf(buffer, sizeof(buffer), "file name :   <%s>", m->fileName);
 		simpleLog(buffer);
 	}
 

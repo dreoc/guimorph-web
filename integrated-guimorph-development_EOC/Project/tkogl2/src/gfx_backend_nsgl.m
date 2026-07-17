@@ -50,9 +50,26 @@
  */
 
 struct gfx_surface {
-    void *view;   /* NSView*          -- Tk's embedded content view (retained) */
+    void *view;   /* NSView*          -- GL child view embedded in Tk's contentView (owned) */
     void *ctx;    /* NSOpenGLContext* -- legacy-2.1 context (owned via +alloc) */
 };
+
+/*
+ * A1 / Pitfall 2 embed rectangle. Tk shares ONE NSView per toplevel, so the GL
+ * context cannot attach to the whole contentView without painting over every
+ * sibling widget. tcl_window.c computes the digitizing widget's sub-rectangle
+ * (Tk point-space, top-left origin, toplevel-relative) and stashes it here via
+ * gfx_set_embed_rect BEFORE gfx_create runs. If it was never set, gfx_create
+ * falls back to the full contentView bounds.
+ */
+static int    g_embed_set = 0;
+static NSRect g_embed_rect;  /* Tk point-space, origin top-left */
+
+void gfx_set_embed_rect(int x, int y, int w, int h)
+{
+    g_embed_rect = NSMakeRect((CGFloat)x, (CGFloat)y, (CGFloat)w, (CGFloat)h);
+    g_embed_set = 1;
+}
 
 gfx_surface *gfx_create(void *native_drawable)
 {
@@ -66,21 +83,66 @@ gfx_surface *gfx_create(void *native_drawable)
     }
 
     @autoreleasepool {
-        NSWindow *win  = (__bridge NSWindow *)native_drawable;
-        NSView   *view = [win contentView];
-        if (view == nil) {
+        NSWindow *win     = (__bridge NSWindow *)native_drawable;
+        NSView   *content = [win contentView];
+        if (content == nil) {
             free(s);
             return NULL;
         }
 
         /*
-         * D-05 (viewport half): request a backing-resolution surface so
-         * glViewport can be driven in backing pixels (see gfx_resize). Apple
-         * documents that layer-backed views (Tk's aqua contentView on modern
-         * macOS) manage their own backing and may ignore this, but it is the
-         * documented, display-aware request and is harmless where ignored.
+         * A1 / Pitfall 2: build a dedicated GL child NSView at the Tk widget's
+         * rect and add it as a subview of the shared contentView, instead of
+         * attaching GL to the contentView itself (which would cover the notebook,
+         * nav buttons, and status bar -- the "blank window, no widgets" symptom).
+         * Still within D-04: it lives inside Tk's own view hierarchy, no new
+         * top-level window.
+         *
+         * Tk hands us a top-left-origin rect. AppKit views are bottom-left-origin
+         * unless the superview is flipped, so consult -isFlipped and convert only
+         * when needed -- this keeps the canvas vertically correct on either kind
+         * of Tk contentView.
          */
-        view.wantsBestResolutionOpenGLSurface = YES;
+        NSRect childFrame = [content bounds];   /* fallback: full contentView */
+        if (g_embed_set &&
+            g_embed_rect.size.width >= 1.0 && g_embed_rect.size.height >= 1.0) {
+            CGFloat cx = g_embed_rect.origin.x;
+            CGFloat cw = g_embed_rect.size.width;
+            CGFloat ch = g_embed_rect.size.height;
+            CGFloat cy;
+            if ([content isFlipped]) {
+                cy = g_embed_rect.origin.y;                         /* top-left origin */
+            } else {
+                cy = [content bounds].size.height
+                     - (g_embed_rect.origin.y + ch);                /* flip to bottom-left */
+            }
+            childFrame = NSMakeRect(cx, cy, cw, ch);
+        }
+
+        NSView *view = [[NSView alloc] initWithFrame:childFrame];
+        if (view == nil) {
+            free(s);
+            return NULL;
+        }
+        /* Track the parent as the window resizes (approximate; exact per-widget
+         * relayout is Tk's job and is refreshed via gfx_resize on <Configure>). */
+        [view setAutoresizingMask:(NSViewWidthSizable | NSViewHeightSizable)];
+        [content addSubview:view];
+
+        /*
+         * D-05 (viewport half), first-light reality: Tk's contentView is
+         * layer-backed on modern macOS, and layer-backing is inherited by every
+         * subview -- so this GL child is layer-backed too and IGNORES
+         * wantsBestResolutionOpenGLSurface. The GL surface therefore stays at
+         * POINT size. Requesting a best-resolution (backing) surface here while
+         * the layer refuses it desynchronizes the surface from a backing-pixel
+         * glViewport and renders the scene into the bottom-left, clipped. Keep
+         * the surface at point resolution and drive glViewport in points too
+         * (see gfx_resize) so the mesh fills the canvas. Crisp full-Retina (a
+         * non-layer-backed child NSView or a CAOpenGLLayer) is a deferred
+         * follow-up -- "first light = fills the viewport", not pixel-perfect.
+         */
+        view.wantsBestResolutionOpenGLSurface = NO;
 
         /*
          * D-01: legacy 2.1 profile -- the engine is fixed-function immediate
@@ -121,20 +183,14 @@ gfx_surface *gfx_create(void *native_drawable)
         }
 
         /*
-         * D-04: attach the context to Tk's embedded contentView (no standalone
-         * window).
-         *
-         * READY FALLBACK (A1 / Pitfall 2) -- DO NOT activate unless Plan 03's
-         * live session shows a blank / invalid-drawable viewport on this
-         * layer-backed Tk view. In that case: create a dedicated child NSView
-         * matching the contentView's bounds/autoresize mask, add it as a subview
-         * of the contentView, and setView: on that child instead. That isolates
-         * GL drawing from Tk's own layer-backed content drawing while staying
-         * within D-04 (still Tk's view hierarchy, no new top-level window).
+         * D-04: attach the context to the GL child view embedded above (A1 /
+         * Pitfall 2 fallback, now the active path). This isolates GL drawing from
+         * Tk's own content drawing while staying within Tk's view hierarchy.
          */
         [ctx setView:view];
 
-        [view retain];                        /* contentView not owned -> retain */
+        /* `view` is owned via +alloc (addSubview also retains it, dropped on
+         * removeFromSuperview in gfx_destroy). Store our +alloc ref as-is. */
         s->view = (__bridge void *)view;
         s->ctx  = (__bridge void *)ctx;       /* owned via +alloc; store as-is */
     }
@@ -187,13 +243,17 @@ void gfx_resize(gfx_surface *s, int w, int h)
         [ctx update];   /* NSOpenGL must be told the view geometry changed */
 
         /*
-         * D-05: glViewport wants BACKING pixels. convertRectToBacking: is the
-         * display-aware path (survives 1x/2x displays and monitor moves) -- do
-         * NOT hardcode *2 or read backingScaleFactor (Pitfall 4). Viewport only;
-         * pick-coordinate backing conversion is deferred to Phase 5 / PICK-01.
+         * The GL surface on this layer-backed view is POINT-sized (see gfx_create:
+         * wantsBestResolutionOpenGLSurface is ignored under layer-backing). Drive
+         * glViewport from the view's point-space bounds so viewport == surface and
+         * the mesh fills the whole canvas. Using convertRectToBacking: here (2x)
+         * would exceed the point-sized surface and clip into the bottom-left.
+         * Pixel-perfect Retina (backing-sized surface + backing viewport) is
+         * deferred with the non-layer-backed-child follow-up (Phase 5 / PICK-01
+         * also needs the backing path for picking).
          */
-        NSRect px = [view convertRectToBacking:[view bounds]];
-        glViewport(0, 0, (GLsizei)px.size.width, (GLsizei)px.size.height);
+        NSRect b = [view bounds];
+        glViewport(0, 0, (GLsizei)b.size.width, (GLsizei)b.size.height);
     }
 }
 
@@ -210,7 +270,9 @@ void gfx_destroy(gfx_surface *s)
             s->ctx = NULL;
         }
         if (s->view) {
-            [(__bridge NSView *)s->view release];            /* balances -retain */
+            NSView *v = (__bridge NSView *)s->view;
+            [v removeFromSuperview];    /* drop the superview's addSubview retain */
+            [v release];                /* balances +alloc */
             s->view = NULL;
         }
     }
