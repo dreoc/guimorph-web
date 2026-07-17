@@ -46,6 +46,9 @@ int ogl_DrawTriangle()
 
 int ogl_drawModel(model_t* model)
 {
+	/* DAT-03 parity relies on the same vertex ordering after load/save cycles.
+	 * Draw order is intentionally tied to model->count with no platform-specific
+	 * reindexing so byte-validated fixtures remain semantically equivalent. */
 	glEnableClientState(GL_VERTEX_ARRAY); /*enables vertex array for writing and used during rendering*/
 	glEnableClientState(GL_NORMAL_ARRAY); /*enables normal array for writing and used during rendering*/
 	glVertexPointer(3, GL_FLOAT, 0, model->vertex); /*defines an array of vertex, we are storing it in the model's vertex*/

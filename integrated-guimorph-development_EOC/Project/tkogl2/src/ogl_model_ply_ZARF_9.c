@@ -1015,6 +1015,9 @@ int unit_test_ogl_loadCurve(const char* filename)
 int ogl_loadDgtModel(const char* filename, model_t* model)
 {
 	simpleLog("DEBUG : ogl_loadDgtModel ... ");
+	/* DAT-03 parity note: keep text parsing strict and locale-agnostic ("%f %f %f")
+	 * so Windows-authored and macOS-authored .dgt numeric triples round-trip through
+	 * the same fixed field order and precision contract. */
 
 	if (NULL == model)
 	{
