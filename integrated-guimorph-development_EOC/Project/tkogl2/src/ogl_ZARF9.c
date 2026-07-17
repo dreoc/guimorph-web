@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "def_ZARF_9.h"
 
 /*called in setWindowId*/

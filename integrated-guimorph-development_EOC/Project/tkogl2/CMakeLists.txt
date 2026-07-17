@@ -155,7 +155,12 @@ elseif(APPLE)
     # /usr/local/opt/tcl-tk on Intel, or pass -DTKOGL2_MACOS_TCLTK_PREFIX=...).
     set(TKOGL2_MACOS_TCLTK_PREFIX "/opt/homebrew/opt/tcl-tk"
         CACHE PATH "macOS Tcl/Tk install prefix (contains include/ and lib/)")
-    target_include_directories(tkogl2 PRIVATE ${TKOGL2_MACOS_TCLTK_PREFIX}/include)
+    # Homebrew tcl-tk 9.x nests tcl.h/tk.h under include/tcl-tk/ (8.6 kept them at
+    # include/). List both so <tk.h> resolves to the Aqua Tk headers instead of the
+    # macOS SDK's X11-linked tk.h (which #includes <X11/Xlib.h> and fails to build).
+    target_include_directories(tkogl2 PRIVATE
+        ${TKOGL2_MACOS_TCLTK_PREFIX}/include
+        ${TKOGL2_MACOS_TCLTK_PREFIX}/include/tcl-tk)
 endif()
 
 # ----------------------------------------------------------------------------

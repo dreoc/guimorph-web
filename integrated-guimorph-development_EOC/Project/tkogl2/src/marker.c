@@ -1,6 +1,8 @@
 #pragma warning( disable : 4305)
 #pragma warning( disable : 4244)
 
+#include <string.h>
+
 #include "RunTime_Defines_ZARF_9.h"
 #include "def_ZARF_9.h"
 #include "marker.h"

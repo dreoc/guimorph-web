@@ -57,6 +57,7 @@ cmake_install.cmake
 # inst/libs, mirroring the Windows tkogl2.dll policy). Never tracked.
 integrated-guimorph-development_EOC/Project/tkogl2/build-gate/
 integrated-guimorph-development_EOC/Project/tkogl2/test/gate/build-gate/
+integrated-guimorph-development_EOC/Project/tkogl2/build-mac/
 
 # --- Compiler intermediates (anywhere) ---
 *.obj

@@ -1,6 +1,8 @@
 #pragma warning( disable : 4305)
 #pragma warning( disable : 4244)
 #include <math.h>
+#include <stdlib.h>
+#include <ctype.h>
 #include "def_ZARF_9.h"
 
 #include <string.h>   // c language functions : NOT c++
