@@ -145,27 +145,56 @@ gfx_surface *gfx_create(void *native_drawable)
 int gfx_make_current(gfx_surface *s)
 {
     if (s == NULL || s->ctx == NULL) {
-        return -1;    /* Phase 4: makeCurrentContext once ctx exists */
+        return -1;
     }
     [(__bridge NSOpenGLContext *)s->ctx makeCurrentContext];
+
+    /*
+     * RND-03/RND-04 black-mesh guard (Validation Architecture Wave-0 gap):
+     * log GL_VERSION on EVERY make-current so the live Plan 03 session shows the
+     * profile actually granted. A legacy context reports a "2.1 ..." string and
+     * MUST NOT contain "Core Profile"; a core string here is Pitfall 1 (the mesh
+     * will be black). fprintf(stderr) keeps this free of any core-logger dep.
+     */
+    const char *ver = (const char *)glGetString(GL_VERSION);
+    fprintf(stderr, "[tkogl2/nsgl] GL_VERSION: %s\n",
+            ver ? ver : "(null) -- no current context!");
     return 0;
 }
 
 void gfx_swap(gfx_surface *s)
 {
     if (s == NULL || s->ctx == NULL) {
-        return;       /* Phase 4: present the back buffer */
+        return;
     }
+    /* D-03 / Pitfall 6: present the double-buffered back buffer. The core's
+     * trailing glFlush() is harmless; only flushBuffer actually presents. */
     [(__bridge NSOpenGLContext *)s->ctx flushBuffer];
 }
 
 void gfx_resize(gfx_surface *s, int w, int h)
 {
-    /* Phase 4: [ctx update] and set the GL viewport at backingScaleFactor
-     * (Retina, PICK-01). No-op in the stub. */
-    (void)s;
+    if (s == NULL || s->ctx == NULL) {
+        return;
+    }
+    /* Viewport is derived from the view's backing rect, not the point-space
+     * (w,h) the core passes -- those stay unused here (D-05). */
     (void)w;
     (void)h;
+    @autoreleasepool {
+        NSOpenGLContext *ctx = (__bridge NSOpenGLContext *)s->ctx;
+        NSView *view = (__bridge NSView *)s->view;
+        [ctx update];   /* NSOpenGL must be told the view geometry changed */
+
+        /*
+         * D-05: glViewport wants BACKING pixels. convertRectToBacking: is the
+         * display-aware path (survives 1x/2x displays and monitor moves) -- do
+         * NOT hardcode *2 or read backingScaleFactor (Pitfall 4). Viewport only;
+         * pick-coordinate backing conversion is deferred to Phase 5 / PICK-01.
+         */
+        NSRect px = [view convertRectToBacking:[view bounds]];
+        glViewport(0, 0, (GLsizei)px.size.width, (GLsizei)px.size.height);
+    }
 }
 
 void gfx_destroy(gfx_surface *s)
@@ -173,7 +202,18 @@ void gfx_destroy(gfx_surface *s)
     if (s == NULL) {
         return;
     }
-    /* Phase 4: [NSOpenGLContext clearCurrentContext] and release ctx. */
+    @autoreleasepool {
+        /* Drop the current context before releasing it (Pitfall 5 hygiene). */
+        [NSOpenGLContext clearCurrentContext];
+        if (s->ctx) {
+            [(__bridge NSOpenGLContext *)s->ctx release];   /* balances +alloc */
+            s->ctx = NULL;
+        }
+        if (s->view) {
+            [(__bridge NSView *)s->view release];            /* balances -retain */
+            s->view = NULL;
+        }
+    }
     free(s);
 }
 
