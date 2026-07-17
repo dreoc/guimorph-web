@@ -797,6 +797,21 @@ normalizeWheelDelta <- function(D) {
   raw / 120
 }
 
+shortcutLabel <- function(key) {
+  if (.isMacOS()) {
+    paste0("Cmd+", key)
+  } else {
+    paste0("Ctrl+", key)
+  }
+}
+
+bindPlatformAccelerator <- function(widget, key, handler) {
+  tkbind(widget, paste0("<Control-", key, ">"), handler)
+  if (.isMacOS()) {
+    tkbind(widget, paste0("<Command-", key, ">"), handler)
+  }
+}
+
 bindDeleteGesture <- function(widget, handler) {
   tkbind(widget, "<ButtonPress-3>", handler)
   if (.isMacOS()) {

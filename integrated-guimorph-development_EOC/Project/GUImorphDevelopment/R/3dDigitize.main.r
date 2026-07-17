@@ -768,12 +768,12 @@ ui.main <- function(e)
 
 bind.accelerators <- function(e)
 {
-  tkbind(e$wnd, "<Control-o>", function() loadPly(e))
-  tkbind(e$wnd, "<Control-s>", function() saveToDgt(e))
-  tkbind(e$wnd, "<Control-bracketleft>", function() onPrevious(e))
-  tkbind(e$wnd, "<Control-bracketright>", function() onNext(e))
-  tkbind(e$wnd, "<Control-f>", function() onFit(e))
-  tkbind(e$wnd, "<Control-z>", function() doUndo(e))
+  bindPlatformAccelerator(e$wnd, "o", function() loadPly(e))
+  bindPlatformAccelerator(e$wnd, "s", function() saveToDgt(e))
+  bindPlatformAccelerator(e$wnd, "bracketleft", function() onPrevious(e))
+  bindPlatformAccelerator(e$wnd, "bracketright", function() onNext(e))
+  bindPlatformAccelerator(e$wnd, "f", function() onFit(e))
+  bindPlatformAccelerator(e$wnd, "z", function() doUndo(e))
 }
 
 showShortcutsDialog <- function(e)
@@ -793,12 +793,12 @@ showShortcutsDialog <- function(e)
   )
 
   shortcuts <- c(
-    "Ctrl+O    Load PLY File",
-    "Ctrl+S    Save to DGT",
-    "Ctrl+[    Previous specimen",
-    "Ctrl+]    Next specimen",
-    "Ctrl+F    Fit view (Curves tab: Reset view button)",
-    "Ctrl+Z    Undo last landmark, anchor, or curve segment action"
+    paste(shortcutLabel("O"), "   Load PLY File"),
+    paste(shortcutLabel("S"), "   Save to DGT"),
+    paste(shortcutLabel("["), "   Previous specimen"),
+    paste(shortcutLabel("]"), "   Next specimen"),
+    paste(shortcutLabel("F"), "   Fit view (Curves tab: Reset view button)"),
+    paste(shortcutLabel("Z"), "   Undo last landmark, anchor, or curve segment action")
   )
   for (line in shortcuts) {
     tkpack(
@@ -824,6 +824,27 @@ showShortcutsDialog <- function(e)
     ttkbutton(btnFrame, text = "OK", command = function() tkdestroy(win)),
     side = "right"
   )
+}
+
+.normalizePathExt <- function(path) {
+  tolower(tools::file_ext(path))
+}
+
+.warnUnexpectedExtension <- function(path, allowed, action_label) {
+  ext <- .normalizePathExt(path)
+  if (!nzchar(ext) || ext %in% tolower(allowed)) {
+    return(invisible(FALSE))
+  }
+  tkmessageBox(
+    title = "Extension warning",
+    message = paste0(
+      action_label, " selected a .", ext, " file.\n",
+      "GUImorph will still try to process it and validate file contents."
+    ),
+    icon = "warning",
+    type = "ok"
+  )
+  invisible(TRUE)
 }
 
 #configures file menu
@@ -1432,7 +1453,7 @@ loadPly <- function(e)
   fileStr <-
     tclvalue(
       tkgetOpenFile(
-        filetypes = "{{ply file} {.ply}}",
+        filetypes = "{{PLY and point files} {.ply .pts}} {{All files} *}",
         multiple = TRUE,
         title = "Select PLY specimen file(s)"
       )
@@ -1469,6 +1490,7 @@ loadPly <- function(e)
     for (i in 1:length(imgList))
     {
       speciName <- imgList[[i]]
+      .warnUnexpectedExtension(speciName, c("ply", "pts"), "Load specimen")
       messageToC (paste("File name ", i, "is : ",speciName ))
     }
   }
@@ -1882,13 +1904,15 @@ saveToDgt <- function(e)
   }
 
   #select the location
-  fileName <- tclvalue(tkgetSaveFile(filetypes = "{DGT {.dgt}}"))
+  fileName <- tclvalue(tkgetSaveFile(filetypes = "{{DGT file} {.dgt}} {{All files} *}"))
   if (!nchar(fileName)) {
     return ()
   }
 
-  if (length(grep(".dgt", x = fileName)) == 0) {
+  if (!nzchar(.normalizePathExt(fileName))) {
     fileName <- paste(fileName, ".dgt", sep = "")
+  } else {
+    .warnUnexpectedExtension(fileName, "dgt", "Save session")
   }
 
   file.create(fileName, showWarnings = TRUE)
@@ -2720,7 +2744,7 @@ openDgt <- function(e)
 
 
 
-  dgtfileName <- tclvalue(tkgetOpenFile(filetypes = "{DGT {.dgt}}"))
+  dgtfileName <- tclvalue(tkgetOpenFile(filetypes = "{{DGT file} {.dgt}} {{All files} *}"))
 
   # if file name is empty ... quit early ....
   if ("" == dgtfileName)
@@ -2732,6 +2756,7 @@ openDgt <- function(e)
 
   e$dgtPath <- dirname(dgtfileName)
   e$dgtFileName <- dgtfileName
+  .warnUnexpectedExtension(dgtfileName, "dgt", "Open DGT")
 
 
   if (1)
@@ -2744,7 +2769,24 @@ openDgt <- function(e)
   }
 
 
-  rawContent <- scan( file = dgtfileName, what = "char",  sep = "\n", quiet = TRUE   )
+  rawContent <- tryCatch(
+    scan(file = dgtfileName, what = "char", sep = "\n", quiet = TRUE),
+    error = function(err) {
+      tkmessageBox(
+        title = "Invalid DGT file",
+        message = paste0(
+          "Could not read this file as DGT content.\n",
+          conditionMessage(err)
+        ),
+        icon = "error",
+        type = "ok"
+      )
+      return(NULL)
+    }
+  )
+  if (is.null(rawContent)) {
+    return(FALSE)
+  }
 
   if (0)
   {
@@ -2759,7 +2801,24 @@ openDgt <- function(e)
 
   # olddat corresponds to the N lines of text from the file immediately following
   # the text 'LM3= ' in the original file
-  olddat <- read.digitize(e, content = rawContent)
+  olddat <- tryCatch(
+    read.digitize(e, content = rawContent),
+    error = function(err) {
+      tkmessageBox(
+        title = "Invalid DGT payload",
+        message = paste0(
+          "This file could not be parsed as a valid DGT dataset.\n",
+          conditionMessage(err)
+        ),
+        icon = "error",
+        type = "ok"
+      )
+      return(NULL)
+    }
+  )
+  if (is.null(olddat)) {
+    return(FALSE)
+  }
   if (1)
   {
     dbg(".........................................................")

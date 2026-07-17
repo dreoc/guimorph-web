@@ -900,11 +900,12 @@ loadLandmark <- function(e)
   fileStr <-
     tclvalue(
       tkgetOpenFile(
-        filetypes = "{{landmark file} {.pts}} {{csv file} {.csv}}",
+        filetypes = "{{landmark file} {.pts}} {{csv file} {.csv}} {{All files} *}",
         multiple = FALSE,
         title = "Select landmark file"
       )
     )
+  .warnUnexpectedExtension(fileStr, c("pts", "csv"), "Load landmarks")
   add("landmark", e$currImgId - 1, e$landmarkNum, fileStr)
   e$activeDataList[[e$currImgId]][[3]] <- e$landmarkNum
   tkconfigure(e$landMarkNumLabel,
