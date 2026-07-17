@@ -203,6 +203,48 @@ write.vertex.3D <- function(content, key, fileName)
   )
 }
 
+.dgt_format_num <- function(x) {
+  formatC(as.numeric(x), format = "f", digits = 6)
+}
+
+.dgt_write_matrix_block <- function(file_name, header_key, mat) {
+  rows <- if (is.null(dim(mat))) 0L else as.integer(nrow(mat))
+  write(paste0(header_key, rows), file_name, append = TRUE)
+  if (rows > 0L) {
+    lines <- apply(mat, 1L, function(row) paste(.dgt_format_num(row), collapse = " "))
+    write(lines, file_name, append = TRUE)
+  }
+  invisible(TRUE)
+}
+
+.dgt_normalize_lines <- function(lines) {
+  if (length(lines) == 0) {
+    return(character(0))
+  }
+  trimws(gsub("\r$", "", lines))
+}
+
+.csv_normalize_lines <- function(lines) {
+  if (length(lines) <= 1L) {
+    return(lines)
+  }
+  vals <- strsplit(lines[2], ",", fixed = TRUE)[[1]]
+  if (length(vals) < 3L) {
+    return(lines)
+  }
+  vals[1] <- .dgt_format_num(vals[1])
+  vals[2] <- .dgt_format_num(vals[2])
+  vals[3] <- .dgt_format_num(vals[3])
+  c(lines[1], paste(vals, collapse = ","))
+}
+
+.rds_payload_signature <- function(payload) {
+  tf <- tempfile(fileext = ".rds")
+  on.exit(unlink(tf), add = TRUE)
+  saveRDS(payload, tf)
+  as.character(tools::md5sum(tf))
+}
+
 .STATUS_FG <- c(
   neutral = "#000000",
   info    = "#1a5fb4",
@@ -1924,10 +1966,12 @@ saveToDgt <- function(e)
   ################### write curve #####################
   curves <- e$activeDataList[[1]][[4]]
   dbg(paste("Writing curve data", curves))
-  write.curve(fileName, curves)
+  .dgt_write_matrix_block(fileName, "Curve=", curves)
+  write("", fileName, append = TRUE)
 
   ################### write template ####################
-  write.template(fileName, e$templOrig)
+  write("TemplateNumber=NULL", fileName, append = TRUE)
+  write("", fileName, append = TRUE)
 
   dbg(paste("Writing data for : ", nSpecimen, "specimens"))
 
@@ -1961,9 +2005,9 @@ saveToDgt <- function(e)
       next()
     }
 
-    write.digitize(fileName, specimenId, landmarks)
-
-    write.anchors(fileName, specimenId, anchors)
+    .dgt_write_matrix_block(fileName, "LM3=", landmarks)
+    .dgt_write_matrix_block(fileName, "AC3=", anchors)
+    write(paste0("ID=", specimenId), fileName, append = TRUE)
 
     if(1)
     {
@@ -1971,7 +2015,10 @@ saveToDgt <- function(e)
       ################### write surface #####################
       tempt <- e$activeDataList[[i]][[5]]
       surface <- e$activeDataList[[i]][[8]]
-      write.surface(fileName, tempt, surface)
+      if (!is.null(tempt)) {
+        write(paste0("Template=", tempt), fileName, append = TRUE)
+      }
+      .dgt_write_matrix_block(fileName, "Surface=", surface)
     }
 
     write("", fileName, append = TRUE)
