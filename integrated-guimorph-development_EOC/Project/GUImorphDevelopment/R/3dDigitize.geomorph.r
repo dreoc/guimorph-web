@@ -149,6 +149,14 @@ itob <- function(int) {
   }
 }
 
+.safe_gpagen_maxiter <- function(raw) {
+  parsed <- suppressWarnings(as.numeric(raw))
+  if (is.na(parsed) || parsed < 1) {
+    return(1)
+  }
+  as.integer(parsed)
+}
+
 # C landmark query can duplicate after specimen switch (queryFromR false negative).
 # Prefer C when count matches; fall back to R-side activeDataList[[10]] from openDgt.
 .landmarks_for_specimen <- function(e, i) {
@@ -321,12 +329,16 @@ compute <- function(e) {
   coords.A <- gd$land
   curves   <- gd$curves
   surfaces <- gd$surfaces
+  max_iter <- .safe_gpagen_maxiter(tclvalue(e$maxiter))
+  if (!is.null(e$statusLabel) && max_iter == 1L) {
+    setStatus(e, "Invalid GPA iteration input; using max.iter = 1.", "warning")
+  }
 
   dbg("before gpagen")
   e$gm.results <- geomorph::gpagen(A=coords.A,
                          curves = curves,
                          surfaces = surfaces,
-                         max.iter = as.numeric(tclvalue(e$maxiter)),
+                         max.iter = max_iter,
                          PrinAxes = itob(tclvalue(e$PrinAxes)),
                          ProcD = itob(tclvalue(e$ProcD)),
                          Proj = itob(tclvalue(e$Proj)),
