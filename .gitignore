@@ -53,6 +53,11 @@ CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 
+# macOS CMake build trees (generated proof artifacts; deployed copies live in
+# inst/libs, mirroring the Windows tkogl2.dll policy). Never tracked.
+integrated-guimorph-development_EOC/Project/tkogl2/build-gate/
+integrated-guimorph-development_EOC/Project/tkogl2/test/gate/build-gate/
+
 # --- Compiler intermediates (anywhere) ---
 *.obj
 *.o
