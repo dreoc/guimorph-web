@@ -1,16 +1,40 @@
 ---
 title: "DEFECT: PCA (morphospace) crashes when the PCA yields a single component"
-status: open
+status: done
 kind: defect
 scope: out-of-milestone
 milestone: none (NOT part of the macOS port; pre-existing, reproduces on Windows)
 priority: medium
 severity: crash-no-data-loss
 discovered: 2026-07-18
+resolved: 2026-07-18
 discovered_during: Phase 5 Windows validation
 affects: [GPA tab, PCA (morphospace) button]
 owner: eoc
 ---
+
+## Resolution (2026-07-18)
+
+Fixed in `3dDigitize.geomorph.r::plotPCA`. Root cause confirmed by reading the code:
+the failing `apply(scores, 2, stats::var)` is GUImorph's own line, not geomorph's.
+`scores <- pca$x` returns a plain vector when the ordination retains a single
+component, because R drops the dimensions of a one-column result. `apply` and the
+`ncol(scores) >= 2` test below it both require a `dim` attribute, so the crash
+happened before the existing one-axis branch could run.
+
+Changes:
+- `scores <- as.matrix(scores)` restores the m x 1 shape, so the author's original
+  one-axis branch now works as intended. This is the actual fix.
+- `gm.prcomp` wrapped in `tryCatch` with a readable message instead of a raw abort.
+- NULL / zero-length scores refused with an explanation.
+- Variance percentages guarded against a zero total (identical shapes), which would
+  otherwise print NaN.
+- Plot dimensions keyed off `nrow(scores)` rather than the specimen count, so a
+  mismatch cannot desync the colours and labels.
+- The one-axis title no longer hardcodes "2 specimens".
+
+The 2-specimen minimum was deliberate and is retained. A two-specimen ordination has
+exactly one axis, which the one-axis branch was written to display.
 
 ## Scope note
 

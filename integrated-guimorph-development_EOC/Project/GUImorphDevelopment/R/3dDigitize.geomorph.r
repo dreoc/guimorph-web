@@ -397,25 +397,57 @@ plotPCA <- function(e) {
   if (is.null(gm.res)) return()
   aligned <- .gm_aligned_coords(gm.res)
   n <- dim(aligned)[3]
-  if (n < 2) {
+  if (is.null(n) || is.na(n) || n < 2) {
     tkmessageBox(title = "PCA", message = "PCA needs at least 2 specimens.", icon = "info", type = "ok")
     return()
   }
-  pca <- geomorph::gm.prcomp(aligned)
+
+  pca <- tryCatch(geomorph::gm.prcomp(aligned), error = function(err) err)
+  if (inherits(pca, "error")) {
+    tkmessageBox(title = "PCA",
+      message = paste0("The ordination could not be computed.\n\ngm.prcomp reported: ",
+                       conditionMessage(pca)),
+      icon = "error", type = "ok")
+    return()
+  }
+
+  # A GPA-aligned sample of n specimens supports at most n - 1 non-zero components,
+  # so two specimens yield exactly one. R drops the dimensions of a single-column
+  # result, which left `scores` as a plain vector with no dim attribute; both
+  # apply(scores, 2, ...) and ncol(scores) then failed ("dim(X) must have a positive
+  # length") before the one-axis branch below could be reached. as.matrix() restores
+  # the m x 1 shape, so the branch works as originally intended.
   scores <- pca$x
-  cols <- grDevices::rainbow(n)
-  vv <- apply(scores, 2, stats::var)
-  ve <- round(100 * vv / sum(vv), 1)
+  if (is.null(scores) || length(scores) == 0L) {
+    tkmessageBox(title = "PCA",
+      message = "The ordination returned no component scores, so there is nothing to plot.",
+      icon = "info", type = "ok")
+    return()
+  }
+  scores <- as.matrix(scores)
+
+  nPC  <- ncol(scores)
+  m    <- nrow(scores)   # specimens actually represented in the ordination
+  cols <- grDevices::rainbow(m)
+
+  # Percent of total variance per component. Guard the degenerate case where the
+  # shapes are identical, which makes the total zero and every ratio NaN.
+  vv    <- apply(scores, 2, stats::var)
+  total <- sum(vv)
+  ve    <- if (is.finite(total) && total > 0) round(100 * vv / total, 1) else rep(NA_real_, nPC)
+  lab   <- function(i) if (is.na(ve[i])) paste0("PC", i) else paste0("PC", i, " (", ve[i], "%)")
+
   grDevices::dev.new()
-  if (ncol(scores) >= 2) {
+  if (nPC >= 2) {
     plot(scores[, 1], scores[, 2], pch = 19, col = cols, cex = 1.5,
-      xlab = paste0("PC1 (", ve[1], "%)"), ylab = paste0("PC2 (", ve[2], "%)"),
+      xlab = lab(1), ylab = lab(2),
       main = "Shape morphospace (PCA)")
-    text(scores[, 1], scores[, 2], labels = seq_len(n), pos = 3, cex = 0.9)
+    text(scores[, 1], scores[, 2], labels = seq_len(m), pos = 3, cex = 0.9)
   } else {
-    plot(scores[, 1], rep(0, n), pch = 19, col = cols, cex = 1.5, yaxt = "n", ylab = "",
-      xlab = "PC1", main = "Shape PCA (2 specimens: one axis)")
-    text(scores[, 1], rep(0, n), labels = seq_len(n), pos = 3, cex = 0.9)
+    plot(scores[, 1], rep(0, m), pch = 19, col = cols, cex = 1.5, yaxt = "n", ylab = "",
+      xlab = lab(1),
+      main = paste0("Shape PCA (", m, " specimens: one axis)"))
+    text(scores[, 1], rep(0, m), labels = seq_len(m), pos = 3, cex = 0.9)
   }
 }
 
