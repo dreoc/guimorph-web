@@ -2273,6 +2273,16 @@ TCL_CMD(add)
 		{
 			simpleLogWriteCurveToFile(GBL_PTR_CURVE[2]);
 		}
+		/*
+		 * Redraw now that the curve is registered.
+		 *
+		 * TCL_CMD_SHOW ends with onDisplay(); TCL_CMD_ADD does not. A newly defined
+		 * curve therefore stayed invisible until something unrelated forced a frame:
+		 * switching tabs, changing specimen, or a mouse-move pick. R calls
+		 * add("curve", beg, mid, end) as the last step of onSelectCurve(), so this is
+		 * the point at which the segment becomes drawable.
+		 */
+		onDisplay();
 		simpleLog((const char*)"function add curve");
 	}
 	else if (strcmp(shape, "setNewLandmarkCount") == 0)
@@ -3431,6 +3441,13 @@ TCL_CMD(setDot)
 		{
 			simpleLog("ERROR : negative return from dot color .... NULL pointer?");
 		}
+		/*
+		 * Redraw so the new colour is visible immediately. setDot has no trailing
+		 * onDisplay() the way TCL_CMD_SHOW does, so curve-selection feedback (cyan
+		 * while picking, then red endpoints with a blue slider once the segment
+		 * closes) only surfaced after an unrelated redraw.
+		 */
+		onDisplay();
 		simpleLog((const char*)"setDot ... color ... end");
 	}
 	else if (strcmp(attr, "anchorColor") == 0)
@@ -3448,6 +3465,8 @@ TCL_CMD(setDot)
 		{
 			simpleLog("ERROR : negative return from dot color .... NULL pointer?");
 		}
+		/* Redraw for the same reason as the landmark colour branch above. */
+		onDisplay();
 		simpleLog((const char*)"setDot ... anchorColor ... end ");
 	}
 	else if (strcmp(attr, "labeled") == 0) // toggle label on landmark
