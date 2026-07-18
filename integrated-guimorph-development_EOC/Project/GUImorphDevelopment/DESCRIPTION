@@ -1,7 +1,7 @@
 Package: GUImorph
 Type: Package
 Title: Graphical User Interface for Morphometrics
-Version: 0.9.0
+Version: 0.9.1
 Date: 2020-08-18
 Author: Erik Otarola-Castillo  
 Maintainer: Erik Otarola-Castillo <eoc@purdue.edu>
