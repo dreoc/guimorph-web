@@ -203,6 +203,48 @@ write.vertex.3D <- function(content, key, fileName)
   )
 }
 
+.dgt_format_num <- function(x) {
+  formatC(as.numeric(x), format = "f", digits = 6)
+}
+
+.dgt_write_matrix_block <- function(file_name, header_key, mat) {
+  rows <- if (is.null(dim(mat))) 0L else as.integer(nrow(mat))
+  write(paste0(header_key, rows), file_name, append = TRUE)
+  if (rows > 0L) {
+    lines <- apply(mat, 1L, function(row) paste(.dgt_format_num(row), collapse = " "))
+    write(lines, file_name, append = TRUE)
+  }
+  invisible(TRUE)
+}
+
+.dgt_normalize_lines <- function(lines) {
+  if (length(lines) == 0) {
+    return(character(0))
+  }
+  trimws(gsub("\r$", "", lines))
+}
+
+.csv_normalize_lines <- function(lines) {
+  if (length(lines) <= 1L) {
+    return(lines)
+  }
+  vals <- strsplit(lines[2], ",", fixed = TRUE)[[1]]
+  if (length(vals) < 3L) {
+    return(lines)
+  }
+  vals[1] <- .dgt_format_num(vals[1])
+  vals[2] <- .dgt_format_num(vals[2])
+  vals[3] <- .dgt_format_num(vals[3])
+  c(lines[1], paste(vals, collapse = ","))
+}
+
+.rds_payload_signature <- function(payload) {
+  tf <- tempfile(fileext = ".rds")
+  on.exit(unlink(tf), add = TRUE)
+  saveRDS(payload, tf)
+  as.character(tools::md5sum(tf))
+}
+
 .STATUS_FG <- c(
   neutral = "#000000",
   info    = "#1a5fb4",
@@ -235,7 +277,7 @@ busyStop <- function(e, text = NULL, state = "neutral") {
 
 # Single source of truth for Previous/Next availability. Enable/disable is based
 # ONLY on whether a neighbouring specimen exists, never on landmark/anchor
-# completeness — incomplete counts are surfaced as an inline status warning when
+# completeness - incomplete counts are surfaced as an inline status warning when
 # the user attempts to navigate, so the buttons can never get stuck disabled.
 refreshNavButtons <- function(e) {
   if (is.null(e$nextBtn) || is.null(e$prevBtn)) return(invisible())
@@ -721,7 +763,7 @@ ui.main <- function(e)
   # viewport + ghosted sibling widgets).
   # Full update (not just idletasks) so the resizable, expand/fill canvas reaches
   # its real on-screen pixel size before the GL context binds. The C engine never
-  # calls glViewport — the pick path (ogl_getObjCoordinate) flips winY = viewport[3] - y
+  # calls glViewport - the pick path (ogl_getObjCoordinate) flips winY = viewport[3] - y
   # against the viewport frozen at context-creation time. If we bind while the canvas
   # is still at its requested 600x600, placed landmarks land offset (lower) from the
   # cursor once the window expands. Measure the true size and push THAT.
@@ -754,7 +796,7 @@ ui.main <- function(e)
   tkbind(canvasFrame, "<Configure>", onCanvasConfigure)
 
   # Force one size sync after the window is fully mapped/laid out, so the engine
-  # viewport is correct before the first landmark placement — not only after a
+  # viewport is correct before the first landmark placement - not only after a
   # manual resize fires <Configure>.
   tcl("after", "idle", pushCanvasSize)
 
@@ -768,12 +810,12 @@ ui.main <- function(e)
 
 bind.accelerators <- function(e)
 {
-  tkbind(e$wnd, "<Control-o>", function() loadPly(e))
-  tkbind(e$wnd, "<Control-s>", function() saveToDgt(e))
-  tkbind(e$wnd, "<Control-bracketleft>", function() onPrevious(e))
-  tkbind(e$wnd, "<Control-bracketright>", function() onNext(e))
-  tkbind(e$wnd, "<Control-f>", function() onFit(e))
-  tkbind(e$wnd, "<Control-z>", function() doUndo(e))
+  bindPlatformAccelerator(e$wnd, "o", function() loadPly(e))
+  bindPlatformAccelerator(e$wnd, "s", function() saveToDgt(e))
+  bindPlatformAccelerator(e$wnd, "bracketleft", function() onPrevious(e))
+  bindPlatformAccelerator(e$wnd, "bracketright", function() onNext(e))
+  bindPlatformAccelerator(e$wnd, "f", function() onFit(e))
+  bindPlatformAccelerator(e$wnd, "z", function() doUndo(e))
 }
 
 showShortcutsDialog <- function(e)
@@ -793,12 +835,12 @@ showShortcutsDialog <- function(e)
   )
 
   shortcuts <- c(
-    "Ctrl+O    Load PLY File",
-    "Ctrl+S    Save to DGT",
-    "Ctrl+[    Previous specimen",
-    "Ctrl+]    Next specimen",
-    "Ctrl+F    Fit view (Curves tab: Reset view button)",
-    "Ctrl+Z    Undo last landmark, anchor, or curve segment action"
+    paste(shortcutLabel("O"), "   Load PLY File"),
+    paste(shortcutLabel("S"), "   Save to DGT"),
+    paste(shortcutLabel("["), "   Previous specimen"),
+    paste(shortcutLabel("]"), "   Next specimen"),
+    paste(shortcutLabel("F"), "   Fit view (Curves tab: Reset view button)"),
+    paste(shortcutLabel("Z"), "   Undo last landmark, anchor, or curve segment action")
   )
   for (line in shortcuts) {
     tkpack(
@@ -824,6 +866,27 @@ showShortcutsDialog <- function(e)
     ttkbutton(btnFrame, text = "OK", command = function() tkdestroy(win)),
     side = "right"
   )
+}
+
+.normalizePathExt <- function(path) {
+  tolower(tools::file_ext(path))
+}
+
+.warnUnexpectedExtension <- function(path, allowed, action_label) {
+  ext <- .normalizePathExt(path)
+  if (!nzchar(ext) || ext %in% tolower(allowed)) {
+    return(invisible(FALSE))
+  }
+  tkmessageBox(
+    title = "Extension warning",
+    message = paste0(
+      action_label, " selected a .", ext, " file.\n",
+      "GUImorph will still try to process it and validate file contents."
+    ),
+    icon = "warning",
+    type = "ok"
+  )
+  invisible(TRUE)
 }
 
 #configures file menu
@@ -1075,15 +1138,25 @@ zoom <- function(e, D)
   {
     imgId <- e$currImgId
     zoomValue <- e$activeDataList[[imgId]][[7]]
-    if (D > 0)
-    {
-      set("specimen", "scale", "in")
-      zoomValue <- zoomValue + 1
+    delta <- suppressWarnings(as.numeric(D))
+    if (is.na(delta) || delta == 0) {
+      return(invisible())
     }
-    else
-    {
-      set("specimen", "scale", "out")
-      zoomValue <- zoomValue - 1
+
+    if (is.null(e$wheelResidual)) {
+      e$wheelResidual <- 0
+    }
+    e$wheelResidual <- e$wheelResidual + delta
+    while (abs(e$wheelResidual) >= 0.25) {
+      if (e$wheelResidual > 0) {
+        set("specimen", "scale", "in")
+        zoomValue <- zoomValue + 1
+        e$wheelResidual <- e$wheelResidual - 0.25
+      } else {
+        set("specimen", "scale", "out")
+        zoomValue <- zoomValue - 1
+        e$wheelResidual <- e$wheelResidual + 0.25
+      }
     }
     e$activeDataList[[imgId]][[7]] <- zoomValue
   }
@@ -1422,7 +1495,7 @@ loadPly <- function(e)
   fileStr <-
     tclvalue(
       tkgetOpenFile(
-        filetypes = "{{ply file} {.ply}}",
+        filetypes = "{{PLY and point files} {.ply .pts}} {{All files} *}",
         multiple = TRUE,
         title = "Select PLY specimen file(s)"
       )
@@ -1459,6 +1532,7 @@ loadPly <- function(e)
     for (i in 1:length(imgList))
     {
       speciName <- imgList[[i]]
+      .warnUnexpectedExtension(speciName, c("ply", "pts"), "Load specimen")
       messageToC (paste("File name ", i, "is : ",speciName ))
     }
   }
@@ -1872,13 +1946,15 @@ saveToDgt <- function(e)
   }
 
   #select the location
-  fileName <- tclvalue(tkgetSaveFile(filetypes = "{DGT {.dgt}}"))
+  fileName <- tclvalue(tkgetSaveFile(filetypes = "{{DGT file} {.dgt}} {{All files} *}"))
   if (!nchar(fileName)) {
     return ()
   }
 
-  if (length(grep(".dgt", x = fileName)) == 0) {
+  if (!nzchar(.normalizePathExt(fileName))) {
     fileName <- paste(fileName, ".dgt", sep = "")
+  } else {
+    .warnUnexpectedExtension(fileName, "dgt", "Save session")
   }
 
   file.create(fileName, showWarnings = TRUE)
@@ -1890,10 +1966,12 @@ saveToDgt <- function(e)
   ################### write curve #####################
   curves <- e$activeDataList[[1]][[4]]
   dbg(paste("Writing curve data", curves))
-  write.curve(fileName, curves)
+  .dgt_write_matrix_block(fileName, "Curve=", curves)
+  write("", fileName, append = TRUE)
 
   ################### write template ####################
-  write.template(fileName, e$templOrig)
+  write("TemplateNumber=NULL", fileName, append = TRUE)
+  write("", fileName, append = TRUE)
 
   dbg(paste("Writing data for : ", nSpecimen, "specimens"))
 
@@ -1927,9 +2005,9 @@ saveToDgt <- function(e)
       next()
     }
 
-    write.digitize(fileName, specimenId, landmarks)
-
-    write.anchors(fileName, specimenId, anchors)
+    .dgt_write_matrix_block(fileName, "LM3=", landmarks)
+    .dgt_write_matrix_block(fileName, "AC3=", anchors)
+    write(paste0("ID=", specimenId), fileName, append = TRUE)
 
     if(1)
     {
@@ -1937,7 +2015,10 @@ saveToDgt <- function(e)
       ################### write surface #####################
       tempt <- e$activeDataList[[i]][[5]]
       surface <- e$activeDataList[[i]][[8]]
-      write.surface(fileName, tempt, surface)
+      if (!is.null(tempt)) {
+        write(paste0("Template=", tempt), fileName, append = TRUE)
+      }
+      .dgt_write_matrix_block(fileName, "Surface=", surface)
     }
 
     write("", fileName, append = TRUE)
@@ -2710,7 +2791,7 @@ openDgt <- function(e)
 
 
 
-  dgtfileName <- tclvalue(tkgetOpenFile(filetypes = "{DGT {.dgt}}"))
+  dgtfileName <- tclvalue(tkgetOpenFile(filetypes = "{{DGT file} {.dgt}} {{All files} *}"))
 
   # if file name is empty ... quit early ....
   if ("" == dgtfileName)
@@ -2722,6 +2803,7 @@ openDgt <- function(e)
 
   e$dgtPath <- dirname(dgtfileName)
   e$dgtFileName <- dgtfileName
+  .warnUnexpectedExtension(dgtfileName, "dgt", "Open DGT")
 
 
   if (1)
@@ -2734,7 +2816,24 @@ openDgt <- function(e)
   }
 
 
-  rawContent <- scan( file = dgtfileName, what = "char",  sep = "\n", quiet = TRUE   )
+  rawContent <- tryCatch(
+    scan(file = dgtfileName, what = "char", sep = "\n", quiet = TRUE),
+    error = function(err) {
+      tkmessageBox(
+        title = "Invalid DGT file",
+        message = paste0(
+          "Could not read this file as DGT content.\n",
+          conditionMessage(err)
+        ),
+        icon = "error",
+        type = "ok"
+      )
+      return(NULL)
+    }
+  )
+  if (is.null(rawContent)) {
+    return(FALSE)
+  }
 
   if (0)
   {
@@ -2749,7 +2848,24 @@ openDgt <- function(e)
 
   # olddat corresponds to the N lines of text from the file immediately following
   # the text 'LM3= ' in the original file
-  olddat <- read.digitize(e, content = rawContent)
+  olddat <- tryCatch(
+    read.digitize(e, content = rawContent),
+    error = function(err) {
+      tkmessageBox(
+        title = "Invalid DGT payload",
+        message = paste0(
+          "This file could not be parsed as a valid DGT dataset.\n",
+          conditionMessage(err)
+        ),
+        icon = "error",
+        type = "ok"
+      )
+      return(NULL)
+    }
+  )
+  if (is.null(olddat)) {
+    return(FALSE)
+  }
   if (1)
   {
     dbg(".........................................................")

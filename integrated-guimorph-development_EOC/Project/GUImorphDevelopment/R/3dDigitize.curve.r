@@ -32,7 +32,11 @@ ui.curve <- function(e, parent)
 
   e$curveDescLabel <- ttklabel(
     curveCtlFrame,
-    text = "Define curves by selecting 3 landmarks per segment"
+    text = paste0(
+      "Define curves by selecting 3 landmarks per segment (",
+      shortcutLabel("["), "/", shortcutLabel("]"),
+      " changes specimen)"
+    )
   )
   tkconfigure(e$curveDescLabel, foreground = "#505050")
 
@@ -270,6 +274,9 @@ onSelectCurve <- function(e, x, y)
   else
   {
     dbg("file 3dDigitize curve line 296 : else clause ... false return from set dot selected at line 258")
+    if (!is.null(e$statusLabel)) {
+      setStatus(e, "Curve selection missed a landmark; no segment changes were made.", "warning")
+    }
   }
 
   dbg("file 3dDigitize.curve ... function onSelectCurve ... end")

@@ -37,7 +37,11 @@ ui.geomorph <- function(e, parent) {
   tkconfigure(canvas, background = .cbg)
   tkcreate(canvas, "window", 0, 0, anchor = "nw", window = gpagenCtlFrame)
   tkbind(gpagenCtlFrame, "<Configure>", function() tkconfigure(canvas, scrollregion = tkbbox(canvas, "all")))
-  tkbind(canvas, "<MouseWheel>", function(D = 0) tkyview(canvas, "scroll", as.integer(-as.numeric(D) / 120), "units"))
+  tkbind(canvas, "<MouseWheel>", function(D = 0) {
+    delta <- normalizeWheelDelta(D)
+    if (delta == 0) return(invisible())
+    tkyview(canvas, "scroll", as.integer(-sign(delta)), "units")
+  })
 
   fitBtn <- ttkbutton(gpagenCtlFrame, text = "Fit", command = function() onFit(e))
   tkgrid(fitBtn, row = 0, column = 0, pady = 2)
@@ -143,6 +147,14 @@ itob <- function(int) {
   } else {
     return(TRUE)
   }
+}
+
+.safe_gpagen_maxiter <- function(raw) {
+  parsed <- suppressWarnings(as.numeric(raw))
+  if (is.na(parsed) || parsed < 1) {
+    return(1)
+  }
+  as.integer(parsed)
 }
 
 # C landmark query can duplicate after specimen switch (queryFromR false negative).
@@ -317,12 +329,16 @@ compute <- function(e) {
   coords.A <- gd$land
   curves   <- gd$curves
   surfaces <- gd$surfaces
+  max_iter <- .safe_gpagen_maxiter(tclvalue(e$maxiter))
+  if (!is.null(e$statusLabel) && max_iter == 1L) {
+    setStatus(e, "Invalid GPA iteration input; using max.iter = 1.", "warning")
+  }
 
   dbg("before gpagen")
   e$gm.results <- geomorph::gpagen(A=coords.A,
                          curves = curves,
                          surfaces = surfaces,
-                         max.iter = as.numeric(tclvalue(e$maxiter)),
+                         max.iter = max_iter,
                          PrinAxes = itob(tclvalue(e$PrinAxes)),
                          ProcD = itob(tclvalue(e$ProcD)),
                          Proj = itob(tclvalue(e$Proj)),

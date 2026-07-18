@@ -787,6 +787,39 @@ set <- function(shape, attr, arg1, arg2, arg3)
 # which GUImorph(debug=TRUE) sets. Preserves every debugging note.
 dbg <- function(...) if (isTRUE(getOption("guimorph.debug", FALSE))) print(...)
 
+.isMacOS <- function() {
+  identical(tolower(Sys.info()[["sysname"]]), "darwin")
+}
+
+normalizeWheelDelta <- function(D) {
+  raw <- suppressWarnings(as.numeric(D))
+  if (is.na(raw)) return(0)
+  raw / 120
+}
+
+shortcutLabel <- function(key) {
+  if (.isMacOS()) {
+    paste0("Cmd+", key)
+  } else {
+    paste0("Ctrl+", key)
+  }
+}
+
+bindPlatformAccelerator <- function(widget, key, handler) {
+  tkbind(widget, paste0("<Control-", key, ">"), handler)
+  if (.isMacOS()) {
+    tkbind(widget, paste0("<Command-", key, ">"), handler)
+  }
+}
+
+bindDeleteGesture <- function(widget, handler) {
+  tkbind(widget, "<ButtonPress-3>", handler)
+  if (.isMacOS()) {
+    tkbind(widget, "<Button-2>", handler)
+    tkbind(widget, "<Control-Button-1>", handler)
+  }
+}
+
 .onAttach <- function(libname, pkgname) {
   gmv <- tryCatch(as.character(utils::packageVersion("geomorph")), error = function(err) "not found")
   packageStartupMessage(

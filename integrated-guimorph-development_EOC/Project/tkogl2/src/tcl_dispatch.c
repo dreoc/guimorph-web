@@ -3,6 +3,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stddef.h>
 #include <time.h>
 #include <math.h>
@@ -589,6 +590,35 @@ int getSpecimenCoordinate(int x, int y, point_t* p, char* buf)
 
 
 
+	int sampleX = x;
+	int sampleY = y;
+	int viewportW = 0;
+	int viewportH = 0;
+
+#if defined(MAC_OSX_TK) || defined(__APPLE__)
+	/*
+	 * Phase 5 / PICK-01: establish one coordinate authority by converting Tk
+	 * point-space events to backing-pixel coordinates before unproject.
+	 */
+	if (g_surface != NULL)
+	{
+		if (0 == gfx_point_to_backing(g_surface, x, y, &sampleX, &sampleY))
+		{
+			sprintf(buffer,
+				"INFO : getSpecimenCoordinate backing sample [%d %d] from Tk [%d %d]",
+				sampleX, sampleY, x, y);
+			simpleLog(buffer);
+		}
+		if (0 == gfx_get_viewport_size(g_surface, &viewportW, &viewportH))
+		{
+			sprintf(buffer,
+				"INFO : getSpecimenCoordinate viewport backing size [%d %d]",
+				viewportW, viewportH);
+			simpleLog(buffer);
+		}
+	}
+#endif
+
 	show_mode_t oldModel = showModel;
 	showModel = SPECIMEN;
 	onDisplay();
@@ -601,9 +631,9 @@ int getSpecimenCoordinate(int x, int y, point_t* p, char* buf)
 	glTranslatef(context[model_index].x, context[model_index].y, context[model_index].z);
 
 	// 01 July 2020 investigating why anchors can not be dragged  ... discovered an item in the following function
-	ogl_getObjCoordinate(x, y, &p->x, &p->y, &p->z, buf);
+	ogl_getObjCoordinate(sampleX, sampleY, &p->x, &p->y, &p->z, buf);
 
-	sprintf(buffer, "INFO : result from ogl_getObjCoordinate  [%d] [%d] <%10.6f  %10.6f  %10.6f>", x, y, p->x, p->y, p->z);
+	sprintf(buffer, "INFO : result from ogl_getObjCoordinate  [%d] [%d] <%10.6f  %10.6f  %10.6f>", sampleX, sampleY, p->x, p->y, p->z);
 	simpleLog(buffer);
 
 
@@ -3104,6 +3134,7 @@ TCL_CMD(setDownSample)
 // specimen rotation). Widening the grab box makes selection forgiving without
 // enlarging the drawn marker.
 #define GBL_SELECT_TOLERANCE_FACTOR 3.0
+#define GBL_RETINA_NEAR_MISS_PX 2
 
 //updates dot parameters
 #ifdef STAND_ALONE_TOOL
@@ -3158,8 +3189,31 @@ TCL_CMD(setDot)
 
 		if (LANDMARK == showModel)
 		{
-
-			if (0 != dot_select(&p, dotRadius * GBL_SELECT_TOLERANCE_FACTOR))
+			int selected = dot_select(&p, dotRadius * GBL_SELECT_TOLERANCE_FACTOR);
+			if (0 != selected)
+			{
+				/*
+				 * Phase 5 / PICK-01 D-03: retry a tiny near-miss window in backing
+				 * pixel space so Retina picks tolerate a 2-4 px sampling mismatch.
+				 */
+				int ox, oy;
+				for (oy = -GBL_RETINA_NEAR_MISS_PX; oy <= GBL_RETINA_NEAR_MISS_PX && selected != 0; ++oy)
+				{
+					for (ox = -GBL_RETINA_NEAR_MISS_PX; ox <= GBL_RETINA_NEAR_MISS_PX && selected != 0; ++ox)
+					{
+						point_t retry;
+						if (ox == 0 && oy == 0)
+						{
+							continue;
+						}
+						if (0 == getSpecimenCoordinate(x + ox, y + oy, &retry, NULL))
+						{
+							selected = dot_select(&retry, dotRadius * GBL_SELECT_TOLERANCE_FACTOR);
+						}
+					}
+				}
+			}
+			if (0 != selected)
 			{
 				sprintf(buffer, "INFO : (landmark) No dot selected at %d %d", x, y);
 				simpleLog(buffer); // NOT an error 
@@ -3182,7 +3236,27 @@ TCL_CMD(setDot)
 
 		if (ANCHOR == showModel)
 		{
-			if (0 != anchor_select(&p, anchorRadius * GBL_SELECT_TOLERANCE_FACTOR))
+			int selected = anchor_select(&p, anchorRadius * GBL_SELECT_TOLERANCE_FACTOR);
+			if (0 != selected)
+			{
+				int ox, oy;
+				for (oy = -GBL_RETINA_NEAR_MISS_PX; oy <= GBL_RETINA_NEAR_MISS_PX && selected != 0; ++oy)
+				{
+					for (ox = -GBL_RETINA_NEAR_MISS_PX; ox <= GBL_RETINA_NEAR_MISS_PX && selected != 0; ++ox)
+					{
+						point_t retry;
+						if (ox == 0 && oy == 0)
+						{
+							continue;
+						}
+						if (0 == getSpecimenCoordinate(x + ox, y + oy, &retry, NULL))
+						{
+							selected = anchor_select(&retry, anchorRadius * GBL_SELECT_TOLERANCE_FACTOR);
+						}
+					}
+				}
+			}
+			if (0 != selected)
 			{
 				sprintf(buffer, "INFO : No anchor selected at %d %d\n", x, y);
 				simpleLog(buffer); // NOT an error 
@@ -3205,8 +3279,27 @@ TCL_CMD(setDot)
 		// added 10 July 2020  // code copied from landmark for now
 		if (CURVE == showModel)
 		{
-
-			if (0 != dot_select(&p, dotRadius * GBL_SELECT_TOLERANCE_FACTOR))
+			int selected = dot_select(&p, dotRadius * GBL_SELECT_TOLERANCE_FACTOR);
+			if (0 != selected)
+			{
+				int ox, oy;
+				for (oy = -GBL_RETINA_NEAR_MISS_PX; oy <= GBL_RETINA_NEAR_MISS_PX && selected != 0; ++oy)
+				{
+					for (ox = -GBL_RETINA_NEAR_MISS_PX; ox <= GBL_RETINA_NEAR_MISS_PX && selected != 0; ++ox)
+					{
+						point_t retry;
+						if (ox == 0 && oy == 0)
+						{
+							continue;
+						}
+						if (0 == getSpecimenCoordinate(x + ox, y + oy, &retry, NULL))
+						{
+							selected = dot_select(&retry, dotRadius * GBL_SELECT_TOLERANCE_FACTOR);
+						}
+					}
+				}
+			}
+			if (0 != selected)
 			{
 				sprintf(buffer, "INFO : (curve) No dot selected at %d %d", x, y);
 				simpleLog(buffer); // NOT an error 

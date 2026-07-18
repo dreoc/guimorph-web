@@ -108,6 +108,24 @@ TCL_CMD(setWindow)
 		// public Tk_ prefix). The Phase 4 NSGL backend derives the NSView from
 		// this NSWindow.
 		native_drawable = (void *)Tk_MacOSXGetNSWindowForDrawable(Tk_WindowId(tkwin));
+		// A1 / Pitfall 2: Tk shares ONE NSView per toplevel, so the backend must
+		// embed a child NSView at THIS widget's sub-rectangle rather than take over
+		// the whole contentView (which paints over every sibling widget). Sum the
+		// widget's parent-relative offsets up to its toplevel to get the rect in Tk
+		// point-space (origin top-left) and hand it to the NSGL backend before the
+		// context is created. The canvas is already realized (R calls `update`
+		// before `set window id`), so Tk_Width/Tk_Height are the true on-screen size.
+		{
+			int embedX = 0, embedY = 0;
+			Tk_Window walk = tkwin;
+			while (walk != NULL && !Tk_IsTopLevel(walk))
+			{
+				embedX += Tk_X(walk);
+				embedY += Tk_Y(walk);
+				walk = Tk_Parent(walk);
+			}
+			gfx_set_embed_rect(embedX, embedY, Tk_Width(tkwin), Tk_Height(tkwin));
+		}
 #else
 		// X11 fallback for a future Linux backend: hand the raw Window id across.
 		native_drawable = (void *)(intptr_t)Tk_WindowId(tkwin);
@@ -169,10 +187,33 @@ TCL_CMD(setWindow)
 			simpleLog("WARNING : window height was zero or negative ... setting it to 600");
 		}
 		float dx = (float)width / height;
+#if defined(MAC_OSX_TK) || defined(__APPLE__)
+		// D-05: on Retina the GL surface is in BACKING pixels (2x), so a point-space
+		// glViewport(0,0,width,height) would fill only the bottom-left quarter.
+		// gfx_resize derives the viewport from the embedded view's backing rect
+		// (convertRectToBacking:) and calls [ctx update]; route macOS through it so
+		// the mesh fills the whole canvas. Non-Apple keeps the direct point-space call.
+		gfx_resize(g_surface, width, height);
+#else
 		glViewport(0, 0, width, height);
+#endif
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		glOrtho(-0.1 * dx, 0.1 * dx, -0.1, 0.1, -2, 2);
+		// Aspect-correct ortho: always widen the LONGER axis so the specimen is
+		// never squeezed or clipped on the short axis. The original form only
+		// corrected landscape canvases (width >= height); a portrait canvas (the
+		// macOS default layout is ~600x856) shrank the horizontal half-range below
+		// the vertical one and clipped the mesh left/right. The landscape branch is
+		// byte-identical to the original, so Windows behavior is preserved (CMP-01).
+		if (width >= height)
+		{
+			glOrtho(-0.1 * dx, 0.1 * dx, -0.1, 0.1, -2, 2);
+		}
+		else
+		{
+			float dy = (float)height / width;
+			glOrtho(-0.1, 0.1, -0.1 * dy, 0.1 * dy, -2, 2);
+		}
 		simpleLog((const char*)"function setWindow size ... end");
 
 		// why do we bother returning this string at all ? The window size is observable

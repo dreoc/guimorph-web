@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Aqua-Tk Deployment Gate + Windows Rendering Seam** - Prove R+Aqua-Tk on macOS and isolate WGL behind a platform seam (Windows CMP-01 validation deferred) (completed 2026-07-13)
 - [x] **Phase 2: Pathname-Based Tk Drawable Resolution** - Reach the native drawable by widget pathname through Tk stubs (verified on Windows 2026-07-15) (completed 2026-07-15)
 - [x] **Phase 3: Tri-Platform Build + Generalized Load + Drop GLUT** - CMake `.dylib` toolchain, extension-aware `.onLoad`, remove GLUT *(Windows verified 2026-07-16; macOS `.dylib` build in Phase 4)*
-- [ ] **Phase 4: macOS NSGL Backend — First Light** - Render a PLY mesh in the embedded macOS viewport (universal2, distributable)
+- [x] **Phase 4: macOS NSGL Backend — First Light** - Render a PLY mesh in the embedded macOS viewport (universal2, distributable) (completed 2026-07-17)
 - [ ] **Phase 5: Retina Picking, Input Fixes & Digitizing/Analysis/Data Parity** - Pixel-accurate picking + macOS input + full workflow parity
 - [ ] **Phase 6: rgl Result-Plot Fallback on macOS** - GPA/PCA/mean-shape plots via rgl NULL/`rglwidget`
 
@@ -81,6 +81,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Windows build still works: the MSVC `tkogl2.dll` builds under the unified CMake and renders unchanged.
 
 **Plans**:
+
 - [x] 03-01-PLAN.md — BLD-01/BLD-02/BLD-04: tri-platform CMake (WIN32/APPLE/else) emitting `tkogl2.dylib` against `-framework OpenGL/AppKit/Foundation`; compiling NSGL stub (`gfx_backend_nsgl.m`, real context in Phase 4); extension-aware, loud-failing `.onLoad` (`[info sharedlibextension]` + `stop()`); GLUT dropped from the draw path (`gluSphere`, vestige removed, labels Windows-guarded). **Windows verified 2026-07-16** (rebuild renders unchanged incl. 6-specimen `.dgt`); macOS `.dylib` build lands in Phase 4 (first Mac build).
 
 ### Phase 4: macOS NSGL Backend — First Light
@@ -95,7 +96,21 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The library is built `universal2` (arm64 + x86_64) and the distribution path handles quarantine / library validation (sign + notarize, or a documented `xattr` workaround).
   4. Windows build still works: the Windows build renders PLY meshes unchanged.
 
-**Plans**: TBD
+**Plans**: 3/3 plans complete
+
+**Wave 1**
+
+- [x] 04-01-PLAN.md — BLD-03 (arm64 env): install Aqua Tk toolchain (D-09), pass the committed Aqua gate (`gate_check: PASS`, closes GATE-01 runtime proof), and produce the first clean arm64 `tkogl2.dylib` from the Phase 3 stub (closes the pending macOS BLD-01 build)
+
+**Wave 2** *(depends on 04-01)*
+
+- [x] 04-02-PLAN.md — RND-03/RND-04/BLD-03: fill `gfx_backend_nsgl.m` with a legacy-2.1 `NSOpenGLContext` (create/attach `setView:`, make-current + GL_VERSION legacy guard, `flushBuffer` present, Retina viewport via `convertRectToBacking:`), rebuild + static-verify the arm64 dylib (`MH_DYLIB`/`arm64`), deploy where `.onLoad` searches
+
+**Wave 3** *(depends on 04-02)*
+
+- [x] 04-03-PLAN.md — RND-03/RND-04: first-light manual acceptance in a live `GUImorph()` session (tetrahedron smoke → real specimen, D-08), confirm legacy GL_VERSION + Retina fill; child-`NSView` fallback ready if the layer-backed direct attach is blank
+
+**Note**: BLD-03 is only PARTIALLY addressed here (arm64 build only). universal2 x86_64, signing, notarization, and the `xattr` quarantine workaround are DEFERRED to a later distribution step (D-06, D-07) and do not block phase closure. Verification is build/static automation + a manual/visual live-session render (no unit-test harness for the native GL path). CMP-01 (Windows still works) is off-box — only `gfx_backend_nsgl.m` changes.
 
 ### Phase 5: Retina Picking, Input Fixes & Digitizing/Analysis/Data Parity
 
@@ -110,8 +125,24 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. `.dgt` save/load/merge and `.csv`/`.rds` export work on macOS, and `.dgt` files/exports are byte-compatible with Windows-authored files (endianness/serialization round-trip verified both directions).
   5. Windows build still works: the full digitizing → GPA → export workflow runs unchanged on the Windows build.
 
-**Plans**: TBD
-**Note**: Research flag (partial): `.dgt` endianness / fixed-width serialization for the Windows↔macOS round-trip and native file-panel UTType behavior need verification during planning.
+**Plans**: 3/4 plans executed
+**Wave 1**
+
+- [x] 05-01-PLAN.md — Retina coordinate authority + core macOS input normalization (PICK-01/02/03)
+
+**Wave 2** *(depends on 05-01)*
+
+- [x] 05-02-PLAN.md — Dialog/shortcut parity + tab-gating stability (PICK-04/05, DIG-05)
+
+**Wave 3** *(depends on 05-01, 05-02)*
+
+- [x] 05-03-PLAN.md — Landmark/anchor/curve/surface interaction parity + GPA compute parity (DIG-01/02/03/04, ANL-01)
+
+**Wave 4** *(depends on 05-03)*
+
+- [ ] 05-04-PLAN.md — `.dgt` + export compatibility hardening and cross-platform byte-parity gate (DAT-01/02/03)
+
+**Note**: DAT-03 remains a blocking bidirectional parity gate requiring off-box Windows evidence (D-16 recurring checkpoint).
 
 ### Phase 6: rgl Result-Plot Fallback on macOS
 
@@ -137,8 +168,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Aqua-Tk Gate + Rendering Seam | 5/5 | Complete   | 2026-07-13 |
 | 2. Pathname Drawable Resolution | 1/1 | Complete   | 2026-07-15 |
 | 3. Tri-Platform Build + Load + Drop GLUT | 1/1 | Complete (Windows verified; macOS `.dylib` build in Phase 4) | 2026-07-16 |
-| 4. macOS NSGL Backend — First Light | 0/TBD | Not started | - |
-| 5. Retina Picking, Input & Parity | 0/TBD | Not started | - |
+| 4. macOS NSGL Backend — First Light | 3/3 | Complete    | 2026-07-17 |
+| 5. Retina Picking, Input & Parity | 3/4 | In Progress|  |
 | 6. rgl Result-Plot Fallback | 0/TBD | Not started | - |
 
 ## Notes

@@ -53,6 +53,12 @@ CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 
+# macOS CMake build trees (generated proof artifacts; deployed copies live in
+# inst/libs, mirroring the Windows tkogl2.dll policy). Never tracked.
+integrated-guimorph-development_EOC/Project/tkogl2/build-gate/
+integrated-guimorph-development_EOC/Project/tkogl2/test/gate/build-gate/
+integrated-guimorph-development_EOC/Project/tkogl2/build-mac/
+
 # --- Compiler intermediates (anywhere) ---
 *.obj
 *.o
@@ -106,6 +112,7 @@ desktop.ini
 # MSVC CMake build tree (build/ is ignored above; this is the VS generator path)
 # ===========================================================================
 build-msvc/
+.r-lib/
 
 # ===========================================================================
 # DLL / source backups and ad-hoc test deploys
@@ -149,6 +156,8 @@ _load_test.R
 *.mesh-validatedot-ok
 fixes/
 build-msvc/
+
+test_data/
 
 # --- edit/patcher backups (anything containing 'bak') ---
 *bak*

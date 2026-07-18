@@ -25,17 +25,19 @@ A researcher can digitize a 3D specimen and feed the result straight into `geomo
 - ✓ Export aligned coordinates + centroid size to `.csv` and geomorph-ready `.rds` — existing
 - ✓ Tab gating enforces workflow prerequisites (Surface Sliders/Curves/GPA unlock after landmarks complete) — existing
 - ✓ Ships a prebuilt MSVC `tkogl2.dll` so Windows end users run without compiling — existing
+- ✓ GUImorph renders a PLY mesh in the embedded digitizing viewport on macOS (not blank/black), arm64 — Validated in Phase 4 (first light, confirmed live in a `GUImorph()` session: real specimen + tetrahedron, legacy `GL_VERSION: 2.1 Metal`)
+- ✓ A reproducible macOS build + load path exists (arm64 `tkogl2.dylib` builds via CMake against Homebrew Aqua Tk and loads via `.onLoad`) — Validated in Phase 4 (BLD-01/BLD-03 arm64 half; GATE-01 Aqua runtime proof closed)
 
 ### Active
 
 <!-- Milestone: cross-platform rendering, macOS first, full feature parity. -->
 
-- [ ] GUImorph launches and renders a PLY mesh in the digitizing viewport on macOS (not blank/black)
-- [ ] Landmark/anchor digitizing (double-click place, move, delete, undo) works on macOS
+- [ ] Landmark/anchor digitizing (double-click place, move, delete, undo) works on macOS with pixel-accurate Retina picking (basic placement demonstrated in Phase 4; PICK-01 backing-coordinate accuracy is Phase 5)
 - [ ] Curves and surface-slider workflows work on macOS
 - [ ] GPA / PCA / mean-shape analysis and `rgl` result plots work on macOS
 - [ ] `.dgt` save/load and `.csv`/`.rds` export work on macOS
-- [ ] A reproducible macOS build + load path exists (native library builds and loads via `.onLoad`)
+- [ ] Crisp full-Retina rendering (non-layer-backed child NSView / CAOpenGLLayer) — Phase 4 ships a point-resolution surface that fills the canvas; crisp Retina deferred
+- [ ] Distributable universal2 artifact + signing/notarization (BLD-03 distribution half, deferred D-06/D-07)
 - [ ] Full feature parity with the Windows build on macOS
 
 ### Out of Scope
@@ -69,7 +71,7 @@ A researcher can digitize a 3D specimen and feed the result straight into `geomo
 | Target macOS first (Linux deferred) | macOS is the origin motivation — rgl/OpenGL digitizing deprecated there | — Pending |
 | Full feature parity target (not MVP slice) | A partial digitizer isn't useful to researchers; parity is the bar | — Pending |
 | Keep R/Tk + geomorph layers; only rework native windowing/GL glue | Analysis + GUI logic are validated; the blocker is Win32/WGL embedding | — Pending |
-| Rendering approach (portable layer vs native NSOpenGL/CGL) TBD via research | Big architectural fork with long-term maintenance implications | — Pending |
+| Rendering approach: native NSOpenGL behind a `gfx` seam (not a portable toolkit) | Portable toolkits (GLFW/SDL) own their own windows and can't render into Tk's `NSView` | ✓ Resolved — legacy-2.1 `NSOpenGLContext` on a child `NSView`; first light achieved Phase 4 |
 | Planning docs local-only (`.planning/` gitignored) | Repo already gitignores `.planning/`; keeps planning out of the public package repo | ✓ Good |
 
 ## Evolution
@@ -90,4 +92,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-12 after initialization*
+*Last updated: 2026-07-17 after Phase 4 (macOS NSGL first light)*

@@ -416,7 +416,7 @@ ui.anchor <- function(e, parent)
 bind.digitize <- function(e)
 {
   tkbind(e$canvasFrame, "<MouseWheel>", function(D) {
-    zoom(e, D)
+    zoom(e, normalizeWheelDelta(D))
   })
 
   tkbind(e$canvasFrame, "<ButtonPress-1>", function(x, y) {
@@ -427,7 +427,7 @@ bind.digitize <- function(e)
     onLeftBtnRelease(e, x, y)
   })
 
-  tkbind(e$canvasFrame, "<ButtonPress-3>", function(x, y) {
+  bindDeleteGesture(e$canvasFrame, function(x, y) {
     deleteLandmark(e, x, y)
   })
 
@@ -447,7 +447,7 @@ bind.digitize <- function(e)
 bind.anchor <- function(e)
 {
   tkbind(e$canvasFrame, "<MouseWheel>", function(D) {
-    zoom(e, D)
+    zoom(e, normalizeWheelDelta(D))
   })
 
   tkbind(e$canvasFrame, "<ButtonPress-1>", function(x, y) {
@@ -458,7 +458,7 @@ bind.anchor <- function(e)
     onLeftBtnRelease(e, x, y)
   })
 
-  tkbind(e$canvasFrame, "<ButtonPress-3>", function(x, y) {
+  bindDeleteGesture(e$canvasFrame, function(x, y) {
     deleteAnchor(e, x, y)
   })
 
@@ -900,11 +900,12 @@ loadLandmark <- function(e)
   fileStr <-
     tclvalue(
       tkgetOpenFile(
-        filetypes = "{{landmark file} {.pts}} {{csv file} {.csv}}",
+        filetypes = "{{landmark file} {.pts}} {{csv file} {.csv}} {{All files} *}",
         multiple = FALSE,
         title = "Select landmark file"
       )
     )
+  .warnUnexpectedExtension(fileStr, c("pts", "csv"), "Load landmarks")
   add("landmark", e$currImgId - 1, e$landmarkNum, fileStr)
   e$activeDataList[[e$currImgId]][[3]] <- e$landmarkNum
   tkconfigure(e$landMarkNumLabel,
@@ -934,6 +935,8 @@ deleteLandmark <- function(e, x, y)
       coord = coord,
       screen = c(as.integer(x), as.integer(y))
     ))
+  } else {
+    .setMissStatus(e, "Landmark delete")
   }
 }
 
@@ -956,6 +959,8 @@ deleteAnchor <- function(e, x, y)
       coord = coord,
       screen = c(as.integer(x), as.integer(y))
     ))
+  } else {
+    .setMissStatus(e, "Anchor delete")
   }
 }
 
@@ -986,6 +991,18 @@ deleteAnchor <- function(e, x, y)
   }
   e$lastPlace <- list(t = now, x = xi, y = yi)
   dup
+}
+
+.setMissStatus <- function(e, action)
+{
+  if (is.null(e$statusLabel))
+    return(invisible(FALSE))
+  setStatus(
+    e,
+    paste0(action, " missed the specimen surface; no changes were applied."),
+    "warning"
+  )
+  invisible(TRUE)
 }
 
 
@@ -1031,6 +1048,7 @@ addDot <- function(e, x, y)
       else
       {
         dbg("WARNING : add dot : not inside the specimen")
+        .setMissStatus(e, "Landmark placement")
       }
     }
   }
@@ -1082,6 +1100,7 @@ addAnchor <- function(e, x, y)
       else
       {
         dbg("WARNING : place anchor : not inside the specimen")
+        .setMissStatus(e, "Anchor placement")
       }
     }
   }

@@ -8,6 +8,7 @@
 
 #include "def_ZARF_9.h"
 #include "gfx_backend.h"
+#include "tcl_window.h"
 
 struct gfx_surface {
 	HDC dc;
@@ -90,6 +91,30 @@ void gfx_destroy(gfx_surface *s)
 {
 	/* Behavior-preserving stub: legacy code did not tear down context/DC. */
 	(void)s;
+}
+
+int gfx_point_to_backing(gfx_surface *s, int x_pt, int y_pt, int *x_px, int *y_px)
+{
+	(void)s;
+	if (x_px == NULL || y_px == NULL)
+	{
+		return -1;
+	}
+	*x_px = x_pt;
+	*y_px = y_pt;
+	return 0;
+}
+
+int gfx_get_viewport_size(gfx_surface *s, int *w_px, int *h_px)
+{
+	(void)s;
+	if (w_px == NULL || h_px == NULL)
+	{
+		return -1;
+	}
+	*w_px = width;
+	*h_px = height;
+	return 0;
 }
 
 #endif
