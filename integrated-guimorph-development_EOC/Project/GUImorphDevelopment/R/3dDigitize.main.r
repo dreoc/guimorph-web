@@ -1147,15 +1147,15 @@ zoom <- function(e, D)
       e$wheelResidual <- 0
     }
     e$wheelResidual <- e$wheelResidual + delta
-    while (abs(e$wheelResidual) >= 0.25) {
+    while (abs(e$wheelResidual) >= 1) {
       if (e$wheelResidual > 0) {
         set("specimen", "scale", "in")
         zoomValue <- zoomValue + 1
-        e$wheelResidual <- e$wheelResidual - 0.25
+        e$wheelResidual <- e$wheelResidual - 1
       } else {
         set("specimen", "scale", "out")
         zoomValue <- zoomValue - 1
-        e$wheelResidual <- e$wheelResidual + 0.25
+        e$wheelResidual <- e$wheelResidual + 1
       }
     }
     e$activeDataList[[imgId]][[7]] <- zoomValue

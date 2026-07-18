@@ -791,10 +791,20 @@ dbg <- function(...) if (isTRUE(getOption("guimorph.debug", FALSE))) print(...)
   identical(tolower(Sys.info()[["sysname"]]), "darwin")
 }
 
+# One wheel notch should equal one zoom step on every platform. The platform
+# notch size is the only platform-specific constant. Windows delivers %D in
+# multiples of 120; macOS trackpads deliver much smaller deltas, which the
+# pre-Phase-5 as.integer(D/120) truncated to zero and so killed wheel zoom there.
+# Dividing by the platform notch and stepping at a residual of 1 restores the
+# pre-merge Windows feel (1 notch = 1 step, was 4) while preserving the macOS
+# behaviour calibrated in Phase 5 (D/120 stepping at 0.25 == D/30 stepping at 1).
+GBL_WHEEL_NOTCH_WINDOWS <- 120
+GBL_WHEEL_NOTCH_MACOS   <- 30
+
 normalizeWheelDelta <- function(D) {
   raw <- suppressWarnings(as.numeric(D))
   if (is.na(raw)) return(0)
-  raw / 120
+  raw / if (.isMacOS()) GBL_WHEEL_NOTCH_MACOS else GBL_WHEEL_NOTCH_WINDOWS
 }
 
 shortcutLabel <- function(key) {

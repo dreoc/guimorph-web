@@ -3190,6 +3190,7 @@ TCL_CMD(setDot)
 		if (LANDMARK == showModel)
 		{
 			int selected = dot_select(&p, dotRadius * GBL_SELECT_TOLERANCE_FACTOR);
+#if defined(MAC_OSX_TK) || defined(__APPLE__)
 			if (0 != selected)
 			{
 				/*
@@ -3213,6 +3214,7 @@ TCL_CMD(setDot)
 					}
 				}
 			}
+#endif
 			if (0 != selected)
 			{
 				sprintf(buffer, "INFO : (landmark) No dot selected at %d %d", x, y);
@@ -3237,6 +3239,7 @@ TCL_CMD(setDot)
 		if (ANCHOR == showModel)
 		{
 			int selected = anchor_select(&p, anchorRadius * GBL_SELECT_TOLERANCE_FACTOR);
+#if defined(MAC_OSX_TK) || defined(__APPLE__)
 			if (0 != selected)
 			{
 				int ox, oy;
@@ -3256,6 +3259,7 @@ TCL_CMD(setDot)
 					}
 				}
 			}
+#endif
 			if (0 != selected)
 			{
 				sprintf(buffer, "INFO : No anchor selected at %d %d\n", x, y);
@@ -3280,6 +3284,7 @@ TCL_CMD(setDot)
 		if (CURVE == showModel)
 		{
 			int selected = dot_select(&p, dotRadius * GBL_SELECT_TOLERANCE_FACTOR);
+#if defined(MAC_OSX_TK) || defined(__APPLE__)
 			if (0 != selected)
 			{
 				int ox, oy;
@@ -3299,6 +3304,7 @@ TCL_CMD(setDot)
 					}
 				}
 			}
+#endif
 			if (0 != selected)
 			{
 				sprintf(buffer, "INFO : (curve) No dot selected at %d %d", x, y);
