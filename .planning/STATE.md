@@ -5,10 +5,10 @@ milestone_name: milestone
 current_phase: 05
 current_phase_name: retina-picking-input-fixes-digitizing-analysis-data-parity
 status: executing
-stopped_at: Phase 5 plans created
-last_updated: "2026-07-17T20:13:23.588Z"
-last_activity: 2026-07-17
-last_activity_desc: Phase 05 execution started
+stopped_at: Phase 5 Windows validation COMPLETE (criterion 5 verified 2026-07-18); Plan 05-04 open, blocked on DAT-03 bidirectional gate (needs Austin's Mac)
+last_updated: "2026-07-18T00:00:00Z"
+last_activity: 2026-07-18
+last_activity_desc: Phase 05 Windows validation passed on rebuilt DLL; GL context rebind fix (129b42a) verified against rgl; two out-of-milestone defects filed
 progress:
   total_phases: 6
   completed_phases: 4
@@ -32,7 +32,28 @@ Phase: 05 (retina-picking-input-fixes-digitizing-analysis-data-parity) — EXECU
 Next: Phase 04 Plan 03 — live first light: run a GUImorph() session, confirm GL_VERSION is legacy 2.1 (no Core Profile), render the tetrahedron smoke fixture then a real specimen (RND-04/D-08), and confirm the mesh fills the full Retina canvas (D-05 viewport).
 Status: Executing Phase 05
 Blocker: RESOLVED — the NSGL seam now creates a real legacy-2.1 NSOpenGLContext, presents via flushBuffer, and the deployed arm64 tkogl2.dylib loads in a fresh aqua R session. Empirical residue for Plan 03: layer-backed contentView setView: (A1/Pitfall 2) — child-NSView subview fallback is documented in-code and ready if the viewport is blank.
-Last activity: 2026-07-17 — Phase 05 execution started
+Last activity: 2026-07-18 — Phase 05 Windows validation PASSED
+
+## Phase 05 Windows validation (2026-07-18)
+
+Criterion 5 verified on the rebuilt Windows DLL. Wheel 1 step/notch, portrait canvas
+correct, 6-specimen `.dgt` round-trip with uniform 1000-point surfaces, 212 live
+picks / 0 failed across 3 rgl mean-shape plots and 5 GPA runs.
+
+Found and fixed in milestone: `gfx_make_current` was bound once at `setWindow` and
+never again, so rgl plots stole the GL context (black canvas, all picks rejected).
+`onDisplay` now rebinds per frame (`129b42a`). Prerequisite for Phase 6.
+
+Filed out of milestone: `defect-anchor-template-fixed-block.md` (template/downsample
+anchor mismatch silently corrupts surface semilandmarks) and
+`defect-pca-single-component.md` (PCA crashes on a single-component ordination).
+
+Remaining for Phase 5: DAT-03 bidirectional `.dgt` parity, needs Austin's Mac.
+Windows-side artifact `testdgt_6_phase5test.DGT` is ready to send.
+
+**Process note:** a rebuild whose `copy` step was skipped cost several debugging
+cycles. Verify the loaded binary after every rebuild with
+`tclvalue(tcl("add", "getCompileInformation", -1, 0, 0))`.
 
 Progress: [█████████░] Phase 04 Plan 02 of 3 done (9/10 plans, 90%); RND-03 context lifecycle wired + GL_VERSION guard, BLD-03 arm64 dylib rebuilt/deployed/loadable (universal2/signing deferred); live render confirmed in Plan 03
 

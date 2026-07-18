@@ -1,13 +1,53 @@
 ---
 title: "Windows rebuild + regression for Austin's Phase 4/5 merge (a98769a)"
-status: pending
+status: done
 priority: high
 resolves_phase: 5
 created: 2026-07-17
-updated: 2026-07-17
+updated: 2026-07-18
+resolved: 2026-07-18
 owner: eoc
 source_plan: "04/05 (Austin) merged at a98769a"
 ---
+
+## Resolution (2026-07-18) - windows-render-ok
+
+Windows validation PASSED on the rebuilt DLL. Criterion 5 met.
+
+**Process note that cost several cycles:** the rebuild was run but the `copy` to
+`inst/libs/x64/` was not, so the deployed engine stayed at the 2026-07-16 Phase 3
+build while three separate fixes were "tested". Timestamps caught it. After every
+rebuild, verify the loaded binary before trusting a result:
+
+```r
+tclvalue(tcl("add", "getCompileInformation", -1, 0, 0))
+```
+
+**The four unguarded changes, resolved:**
+
+1. **Wheel-zoom** - was 4 steps/notch on Windows. Fixed in `bfd7a3f`: the platform
+   notch is now the only platform constant (`/120` Windows, `/30` macOS) with the
+   residual threshold at 1. Verified: 1 notch = 1 step. macOS behaviour is
+   arithmetically identical to Austin's calibration.
+2. **Retina near-miss retry** - now `#if defined(MAC_OSX_TK) || defined(__APPLE__)`
+   at all three sites (landmark, anchor, curve). Windows no longer pays up to 24
+   re-renders on a missed pick.
+3. **Portrait ortho** - verified correct, no distortion or clipping.
+4. **`.dgt` write format** - round-trip verified. `testdgt_6_phase5test.DGT` reopens
+   with all 6 specimens and uniform surface counts (1000 each; `Surface=` offsets
+   evenly spaced at 26/1047/2068/3089/4110/5131). That file also passes the
+   anchor-defect hygiene screen, so it is a valid DAT-03 artifact.
+
+**One new defect found and fixed (in milestone):** `gfx_make_current` was called
+once at `setWindow` and never again, so any rgl plot (Plot Mean Shape / PCA / Plot
+Aligned Specimens) stole the GL context and left the canvas black with every pick
+failing. Fixed in `129b42a` by rebinding per frame in `onDisplay`. Verified: 3 rgl
+mean-shape plots and 5 GPA runs in one session, 212 live picks, 0 failed.
+
+**One new defect found, not fixed:** PCA crashes on a single-component ordination.
+Filed as `defect-pca-single-component.md` (out of milestone).
+
+**Still open:** DAT-03 bidirectional gate, which needs Austin's Mac.
 
 ## Why this exists
 

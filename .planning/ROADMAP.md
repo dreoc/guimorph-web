@@ -123,7 +123,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Fixed-landmark digitizing (place / drag-move / delete / undo / labels / colors / missing), anchors, curves, surface sliders, and tab gating all work on macOS — including right-click delete (aqua button 2/3 swap; `Button-2` + `Control-Button-1`) and wheel zoom/scroll (fixed `%D`/120 truncation) across every tab.
   3. File open/save dialogs work for `.ply`/`.dgt`/`.pts` (custom extensions selectable, no crash on odd extensions), ⌘ accelerators work alongside Ctrl, and GPA (`geomorph::gpagen`) with sliding, principal-axis alignment, and tangent-space options runs on macOS.
   4. `.dgt` save/load/merge and `.csv`/`.rds` export work on macOS, and `.dgt` files/exports are byte-compatible with Windows-authored files (endianness/serialization round-trip verified both directions).
-  5. Windows build still works: the full digitizing → GPA → export workflow runs unchanged on the Windows build.
+  5. Windows build still works: the full digitizing → GPA → export workflow runs unchanged on the Windows build. **VERIFIED 2026-07-18** — rebuilt Windows DLL: full workflow, 6-specimen `.dgt` round-trip (uniform 1000-point surfaces), wheel = 1 step/notch, portrait canvas correct, 212 live picks / 0 failed across 3 rgl plots. Required one new in-milestone fix, `gfx_make_current` per frame (`129b42a`).
 
 **Plans**: 3/4 plans executed
 **Wave 1**
@@ -142,7 +142,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] 05-04-PLAN.md — `.dgt` + export compatibility hardening and cross-platform byte-parity gate (DAT-01/02/03)
 
-**Note**: DAT-03 remains a blocking bidirectional parity gate requiring off-box Windows evidence (D-16 recurring checkpoint).
+**Note**: DAT-03 remains a blocking bidirectional parity gate requiring off-box Windows evidence (D-16 recurring checkpoint). Windows-side artifact is ready: `testdgt_6_phase5test.DGT` (6 specimens, uniform surface counts) is verified locally and can go to Austin as-is; the return leg needs a macOS-authored `.dgt` opened on Windows.
+
+**Note (GL context, `129b42a`)**: `gfx_make_current` was only ever called at `setWindow`. `wglMakeCurrent` and `-[NSOpenGLContext makeCurrentContext]` bind per *thread*, so any rgl plot on the R main thread silently unbound the engine's context: black canvas, every pick rejected, recoverable only by restarting GUImorph. `onDisplay` now rebinds per frame. This is a **prerequisite for Phase 6**, which puts rgl and the engine in the same process by design.
 
 ### Phase 6: rgl Result-Plot Fallback on macOS
 
