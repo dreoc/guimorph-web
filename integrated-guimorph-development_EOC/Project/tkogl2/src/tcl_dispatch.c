@@ -3637,6 +3637,26 @@ void onDisplay()
 	return;
 #endif
 
+	/*
+	 * Rebind our GL context before every frame.
+	 *
+	 * wglMakeCurrent (and -[NSOpenGLContext makeCurrentContext]) bind per
+	 * THREAD, not per window. Any other OpenGL client in this process that
+	 * makes its own context current silently unbinds ours. rgl is exactly
+	 * such a client: geomorph drives it for Plot Mean Shape, PCA and Plot
+	 * Aligned Specimens, all on the R main thread.
+	 *
+	 * Binding once in setWindow was therefore not enough. After any rgl plot,
+	 * every draw here landed in another context, leaving a black canvas, and
+	 * the depth read behind getSpecimenCoordinate returned 0,0,0 for every
+	 * pick. Nothing in the normal workflow calls setWindow again, so the only
+	 * recovery was restarting GUImorph.
+	 *
+	 * Rebinding an already-current context is cheap. getSpecimenCoordinate
+	 * calls onDisplay before it unprojects, so this covers picking too.
+	 */
+	gfx_make_current(g_surface);
+
 	//clean anything on screen
 	float dx = (float)width / height;
 	glViewport(0, 0, width, height);
