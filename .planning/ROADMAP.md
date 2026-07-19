@@ -157,8 +157,17 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Plot functions are audited so they do not rely on `select3d()` / `rgl.snapshot()` (unsupported in NULL mode), or those usages are replaced.
   3. Windows build still works: result plots render unchanged on the Windows build.
 
-**Plans**: TBD
-**Note**: Research flag: verify the `rglwidget` path is adequate and does not break `select3d`/snapshot usage in the three plot functions. This phase corrects PROJECT.md's stale "macOS renders rgl plots today" assumption.
+**Plans**: 2 plans
+
+**Wave 1**
+
+- [ ] 06-01-PLAN.md — ANL-02: add platform-guarded `.rgl_show()` helper (macOS `rglwidget()`→`saveWidget(selfcontained=FALSE)`→`browseURL()`→`close3d()`; Windows unchanged `rgl.bringtotop`) + `.isMacOS()`-guarded `options(rgl.useNULL=TRUE)` at startup, wire into `plotspecs`/`plotMeanShape`, promote `htmlwidgets` in DESCRIPTION, add `test-rgl-fallback-macos.R` (source-scan audit + headless widget smoke)
+
+**Wave 2** *(depends on 06-01)*
+
+- [ ] 06-02-PLAN.md — ANL-02/CMP-01: human-verify checkpoints — live macOS render of aligned-specimen + mean-shape widgets and PCA quartz window; off-box Windows result-plot regression
+
+**Note**: Research (06-RESEARCH.md, HIGH/verified live) resolved the flag: neither 3-D plot function uses `select3d`/`rgl.snapshot`/`snapshot3d`, so ANL-02 criterion 2 is already satisfied (the audit test keeps it true). `plotPCA` is base-graphics via quartz — it needs a live confirmation, not an `rglwidget` rewrite (ROADMAP's "PCA via rglwidget" framing is a mismatch). Only `plotspecs` and `plotMeanShape` get the widget fallback. No new package installs. This phase corrects PROJECT.md's stale "macOS renders rgl plots today" assumption.
 
 ## Progress
 
@@ -172,7 +181,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. Tri-Platform Build + Load + Drop GLUT | 1/1 | Complete (Windows verified; macOS `.dylib` build in Phase 4) | 2026-07-16 |
 | 4. macOS NSGL Backend — First Light | 3/3 | Complete    | 2026-07-17 |
 | 5. Retina Picking, Input & Parity | 4/4 | Complete    | 2026-07-19 |
-| 6. rgl Result-Plot Fallback | 0/TBD | Not started | - |
+| 6. rgl Result-Plot Fallback | 0/2 | Planned | - |
 
 ## Notes
 
