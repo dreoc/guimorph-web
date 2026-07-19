@@ -398,6 +398,10 @@ del <- function(shape, arg1 = -1, arg2 = -1, arg3 = -1)
 #' @export
 GUImorph <- function(debug = FALSE) {
   options(guimorph.debug = isTRUE(debug))
+  # macOS rgl has no OpenGL, so the interactive device is dead; switch rgl to the
+  # NULL device before any Results button can call open3d() (the option is read at
+  # open3d() time). Guarded to macOS so the Windows interactive window is unchanged.
+  if (.isMacOS()) options(rgl.useNULL = TRUE)
   e <- new.env()
   class(e) <- "main"
   ui(e)
@@ -827,6 +831,27 @@ bindDeleteGesture <- function(widget, handler) {
   if (.isMacOS()) {
     tkbind(widget, "<Button-2>", handler)
     tkbind(widget, "<Control-Button-1>", handler)
+  }
+}
+
+# Platform-guarded display for a freshly built 3-D rgl scene. Windows keeps the
+# interactive OpenGL window; macOS (where this rgl build has no OpenGL) captures
+# the NULL-device scene as a WebGL widget and opens it in the default browser.
+.rgl_show <- function() {
+  if (.isMacOS()) {
+    # NULL device on macOS -> render the current scene as a WebGL widget.
+    w <- rgl::rglwidget()
+    # Random temp name avoids symlink/clobber in the shared tempdir().
+    f <- tempfile(pattern = "guimorph-rgl-", fileext = ".html")
+    # selfcontained = FALSE is mandatory: pandoc is absent on the target box, so
+    # the TRUE default (used by print()/saveWidget) errors instead of writing.
+    htmlwidgets::saveWidget(w, f, selfcontained = FALSE)
+    # browseURL has no shell surface (unlike system("open ...")).
+    utils::browseURL(f)
+    # Free the NULL device so scenes don't accumulate across a session.
+    rgl::close3d()
+  } else {
+    rgl::rgl.bringtotop(stay = TRUE)
   }
 }
 
