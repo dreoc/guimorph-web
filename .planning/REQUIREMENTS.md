@@ -46,7 +46,7 @@
 ### Analysis Parity
 
 - [x] **ANL-01**: GPA (`geomorph::gpagen`) with sliding, principal-axis alignment, and tangent-space options runs on macOS
-- [ ] **ANL-02**: Result visualization (aligned specimens, PCA morphospace, mean shape) works on macOS via an rgl fallback (`rgl.useNULL`/`rglwidget`) since interactive XQuartz rgl is broken on current macOS
+- [x] **ANL-02**: Result visualization (aligned specimens, PCA morphospace, mean shape) works on macOS via an rgl fallback (`rgl.useNULL`/`rglwidget`) since interactive XQuartz rgl is broken on current macOS
 
 ### Data & Compatibility
 
@@ -94,7 +94,7 @@
 | DIG-04 | Phase 5 | Complete |
 | DIG-05 | Phase 5 | Complete |
 | ANL-01 | Phase 5 | Complete |
-| ANL-02 | Phase 6 | Pending |
+| ANL-02 | Phase 6 | Complete |
 | DAT-01 | Phase 5 | Complete |
 | DAT-02 | Phase 5 | Complete |
 | DAT-03 | Phase 5 | Complete |

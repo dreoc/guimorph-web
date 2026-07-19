@@ -5,16 +5,16 @@ milestone_name: milestone
 current_phase: 6
 current_phase_name: rgl Result-Plot Fallback on macOS
 status: executing
-stopped_at: Phase 5 COMPLETE (verification passed; DAT-03 macOS->Windows return leg owner-accepted, Erik confirmation tracked as open todo). Transitioned to Phase 6 (rgl result-plot fallback). Rebuilt arm64 dylib is deployed but UNCOMMITTED pending the universal2/signing decision.
-last_updated: "2026-07-19T04:46:10.431Z"
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-07-19T14:17:15.389Z"
 last_activity: 2026-07-19
-last_activity_desc: Phase 05 complete, transitioned to Phase 6
+last_activity_desc: "Phase 6 Plan 01 complete — macOS rgl result-plot fallback (.rgl_show helper + guarded rgl.useNULL); live render + Windows CMP-01 pending in Plan 02"
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 14
-  completed_plans: 14
-  percent: 83
+  total_plans: 16
+  completed_plans: 15
+  percent: 94
 ---
 
 # Project State
@@ -24,11 +24,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-12)
 
 **Core value:** A researcher can digitize a 3D specimen and feed the result straight into `geomorph` — the interactive digitizing viewport must render the mesh and place landmarks correctly.
-**Current focus:** Phase 05 — retina-picking-input-fixes-digitizing-analysis-data-parity
+**Current focus:** Phase 6 — rgl Result-Plot Fallback on macOS
 
 ## Current Position
 
-Phase: 6 — rgl Result-Plot Fallback on macOS
+Phase: 6 (rgl Result-Plot Fallback on macOS) — EXECUTING
 Next (in order):
 
   1. Pull `311b265` and rebuild + redeploy the macOS `tkogl2.dylib` (carries the three
@@ -40,11 +40,11 @@ Next (in order):
 
   3. DAT-03 return leg — author a `.dgt` on the Mac and send it to Erik to open on Windows. Closing
      both legs completes Plan 05-04 and Phase 5.
-Status: Ready to execute
+Status: Executing Phase 6
 Blocker: DAT-03 bidirectional `.dgt` parity gate (Plan 05-04, non-autonomous). Windows leg PASSED;
   macOS leg pending on this box. Hard prerequisite: pull 311b265 + rebuild dylib first (see Next #1) —
   running DAT-03 against the stale dylib would validate the wrong binary.
-Last activity: 2026-07-19 — Phase 05 complete, transitioned to Phase 6
+Last activity: 2026-07-19 — Phase 6 execution started
 
 ## Phase 05 Windows validation (2026-07-18)
 
@@ -173,6 +173,7 @@ Progress: [█████████░] Phase 05 plans 05-01/02/03 complete, 
 | Phase 04 P01 | 10min | 3 tasks | 8 files |
 | Phase 04 P02 | 4min | 3 tasks | 2 files |
 | Phase 05 P03 | 3 min | 2 tasks | 6 files |
+| Phase 06 P01 | 7 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -243,7 +244,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-18T22:00:00Z
-Stopped at: Phase 5 plans 05-01/02/03 executed + committed; 05-04 open at DAT-03. Reviewed Erik's Windows-validation report and synced STATE.
+Last session: 2026-07-19T14:17:15.380Z
+Stopped at: Completed 06-01-PLAN.md
 Next: On the Mac — (1) pull `311b265` + rebuild/redeploy `tkogl2.dylib`, verify loaded binary; (2) open `testdgt_6_phase5test.DGT` and confirm parity; (3) author a `.dgt` and send back. That closes Phase 5 → then Phase 6 (rgl result-plot fallback).
-Resume file: .planning/phases/05-retina-picking-input-fixes-digitizing-analysis-data-parity/05-CONTEXT.md
+Resume file: None

@@ -157,11 +157,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Plot functions are audited so they do not rely on `select3d()` / `rgl.snapshot()` (unsupported in NULL mode), or those usages are replaced.
   3. Windows build still works: result plots render unchanged on the Windows build.
 
-**Plans**: 2 plans
+**Plans**: 1/2 plans executed
 
 **Wave 1**
 
-- [ ] 06-01-PLAN.md — ANL-02: add platform-guarded `.rgl_show()` helper (macOS `rglwidget()`→`saveWidget(selfcontained=FALSE)`→`browseURL()`→`close3d()`; Windows unchanged `rgl.bringtotop`) + `.isMacOS()`-guarded `options(rgl.useNULL=TRUE)` at startup, wire into `plotspecs`/`plotMeanShape`, promote `htmlwidgets` in DESCRIPTION, add `test-rgl-fallback-macos.R` (source-scan audit + headless widget smoke)
+- [x] 06-01-PLAN.md — ANL-02: add platform-guarded `.rgl_show()` helper (macOS `rglwidget()`→`saveWidget(selfcontained=FALSE)`→`browseURL()`→`close3d()`; Windows unchanged `rgl.bringtotop`) + `.isMacOS()`-guarded `options(rgl.useNULL=TRUE)` at startup, wire into `plotspecs`/`plotMeanShape`, promote `htmlwidgets` in DESCRIPTION, add `test-rgl-fallback-macos.R` (source-scan audit + headless widget smoke)
 
 **Wave 2** *(depends on 06-01)*
 
@@ -181,7 +181,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. Tri-Platform Build + Load + Drop GLUT | 1/1 | Complete (Windows verified; macOS `.dylib` build in Phase 4) | 2026-07-16 |
 | 4. macOS NSGL Backend — First Light | 3/3 | Complete    | 2026-07-17 |
 | 5. Retina Picking, Input & Parity | 4/4 | Complete    | 2026-07-19 |
-| 6. rgl Result-Plot Fallback | 0/2 | Planned | - |
+| 6. rgl Result-Plot Fallback | 1/2 | In Progress|  |
 
 ## Notes
 
