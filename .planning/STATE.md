@@ -8,7 +8,7 @@ status: executing
 stopped_at: Phase 5 Windows validation COMPLETE (criterion 5 verified 2026-07-18); Plan 05-04 open, blocked on DAT-03 bidirectional gate (needs Austin's Mac)
 last_updated: "2026-07-18T00:00:00Z"
 last_activity: 2026-07-18
-last_activity_desc: Phase 05 Windows validation passed on rebuilt DLL; GL context rebind fix (129b42a) verified against rgl; two out-of-milestone defects filed
+last_activity_desc: Phase 05 Windows validation passed; three engine rendering bugs found and fixed (GL context rebind, curve redraw, sticky dot colour + unbound curve slice); two out-of-milestone defects filed
 progress:
   total_phases: 6
   completed_phases: 4
@@ -40,9 +40,44 @@ Criterion 5 verified on the rebuilt Windows DLL. Wheel 1 step/notch, portrait ca
 correct, 6-specimen `.dgt` round-trip with uniform 1000-point surfaces, 212 live
 picks / 0 failed across 3 rgl mean-shape plots and 5 GPA runs.
 
-Found and fixed in milestone: `gfx_make_current` was bound once at `setWindow` and
-never again, so rgl plots stole the GL context (black canvas, all picks rejected).
-`onDisplay` now rebinds per frame (`129b42a`). Prerequisite for Phase 6.
+### Engine rendering bugs found and fixed (all in milestone)
+
+Validation surfaced three pre-existing engine bugs. All were confirmed against the
+source and verified on screen; none were in the R layer, which was sending correct
+values throughout.
+
+1. **GL context bound once** (`129b42a`). `gfx_make_current` ran only at
+   `setWindow`. `wglMakeCurrent` and `makeCurrentContext` bind per *thread*, so any
+   rgl plot on the R main thread silently unbound the engine: black canvas, every
+   pick rejected, recoverable only by restarting GUImorph. `onDisplay` now rebinds
+   per frame. **Prerequisite for Phase 6**, which runs rgl alongside the engine by
+   design. Verified: 3 rgl plots and 5 GPA runs in one session, 212 live picks, 0
+   failed.
+
+2. **No redraw after state change** (`457895e`). `TCL_CMD_SHOW` ends with
+   `onDisplay()`; `TCL_CMD_ADD` and `setDot` do not. A new curve segment and its
+   recoloured landmarks stayed invisible until an unrelated redraw fired. Redraw
+   added at the end of the add-curve branch and after `dot_color`/`anchor_color`.
+
+3. **Sticky colour pointer + unbound curve slice** (`763ffca`). Two bugs behind the
+   remaining curve-tab symptoms:
+   - `drawDots()`/`drawAnchors()` declared their colour pointers outside the dot
+     loop and never reset them, so once a dot carried an explicit colour every
+     later dot inherited it. On segment (1,2,3) landmark 1 drew red, landmark 2 set
+     the pointer blue, and landmark 3 rendered blue despite receiving the
+     (-1,-1,-1) restore sentinel.
+   - `drawCurves()` read `get_curve_slice_id()` without binding it, unlike
+     `drawDots()`/`drawAnchors()` which call `dotSetArrayIndex(model_index)`. The
+     add-curve branch loops `curveSetArrayIndex(cc)` over every slice and exits on
+     the last one, so a redraw straight afterwards asked for the wrong specimen's
+     curve. Another instance of the recurring `models[0]` indexing family.
+
+   Verified 2026-07-18: three segments defined with no tab switch; landmarks 1/3/5
+   red, 2/4/6 large blue, all segments drawn immediately.
+
+**Lesson carried forward:** each of these looked like an R bug and was not. The R
+debug log (colour values, pick outcomes) ruled the R layer out in every case, and
+should be read before theorising about it.
 
 Filed out of milestone: `defect-anchor-template-fixed-block.md` (template/downsample
 anchor mismatch silently corrupts surface semilandmarks) and
