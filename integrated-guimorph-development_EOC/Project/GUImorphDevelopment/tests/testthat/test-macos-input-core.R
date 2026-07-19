@@ -1,11 +1,16 @@
 pkg_root <- normalizePath(file.path(testthat::test_path(), "..", ".."))
 
-test_that("normalizeWheelDelta preserves floating wheel input", {
+test_that("normalizeWheelDelta divides by the platform notch and preserves floats", {
   source(file.path(pkg_root, "R", "rtkogl.R"), local = TRUE)
 
-  expect_equal(normalizeWheelDelta(120), 1)
-  expect_equal(normalizeWheelDelta(-30), -0.25)
-  expect_equal(normalizeWheelDelta("15"), 0.125)
+  # One notch = one step on every platform; the notch size is the only
+  # platform-specific constant (Windows 120, macOS 30). Assert against the
+  # active platform's notch so the test is correct on both.
+  notch <- if (.isMacOS()) GBL_WHEEL_NOTCH_MACOS else GBL_WHEEL_NOTCH_WINDOWS
+
+  expect_equal(normalizeWheelDelta(120), 120 / notch)
+  expect_equal(normalizeWheelDelta(-30), -30 / notch)
+  expect_equal(normalizeWheelDelta("15"), 15 / notch)
   expect_equal(normalizeWheelDelta("bad"), 0)
 })
 

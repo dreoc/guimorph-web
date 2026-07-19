@@ -50,9 +50,9 @@
 
 ### Data & Compatibility
 
-- [ ] **DAT-01**: `.dgt` session save/load/merge and add-PLY work on macOS
-- [ ] **DAT-02**: `.csv` aligned-coordinate and `.rds` geomorph exports work on macOS
-- [ ] **DAT-03**: `.dgt` files and exports are byte-compatible between the Windows and macOS builds (endianness/serialization verified)
+- [x] **DAT-01**: `.dgt` session save/load/merge and add-PLY work on macOS
+- [x] **DAT-02**: `.csv` aligned-coordinate and `.rds` geomorph exports work on macOS
+- [x] **DAT-03**: `.dgt` files and exports are byte-compatible between the Windows and macOS builds (endianness/serialization verified)
 - [ ] **CMP-01**: The Windows build continues to work at every phase (each phase has a "Windows still works" checkpoint)
 
 ---
@@ -95,9 +95,9 @@
 | DIG-05 | Phase 5 | Complete |
 | ANL-01 | Phase 5 | Complete |
 | ANL-02 | Phase 6 | Pending |
-| DAT-01 | Phase 5 | Pending |
-| DAT-02 | Phase 5 | Pending |
-| DAT-03 | Phase 5 | Pending |
+| DAT-01 | Phase 5 | Complete |
+| DAT-02 | Phase 5 | Complete |
+| DAT-03 | Phase 5 | Complete |
 | CMP-01 | Phase 1 (recurs every phase) | Pending |
 
 **Coverage:** 26/26 v1 requirements mapped — no orphans, no duplicates. CMP-01 (Windows-regression checkpoint) is owned by Phase 1 for mapping but enforced as a "Windows build still works" success criterion in every phase.

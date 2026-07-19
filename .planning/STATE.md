@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 05
-current_phase_name: retina-picking-input-fixes-digitizing-analysis-data-parity
-status: verifying
-stopped_at: Phase 5 all 4 plans executed; verification = human_needed. Only open item: DAT-03 macOS->Windows return-leg confirmation from Erik (async). Phase held pending — run /gsd-verify-work 5 once Erik confirms.
-last_updated: "2026-07-18T23:10:00Z"
-last_activity: 2026-07-18
-last_activity_desc: Closed Plan 05-04 checkpoint (DAT-03 SUMMARY); ran Phase 5 verifier -> human_needed (13/14 verified, DAT-03 return leg pending Erik). Live macOS validation fixed stale dylib (curves), confirmed shared-curve model + result-plot segfault as Phase 6 scope
+current_phase: 6
+current_phase_name: rgl Result-Plot Fallback on macOS
+status: executing
+stopped_at: Phase 5 COMPLETE (verification passed; DAT-03 macOS->Windows return leg owner-accepted, Erik confirmation tracked as open todo). Transitioned to Phase 6 (rgl result-plot fallback). Rebuilt arm64 dylib is deployed but UNCOMMITTED pending the universal2/signing decision.
+last_updated: "2026-07-19T04:22:26.869Z"
+last_activity: 2026-07-19
+last_activity_desc: Phase 05 complete, transitioned to Phase 6
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 14
-  completed_plans: 13
-  percent: 67
+  completed_plans: 14
+  percent: 83
 ---
 
 # Project State
@@ -28,20 +28,23 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 
 ## Current Position
 
-Phase: 05 (retina-picking-input-fixes-digitizing-analysis-data-parity) — EXECUTING
+Phase: 6 — rgl Result-Plot Fallback on macOS
 Next (in order):
+
   1. Pull `311b265` and rebuild + redeploy the macOS `tkogl2.dylib` (carries the three
      engine fixes 129b42a/457895e/763ffca). Do this BEFORE any further macOS testing.
      Verify the loaded binary after copy: `tclvalue(tcl("add", "getCompileInformation", -1, 0, 0))`.
+
   2. DAT-03 macOS leg — open Erik's `testdgt_6_phase5test.DGT` (6 specimens, Windows-authored,
      uniform 1000-pt surfaces) on the Mac and confirm landmarks, anchors, curves, surfaces intact.
+
   3. DAT-03 return leg — author a `.dgt` on the Mac and send it to Erik to open on Windows. Closing
      both legs completes Plan 05-04 and Phase 5.
 Status: Executing Phase 05 (13/14 plans; only 05-04 DAT-03 macOS leg outstanding)
 Blocker: DAT-03 bidirectional `.dgt` parity gate (Plan 05-04, non-autonomous). Windows leg PASSED;
   macOS leg pending on this box. Hard prerequisite: pull 311b265 + rebuild dylib first (see Next #1) —
   running DAT-03 against the stale dylib would validate the wrong binary.
-Last activity: 2026-07-18 — Reviewed Erik's Windows-validation report; STATE synced
+Last activity: 2026-07-19 — Phase 05 complete, transitioned to Phase 6
 
 ## Phase 05 Windows validation (2026-07-18)
 
@@ -70,11 +73,13 @@ values throughout.
 
 3. **Sticky colour pointer + unbound curve slice** (`763ffca`). Two bugs behind the
    remaining curve-tab symptoms:
+
    - `drawDots()`/`drawAnchors()` declared their colour pointers outside the dot
      loop and never reset them, so once a dot carried an explicit colour every
      later dot inherited it. On segment (1,2,3) landmark 1 drew red, landmark 2 set
      the pointer blue, and landmark 3 rendered blue despite receiving the
      (-1,-1,-1) restore sentinel.
+
    - `drawCurves()` read `get_curve_slice_id()` without binding it, unlike
      `drawDots()`/`drawAnchors()` which call `dotSetArrayIndex(model_index)`. The
      add-curve branch loops `curveSetArrayIndex(cc)` over every slice and exits on
@@ -102,8 +107,10 @@ All handled on Erik's side; Austin's macOS feel is unchanged:
    Windows notch became four zoom steps. The platform notch is now the only platform
    constant (120 Windows / 30 macOS) with residual threshold 1. macOS is arithmetically
    identical: D/120 stepping at 0.25 == D/30 stepping at 1.
+
 2. **Retina near-miss retry** — now guarded to macOS at all three sites. Windows was
    paying up to 24 re-renders on a missed click.
+
 3. **Portrait ortho** — verified correct on Windows, left alone.
 4. **.dgt write format** — round-trips cleanly on Windows.
 
@@ -113,6 +120,7 @@ All handled on Erik's side; Austin's macOS feel is unchanged:
   (morphospace) crashed when the ordination retained a single component; fixed in
   `3dDigitize.geomorph.r::plotPCA` (`scores <- as.matrix(scores)` restores the m×1
   shape). Not a port issue — reproduced on Windows.
+
 - `defect-anchor-template-fixed-block.md` — **OPEN** (`severity: silent-data-corruption`).
   Template/downsample anchor mismatch silently corrupts surface semilandmarks when the
   two disagree on whether anchors sit in the fixed block. Pre-existing Windows behaviour,
@@ -123,6 +131,7 @@ All handled on Erik's side; Austin's macOS feel is unchanged:
 
 Windows leg PASSED. Erik is sending `testdgt_6_phase5test.DGT` (6 specimens,
 Windows-authored, uniform 1000-point surfaces). Two asks to close the phase:
+
   1. Confirm it opens correctly on macOS — landmarks, anchors, curves, surfaces intact.
   2. Author a `.dgt` on the Mac and send it back for Erik to open on Windows.
 
@@ -136,7 +145,7 @@ Progress: [█████████░] Phase 05 plans 05-01/02/03 complete, 
 
 **Velocity:**
 
-- Total plans completed: 10 (Phase 01: 5, Phase 02: 1, Phase 03: 1)
+- Total plans completed: 14 (Phase 01: 5, Phase 02: 1, Phase 03: 1)
 - Average duration: n/a (Phases 02–03 authored off-box, verified on Windows)
 - Total execution time: n/a
 
@@ -148,6 +157,7 @@ Progress: [█████████░] Phase 05 plans 05-01/02/03 complete, 
 | 02 | 1 | n/a (off-box) | n/a |
 | 03 | 1 | n/a (off-box) | n/a |
 | 04 | 3 | - | - |
+| 05 | 4 | - | - |
 
 **Recent Trend:**
 

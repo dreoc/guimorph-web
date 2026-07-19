@@ -1,14 +1,21 @@
 ---
 phase: 05-retina-picking-input-fixes-digitizing-analysis-data-parity
 verified: 2026-07-19T04:12:00Z
-status: human_needed
-score: 13/14 must-haves verified (1 partial pending human confirmation)
+status: passed
+score: 13/14 must-haves verified; DAT-03 return leg owner-accepted (async confirmation tracked)
 behavior_unverified: 0
-overrides_applied: 0
+overrides_applied: 1
+owner_accepted:
+  - item: "DAT-03 macOS→Windows return leg"
+    decision: "Owner accepted Phase 5 closure 2026-07-18 with the Mac-authored .dgt delivered to the maintainer; Erik's off-box Windows open/round-trip confirmation is an accepted-risk follow-up, NOT a blocker."
+    tracked_in: ".planning/todos/pending/dat-03-mac-to-windows-confirmation.md"
+resolved_warnings:
+  - "Stale wheel assertions in test-macos-input-core.R updated to divide by the active platform notch; suite now 8/8 PASS on macOS."
 human_verification:
   - test: "DAT-03 return leg — open the macOS-authored .dgt on the Windows build."
     expected: "The Mac-authored .dgt loads on Windows with landmarks, anchors, curves, and surfaces intact, and round-trips (Windows load → save) without byte-contract drift. If paired round-trip fixtures are produced, drop them in tests/fixtures/parity/ so test-dgt-cross-platform.R exercises the return leg instead of skipping."
     why_human: "Off-box, asynchronous confirmation on a Windows host by the maintainer (Erik). No macOS-side automated oracle can prove a Windows open. Tracked in .planning/todos/pending/dat-03-mac-to-windows-confirmation.md."
+    status: owner-accepted (async confirmation still outstanding)
 ---
 
 # Phase 5: Retina Picking, Input Fixes & Digitizing/Analysis/Data Parity — Verification Report

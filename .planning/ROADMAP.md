@@ -171,7 +171,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Pathname Drawable Resolution | 1/1 | Complete   | 2026-07-15 |
 | 3. Tri-Platform Build + Load + Drop GLUT | 1/1 | Complete (Windows verified; macOS `.dylib` build in Phase 4) | 2026-07-16 |
 | 4. macOS NSGL Backend — First Light | 3/3 | Complete    | 2026-07-17 |
-| 5. Retina Picking, Input & Parity | 4/4 | Complete   | 2026-07-19 |
+| 5. Retina Picking, Input & Parity | 4/4 | Complete    | 2026-07-19 |
 | 6. rgl Result-Plot Fallback | 0/TBD | Not started | - |
 
 ## Notes
