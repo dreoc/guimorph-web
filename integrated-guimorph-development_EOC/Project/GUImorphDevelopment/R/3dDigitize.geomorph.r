@@ -389,7 +389,7 @@ plotspecs <- function(e) {
   for (i in seq_len(n)) rgl::points3d(aligned[, , i], color = cols[i], size = ptcex * 3)
   rgl::points3d(consensus, color = "red", size = meancex * 4)
   rgl::aspect3d("iso")
-  rgl::rgl.bringtotop(stay = TRUE)
+  .rgl_show()
 }
 
 plotPCA <- function(e) {
@@ -477,5 +477,5 @@ plotMeanShape <- function(e) {
   if (wire) rgl::wire3d(mesh, color = "black") else rgl::shade3d(mesh, color = "lightgray")
   rgl::points3d(M, color = "red", size = 4)
   rgl::aspect3d("iso")
-  rgl::rgl.bringtotop(stay = TRUE)
+  .rgl_show()
 }

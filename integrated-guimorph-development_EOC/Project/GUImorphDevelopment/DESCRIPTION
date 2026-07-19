@@ -8,6 +8,7 @@ Maintainer: Erik Otarola-Castillo <eoc@purdue.edu>
 Description: GUI to R programs to digitize in 3D, conduct geometric morphomteric analyses and plotting results based on OpenGL and Tk widget
 Imports:
     rgl,
+    htmlwidgets,
     geomorph (>= 4.1.1),
     Morpho,
     parallel,      
