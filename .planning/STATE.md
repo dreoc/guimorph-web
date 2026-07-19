@@ -4,11 +4,11 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 05
 current_phase_name: retina-picking-input-fixes-digitizing-analysis-data-parity
-status: executing
-stopped_at: Phase 5 Windows validation COMPLETE (criterion 5 verified 2026-07-18); Plan 05-04 open, blocked on DAT-03 bidirectional gate (needs Austin's Mac)
-last_updated: "2026-07-18T00:00:00Z"
+status: verifying
+stopped_at: Phase 5 all 4 plans executed; verification = human_needed. Only open item: DAT-03 macOS->Windows return-leg confirmation from Erik (async). Phase held pending — run /gsd-verify-work 5 once Erik confirms.
+last_updated: "2026-07-18T23:10:00Z"
 last_activity: 2026-07-18
-last_activity_desc: Phase 05 Windows validation passed; three engine rendering bugs found and fixed (GL context rebind, curve redraw, sticky dot colour + unbound curve slice); two out-of-milestone defects filed
+last_activity_desc: Closed Plan 05-04 checkpoint (DAT-03 SUMMARY); ran Phase 5 verifier -> human_needed (13/14 verified, DAT-03 return leg pending Erik). Live macOS validation fixed stale dylib (curves), confirmed shared-curve model + result-plot segfault as Phase 6 scope
 progress:
   total_phases: 6
   completed_phases: 4
@@ -29,10 +29,19 @@ See: .planning/PROJECT.md (updated 2026-07-12)
 ## Current Position
 
 Phase: 05 (retina-picking-input-fixes-digitizing-analysis-data-parity) — EXECUTING
-Next: Phase 04 Plan 03 — live first light: run a GUImorph() session, confirm GL_VERSION is legacy 2.1 (no Core Profile), render the tetrahedron smoke fixture then a real specimen (RND-04/D-08), and confirm the mesh fills the full Retina canvas (D-05 viewport).
-Status: Executing Phase 05
-Blocker: RESOLVED — the NSGL seam now creates a real legacy-2.1 NSOpenGLContext, presents via flushBuffer, and the deployed arm64 tkogl2.dylib loads in a fresh aqua R session. Empirical residue for Plan 03: layer-backed contentView setView: (A1/Pitfall 2) — child-NSView subview fallback is documented in-code and ready if the viewport is blank.
-Last activity: 2026-07-18 — Phase 05 Windows validation PASSED
+Next (in order):
+  1. Pull `311b265` and rebuild + redeploy the macOS `tkogl2.dylib` (carries the three
+     engine fixes 129b42a/457895e/763ffca). Do this BEFORE any further macOS testing.
+     Verify the loaded binary after copy: `tclvalue(tcl("add", "getCompileInformation", -1, 0, 0))`.
+  2. DAT-03 macOS leg — open Erik's `testdgt_6_phase5test.DGT` (6 specimens, Windows-authored,
+     uniform 1000-pt surfaces) on the Mac and confirm landmarks, anchors, curves, surfaces intact.
+  3. DAT-03 return leg — author a `.dgt` on the Mac and send it to Erik to open on Windows. Closing
+     both legs completes Plan 05-04 and Phase 5.
+Status: Executing Phase 05 (13/14 plans; only 05-04 DAT-03 macOS leg outstanding)
+Blocker: DAT-03 bidirectional `.dgt` parity gate (Plan 05-04, non-autonomous). Windows leg PASSED;
+  macOS leg pending on this box. Hard prerequisite: pull 311b265 + rebuild dylib first (see Next #1) —
+  running DAT-03 against the stale dylib would validate the wrong binary.
+Last activity: 2026-07-18 — Reviewed Erik's Windows-validation report; STATE synced
 
 ## Phase 05 Windows validation (2026-07-18)
 
@@ -79,18 +88,49 @@ values throughout.
 debug log (colour values, pick outcomes) ruled the R layer out in every case, and
 should be read before theorising about it.
 
-Filed out of milestone: `defect-anchor-template-fixed-block.md` (template/downsample
-anchor mismatch silently corrupts surface semilandmarks) and
-`defect-pca-single-component.md` (PCA crashes on a single-component ordination).
+**Grep follow-up (from Erik):** the unbound-curve-slice bug is the `models[0]`
+indexing family again — grep for other functions that read a slice index (e.g.
+`get_curve_slice_id()`) without first binding it (`curveSetArrayIndex` /
+`dotSetArrayIndex`).
 
-Remaining for Phase 5: DAT-03 bidirectional `.dgt` parity, needs Austin's Mac.
-Windows-side artifact `testdgt_6_phase5test.DGT` is ready to send.
+### Four unguarded Austin changes had leaked onto Windows — all re-guarded (Erik)
+
+Four Phase 4/5 changes were platform-unguarded and had reached the Windows build.
+All handled on Erik's side; Austin's macOS feel is unchanged:
+
+1. **Wheel zoom** — `normalizeWheelDelta` divided by 120 on every platform, so one
+   Windows notch became four zoom steps. The platform notch is now the only platform
+   constant (120 Windows / 30 macOS) with residual threshold 1. macOS is arithmetically
+   identical: D/120 stepping at 0.25 == D/30 stepping at 1.
+2. **Retina near-miss retry** — now guarded to macOS at all three sites. Windows was
+   paying up to 24 re-renders on a missed click.
+3. **Portrait ortho** — verified correct on Windows, left alone.
+4. **.dgt write format** — round-trips cleanly on Windows.
+
+### Out-of-milestone defects (filed during validation)
+
+- `defect-pca-single-component.md` — **FIXED 2026-07-18** (`status: done`). PCA
+  (morphospace) crashed when the ordination retained a single component; fixed in
+  `3dDigitize.geomorph.r::plotPCA` (`scores <- as.matrix(scores)` restores the m×1
+  shape). Not a port issue — reproduced on Windows.
+- `defect-anchor-template-fixed-block.md` — **OPEN** (`severity: silent-data-corruption`).
+  Template/downsample anchor mismatch silently corrupts surface semilandmarks when the
+  two disagree on whether anchors sit in the fixed block. Pre-existing Windows behaviour,
+  not a port regression. **READ this file before touching that path.** Neither defect
+  blocks the milestone.
+
+### Remaining for Phase 5 — DAT-03 (needs both machines)
+
+Windows leg PASSED. Erik is sending `testdgt_6_phase5test.DGT` (6 specimens,
+Windows-authored, uniform 1000-point surfaces). Two asks to close the phase:
+  1. Confirm it opens correctly on macOS — landmarks, anchors, curves, surfaces intact.
+  2. Author a `.dgt` on the Mac and send it back for Erik to open on Windows.
 
 **Process note:** a rebuild whose `copy` step was skipped cost several debugging
 cycles. Verify the loaded binary after every rebuild with
 `tclvalue(tcl("add", "getCompileInformation", -1, 0, 0))`.
 
-Progress: [█████████░] Phase 04 Plan 02 of 3 done (9/10 plans, 90%); RND-03 context lifecycle wired + GL_VERSION guard, BLD-03 arm64 dylib rebuilt/deployed/loadable (universal2/signing deferred); live render confirmed in Plan 03
+Progress: [█████████░] Phase 05 plans 05-01/02/03 complete, 05-04 open (13/14 plans, 93%). Retina picking authority + macOS input normalization, dialog/shortcut parity, digitizing/anchor/curve/surface + GPA parity all landed and tested. Only DAT-03 macOS leg remains (blocked on 311b265 rebuild).
 
 ## Performance Metrics
 
@@ -166,14 +206,18 @@ Recent decisions affecting current work:
 - `phase-01-windows-validation.md` — RESOLVED 2026-07-16 (superseded). The Phase 03 Windows rebuild is strictly newer source that already contains the Phase 01 seam; its `windows-render-ok` render regression covers Plan 01-04's parity check.
 - `phase-02-windows-validation.md` — RESOLVED 2026-07-15 (windows-render-ok). Records the Windows build recipe: vendored Tk X11 shim + direct Tk-link mode via an import lib from R's tk86.dll.
 - `phase-03-windows-validation.md` — RESOLVED 2026-07-16 (windows-render-ok). Restructured CMake rebuilt tkogl2.dll clean; gluSphere dots + downsample markers + Windows labels render; 6-specimen .dgt loaded through the rewritten .onLoad. macOS .dylib build remains a separate Phase 4 check (no Mac host).
+- `phase-05-windows-validation.md` — Phase 5 Windows validation record (PASSED 2026-07-18; three engine bugs fixed, four unguarded changes re-guarded).
+- `defect-pca-single-component.md` — FIXED 2026-07-18 (out-of-milestone). PCA single-component ordination crash resolved in `plotPCA`.
+- `defect-anchor-template-fixed-block.md` — OPEN (out-of-milestone, silent-data-corruption). Template/downsample anchor-in-fixed-block mismatch corrupts surface semilandmarks. Read before touching that path.
 
 ### Blockers/Concerns
 
 [Issues that affect future work]
 
 - [Phase 1]: Deployment gate is the milestone's gating risk — the native path is dead unless R can run against Aqua (Cocoa) Tk (CRAN R ships X11 Tk; XQuartz GLX is broken on macOS Tahoe). Must be resolved before any GL code.
-- [Phase 5]: `.dgt` cross-platform byte compatibility (endianness/fixed-width) unverified — needs a Windows↔macOS round-trip test.
-- [Phase 6]: rgl `rglwidget` fallback must be checked against `select3d()`/`rgl.snapshot()` usage in the three plot functions.
+- [Phase 5]: `.dgt` cross-platform byte compatibility — Windows leg VERIFIED 2026-07-18; macOS leg (open Windows-authored `.dgt` + author one back) is the only DAT-03 work left. Requires pulling 311b265 + rebuilding the dylib first.
+- [Phase 5/6]: BLD-03 is still **arm64-only** — Intel Macs (x86_64/universal2) and Gatekeeper (signing/notarization/`xattr`) are unresolved. Open decision (Erik): does universal2 + distribution hardening belong in Phase 6, or in a dedicated release phase of its own? Not blocking Phase 5/6 functional work.
+- [Phase 6]: rgl `rglwidget` fallback must be checked against `select3d()`/`rgl.snapshot()` usage in the three plot functions. The GL-context-per-frame fix (`129b42a`) is a hard prerequisite — Phase 6 puts rgl and the engine in one process by design.
 - Phase 01 CMP-01: RESOLVED 2026-07-16 — Windows render parity is covered by the Phase 03 Windows rebuild (strictly newer source incl. the seam; renders unchanged). The recurring CMP-01 checkpoint now only has the macOS side outstanding (Phase 04+).
 
 ## Deferred Items
@@ -189,7 +233,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-17T20:13:03.018Z
-Stopped at: Phase 5 context gathered
-Next: Phase 04 (macos-nsgl-backend-first-light) — requires a macOS host for the first Mac build (BLD-01 macOS `.dylib`) and NSGL first light (RND-03/RND-04, BLD-03).
+Last session: 2026-07-18T22:00:00Z
+Stopped at: Phase 5 plans 05-01/02/03 executed + committed; 05-04 open at DAT-03. Reviewed Erik's Windows-validation report and synced STATE.
+Next: On the Mac — (1) pull `311b265` + rebuild/redeploy `tkogl2.dylib`, verify loaded binary; (2) open `testdgt_6_phase5test.DGT` and confirm parity; (3) author a `.dgt` and send back. That closes Phase 5 → then Phase 6 (rgl result-plot fallback).
 Resume file: .planning/phases/05-retina-picking-input-fixes-digitizing-analysis-data-parity/05-CONTEXT.md

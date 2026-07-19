@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Pathname-Based Tk Drawable Resolution** - Reach the native drawable by widget pathname through Tk stubs (verified on Windows 2026-07-15) (completed 2026-07-15)
 - [x] **Phase 3: Tri-Platform Build + Generalized Load + Drop GLUT** - CMake `.dylib` toolchain, extension-aware `.onLoad`, remove GLUT *(Windows verified 2026-07-16; macOS `.dylib` build in Phase 4)*
 - [x] **Phase 4: macOS NSGL Backend — First Light** - Render a PLY mesh in the embedded macOS viewport (universal2, distributable) (completed 2026-07-17)
-- [ ] **Phase 5: Retina Picking, Input Fixes & Digitizing/Analysis/Data Parity** - Pixel-accurate picking + macOS input + full workflow parity
+- [x] **Phase 5: Retina Picking, Input Fixes & Digitizing/Analysis/Data Parity** - Pixel-accurate picking + macOS input + full workflow parity (completed 2026-07-19)
 - [ ] **Phase 6: rgl Result-Plot Fallback on macOS** - GPA/PCA/mean-shape plots via rgl NULL/`rglwidget`
 
 ## Phase Details
@@ -125,7 +125,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. `.dgt` save/load/merge and `.csv`/`.rds` export work on macOS, and `.dgt` files/exports are byte-compatible with Windows-authored files (endianness/serialization round-trip verified both directions).
   5. Windows build still works: the full digitizing → GPA → export workflow runs unchanged on the Windows build. **VERIFIED 2026-07-18** — rebuilt Windows DLL: full workflow, 6-specimen `.dgt` round-trip (uniform 1000-point surfaces), wheel = 1 step/notch, portrait canvas correct, 212 live picks / 0 failed across 3 rgl plots. Required one new in-milestone fix, `gfx_make_current` per frame (`129b42a`).
 
-**Plans**: 3/4 plans executed
+**Plans**: 4/4 plans complete
 **Wave 1**
 
 - [x] 05-01-PLAN.md — Retina coordinate authority + core macOS input normalization (PICK-01/02/03)
@@ -140,7 +140,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 4** *(depends on 05-03)*
 
-- [ ] 05-04-PLAN.md — `.dgt` + export compatibility hardening and cross-platform byte-parity gate (DAT-01/02/03)
+- [x] 05-04-PLAN.md — `.dgt` + export compatibility hardening and cross-platform byte-parity gate (DAT-01/02/03)
 
 **Note**: DAT-03 remains a blocking bidirectional parity gate requiring off-box Windows evidence (D-16 recurring checkpoint). Windows-side artifact is ready: `testdgt_6_phase5test.DGT` (6 specimens, uniform surface counts) is verified locally and can go to Austin as-is; the return leg needs a macOS-authored `.dgt` opened on Windows.
 
@@ -171,7 +171,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Pathname Drawable Resolution | 1/1 | Complete   | 2026-07-15 |
 | 3. Tri-Platform Build + Load + Drop GLUT | 1/1 | Complete (Windows verified; macOS `.dylib` build in Phase 4) | 2026-07-16 |
 | 4. macOS NSGL Backend — First Light | 3/3 | Complete    | 2026-07-17 |
-| 5. Retina Picking, Input & Parity | 3/4 | In Progress|  |
+| 5. Retina Picking, Input & Parity | 4/4 | Complete   | 2026-07-19 |
 | 6. rgl Result-Plot Fallback | 0/TBD | Not started | - |
 
 ## Notes
