@@ -1,7 +1,7 @@
-# Developers to update this function
+# Version derives from DESCRIPTION; no manual update needed
 get_rtkogl_date <- function()
 {
-  dbg("GUImorph 0.9.0 - rtkogl")
+  .module_banner("rtkogl")
 }
 
 #calls tkogl2 add function / returns shape object and displays to canvas
@@ -790,6 +790,26 @@ set <- function(shape, attr, arg1, arg2, arg3)
 # gated debug printer: prints only when options(guimorph.debug=TRUE),
 # which GUImorph(debug=TRUE) sets. Preserves every debugging note.
 dbg <- function(...) if (isTRUE(getOption("guimorph.debug", FALSE))) print(...)
+
+# Package version, read from DESCRIPTION rather than written by hand.
+#
+# The per-module banners used to hardcode the version string, with a comment
+# asking developers to update them. They were missed at the 0.9.0 -> 0.9.1 bump,
+# so the startup banner (which reads DESCRIPTION) and the module banners (which
+# did not) disagreed. Deriving it removes that class of drift.
+#
+# topenv() resolves to this package namespace, so this also survives a package
+# rename with no further edits.
+.pkg_version <- function() {
+  nm <- environmentName(topenv(environment()))
+  tryCatch(as.character(utils::packageVersion(nm)), error = function(err) "unknown")
+}
+
+# Module load banner, e.g. "GUImorph 0.9.1 - curve".
+.module_banner <- function(module) {
+  dbg(paste0("GUImorph ", .pkg_version(), " - ", module))
+}
+
 
 .isMacOS <- function() {
   identical(tolower(Sys.info()[["sysname"]]), "darwin")

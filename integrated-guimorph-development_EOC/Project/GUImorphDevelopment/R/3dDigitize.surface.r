@@ -1,8 +1,8 @@
 
-# Developers to update this function
+# Version derives from DESCRIPTION; no manual update needed
 get_surface_date <- function()
 {
-  dbg("GUImorph 0.9.0 - surface")
+  .module_banner("surface")
 }
 
 ################# main data structure ##############################

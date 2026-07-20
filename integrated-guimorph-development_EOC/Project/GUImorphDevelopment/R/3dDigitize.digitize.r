@@ -1,7 +1,7 @@
-# Developers to update this function
+# Version derives from DESCRIPTION; no manual update needed
 get_digitize_date <- function()
 {
-  dbg("GUImorph 0.9.0 - digitize")
+  .module_banner("digitize")
 }
 
 

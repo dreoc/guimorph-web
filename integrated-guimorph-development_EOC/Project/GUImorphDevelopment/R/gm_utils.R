@@ -13,7 +13,7 @@
 # =====================================================================
 
 # startup module tag (debug banner only)
-get_geomorph_support_date <- function() dbg("GUImorph 0.9.0 - geomorph support")
+get_geomorph_support_date <- function() .module_banner("geomorph support")
 
 center <- function(x){
   if(is.vector(x)) x- mean(x) else {

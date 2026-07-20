@@ -1,8 +1,8 @@
 
-# Developers to update this function
+# Version derives from DESCRIPTION; no manual update needed
 get_curve_date <- function()
 {
-  dbg("GUImorph 0.9.0 - curve")
+  .module_banner("curve")
 }
 ################# main data structure ##############################
 #dgtDataList

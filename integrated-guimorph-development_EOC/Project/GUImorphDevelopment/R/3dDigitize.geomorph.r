@@ -1,7 +1,7 @@
 # Developers to update this function
 get_geomorph_date <- function()
 {
-  dbg("GUImorph 0.9.0 - geomorph")    # NO OTHER CHANGES MADE TO THIS FILE !
+  .module_banner("geomorph")    # NO OTHER CHANGES MADE TO THIS FILE !
   invisible(NULL)
 }
 
