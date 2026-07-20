@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Tri-Platform Build + Generalized Load + Drop GLUT** - CMake `.dylib` toolchain, extension-aware `.onLoad`, remove GLUT *(Windows verified 2026-07-16; macOS `.dylib` build in Phase 4)*
 - [x] **Phase 4: macOS NSGL Backend — First Light** - Render a PLY mesh in the embedded macOS viewport (universal2, distributable) (completed 2026-07-17)
 - [x] **Phase 5: Retina Picking, Input Fixes & Digitizing/Analysis/Data Parity** - Pixel-accurate picking + macOS input + full workflow parity (completed 2026-07-19)
-- [ ] **Phase 6: rgl Result-Plot Fallback on macOS** - GPA/PCA/mean-shape plots via rgl NULL/`rglwidget`
+- [x] **Phase 6: rgl Result-Plot Fallback on macOS** - GPA/PCA/mean-shape plots via rgl NULL/`rglwidget` (completed 2026-07-20)
 
 ## Phase Details
 
@@ -157,7 +157,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Plot functions are audited so they do not rely on `select3d()` / `rgl.snapshot()` (unsupported in NULL mode), or those usages are replaced.
   3. Windows build still works: result plots render unchanged on the Windows build.
 
-**Plans**: 1/2 plans executed
+**Plans**: 2/2 plans complete
 
 **Wave 1**
 
@@ -165,7 +165,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 **Wave 2** *(depends on 06-01)*
 
-- [ ] 06-02-PLAN.md — ANL-02/CMP-01: human-verify checkpoints — live macOS render of aligned-specimen + mean-shape widgets and PCA quartz window; off-box Windows result-plot regression
+- [x] 06-02-PLAN.md — ANL-02/CMP-01: human-verify checkpoints — live macOS render of aligned-specimen + mean-shape widgets and PCA quartz window; off-box Windows result-plot regression
 
 **Note**: Research (06-RESEARCH.md, HIGH/verified live) resolved the flag: neither 3-D plot function uses `select3d`/`rgl.snapshot`/`snapshot3d`, so ANL-02 criterion 2 is already satisfied (the audit test keeps it true). `plotPCA` is base-graphics via quartz — it needs a live confirmation, not an `rglwidget` rewrite (ROADMAP's "PCA via rglwidget" framing is a mismatch). Only `plotspecs` and `plotMeanShape` get the widget fallback. No new package installs. This phase corrects PROJECT.md's stale "macOS renders rgl plots today" assumption.
 
@@ -181,7 +181,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. Tri-Platform Build + Load + Drop GLUT | 1/1 | Complete (Windows verified; macOS `.dylib` build in Phase 4) | 2026-07-16 |
 | 4. macOS NSGL Backend — First Light | 3/3 | Complete    | 2026-07-17 |
 | 5. Retina Picking, Input & Parity | 4/4 | Complete    | 2026-07-19 |
-| 6. rgl Result-Plot Fallback | 1/2 | In Progress|  |
+| 6. rgl Result-Plot Fallback | 2/2 | Complete    | 2026-07-20 |
 
 ## Notes
 
