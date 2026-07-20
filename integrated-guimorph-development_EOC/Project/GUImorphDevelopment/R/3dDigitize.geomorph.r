@@ -437,18 +437,22 @@ plotPCA <- function(e) {
   ve    <- if (is.finite(total) && total > 0) round(100 * vv / total, 1) else rep(NA_real_, nPC)
   lab   <- function(i) if (is.na(ve[i])) paste0("PC", i) else paste0("PC", i, " (", ve[i], "%)")
 
-  grDevices::dev.new()
-  if (nPC >= 2) {
-    plot(scores[, 1], scores[, 2], pch = 19, col = cols, cex = 1.5,
-      xlab = lab(1), ylab = lab(2),
-      main = "Shape morphospace (PCA)")
-    text(scores[, 1], scores[, 2], labels = seq_len(m), pos = 3, cex = 0.9)
-  } else {
-    plot(scores[, 1], rep(0, m), pch = 19, col = cols, cex = 1.5, yaxt = "n", ylab = "",
-      xlab = lab(1),
-      main = paste0("Shape PCA (", m, " specimens: one axis)"))
-    text(scores[, 1], rep(0, m), labels = seq_len(m), pos = 3, cex = 0.9)
+  # macOS: render to a temp PNG + browser (no native quartz window to crash on
+  # close under Tk's Aqua run loop). Windows: unchanged interactive device.
+  draw <- function() {
+    if (nPC >= 2) {
+      plot(scores[, 1], scores[, 2], pch = 19, col = cols, cex = 1.5,
+        xlab = lab(1), ylab = lab(2),
+        main = "Shape morphospace (PCA)")
+      text(scores[, 1], scores[, 2], labels = seq_len(m), pos = 3, cex = 0.9)
+    } else {
+      plot(scores[, 1], rep(0, m), pch = 19, col = cols, cex = 1.5, yaxt = "n", ylab = "",
+        xlab = lab(1),
+        main = paste0("Shape PCA (", m, " specimens: one axis)"))
+      text(scores[, 1], rep(0, m), labels = seq_len(m), pos = 3, cex = 0.9)
+    }
   }
+  .plot_show(draw)
 }
 
 plotMeanShape <- function(e) {

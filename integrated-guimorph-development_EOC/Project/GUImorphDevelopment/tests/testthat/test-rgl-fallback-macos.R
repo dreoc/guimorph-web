@@ -72,6 +72,54 @@ test_that("plotPCA stays base-graphics (no rgl:: calls)", {
   expect_false(any(grepl("rgl::", plotpca_body, fixed = TRUE)))
 })
 
+test_that("plotPCA displays via .plot_show(), not a bare native device (crash-on-close fix)", {
+  digitize_file <- file.path(pkg_root, "R", "3dDigitize.geomorph.r")
+  src <- readLines(digitize_file, warn = FALSE)
+
+  plotpca_body <- .fn_body(src, "plotPCA")
+  # Routed through the platform-guarded helper...
+  expect_true(any(grepl(".plot_show(", plotpca_body, fixed = TRUE)))
+  # ...and no direct native-window open in the plot body (that call now lives
+  # only inside .plot_show's Windows branch). Closing a quartz window under Tk's
+  # Aqua run loop was the EXC_BAD_ACCESS on close.
+  expect_false(any(grepl("dev.new(", plotpca_body, fixed = TRUE)))
+})
+
+test_that(".plot_show() helper defines the macOS PNG+browser path and the Windows dev.new branch", {
+  rtkogl_file <- file.path(pkg_root, "R", "rtkogl.R")
+  src <- readLines(rtkogl_file, warn = FALSE)
+
+  expect_true(any(grepl("^.plot_show <- function", src)))
+
+  helper_body <- .fn_body(src, ".plot_show")
+  # macOS branch: temp PNG rendered off-screen, then opened in the browser.
+  expect_true(any(grepl(".isMacOS()", helper_body, fixed = TRUE)))
+  expect_true(any(grepl("png(", helper_body, fixed = TRUE)))
+  expect_true(any(grepl("browseURL", helper_body, fixed = TRUE)))
+  # Windows branch: unchanged interactive device (CMP-01).
+  expect_true(any(grepl("dev.new()", helper_body, fixed = TRUE)))
+})
+
+test_that(".plot_show() on macOS writes a PNG and opens it without a native window", {
+  # Exercise the macOS branch on any host: source locally so .plot_show resolves
+  # .isMacOS lexically in this frame, then override it to TRUE. Capture the open
+  # via the `browser` option (browseURL calls it when it is a function) so no
+  # real browser launches and no quartz window is created.
+  source(file.path(pkg_root, "R", "rtkogl.R"), local = TRUE)
+  .isMacOS <- function() TRUE
+
+  opened <- NULL
+  old <- options(browser = function(url, ...) { opened <<- url; invisible(TRUE) })
+  on.exit(options(old), add = TRUE)
+
+  .plot_show(function() plot(1:3, 1:3), width = 200, height = 150)
+
+  expect_false(is.null(opened))
+  expect_true(file.exists(opened))
+  expect_gt(file.info(opened)$size, 0)
+  expect_match(opened, "\\.png$")
+})
+
 test_that("NULL-mode rglwidget -> saveWidget(selfcontained = FALSE) writes a non-empty file", {
   skip_if_not_installed("rgl")
   skip_if_not_installed("htmlwidgets")

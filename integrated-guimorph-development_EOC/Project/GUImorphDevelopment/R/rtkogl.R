@@ -855,6 +855,28 @@ bindDeleteGesture <- function(widget, handler) {
   }
 }
 
+# Platform-guarded display for a base-graphics (2-D) plot (e.g. the PCA
+# morphospace). Windows keeps the interactive dev.new() window. macOS renders to
+# a temp PNG and opens it in the browser instead of a native quartz window: the
+# quartz window's close animation commits a Core Animation transaction on the
+# same main run loop Tk (Aqua) drives, and the two Cocoa clients over-release the
+# animation object during the autorelease-pool drain -> EXC_BAD_ACCESS on close.
+# Emitting a file and opening it externally (same pattern as .rgl_show) avoids
+# the in-process AppKit window entirely. `draw` is a zero-arg closure that issues
+# the plot() / text() calls.
+.plot_show <- function(draw, width = 800, height = 600) {
+  if (.isMacOS()) {
+    f <- tempfile(pattern = "guimorph-plot-", fileext = ".png")
+    grDevices::png(f, width = width, height = height)
+    ok <- FALSE
+    tryCatch({ draw(); ok <- TRUE }, finally = grDevices::dev.off())
+    if (ok) utils::browseURL(f)
+  } else {
+    grDevices::dev.new()
+    draw()
+  }
+}
+
 .onAttach <- function(libname, pkgname) {
   gmv <- tryCatch(as.character(utils::packageVersion("geomorph")), error = function(err) "not found")
   packageStartupMessage(
