@@ -631,37 +631,37 @@ int simpleLogWriteCurveToFile(curve_t* c)
 
 void simpleLogCurveInformation()
 {
-	sprintf(buffer, curveVersionPtr);
+	snprintf(buffer, sizeof(buffer), "%s", curveVersionPtr);
 	simpleLog(buffer);
 }
 void simpleLogDotInformation()
 {
-	sprintf(buffer, dotVersionPtr);
+	snprintf(buffer, sizeof(buffer), "%s", dotVersionPtr);
 	simpleLog(buffer);
 }
 void simpleLogOglModelInformation()
 {
-	sprintf(buffer, oglModelVersionPtr);
+	snprintf(buffer, sizeof(buffer), "%s", oglModelVersionPtr);
 	simpleLog(buffer);
 }
 void simpleLogOglModelPlyInformation()
 {
-	sprintf(buffer, oglModelPlyVersionPtr);
+	snprintf(buffer, sizeof(buffer), "%s", oglModelPlyVersionPtr);
 	simpleLog(buffer);
 }
 void simpleLogStatisticsInformation()
 {
-	sprintf(buffer, statisticsVersionPtr);
+	snprintf(buffer, sizeof(buffer), "%s", statisticsVersionPtr);
 	simpleLog(buffer);
 }
 void simpleLogTclIfInformation()
 {
-	sprintf(buffer, tcl_ifVersionPtr);
+	snprintf(buffer, sizeof(buffer), "%s", tcl_ifVersionPtr);
 	simpleLog(buffer);
 }
 void simpleLogOglInformation()
 {
-	sprintf(buffer, oglVersionPtr);
+	snprintf(buffer, sizeof(buffer), "%s", oglVersionPtr);
 	simpleLog(buffer);
 }
 

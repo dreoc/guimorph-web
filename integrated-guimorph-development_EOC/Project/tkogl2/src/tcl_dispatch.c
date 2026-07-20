@@ -815,11 +815,11 @@ TCL_CMD(add)
 	// (at least the open file actions)  then simply return 
 	if (strcmp(shape, "getCompileInformation") == 0)
 	{
-		sprintf(buffer, COMPILE_INFORMATION);
+		snprintf(buffer, sizeof(buffer), "%s", COMPILE_INFORMATION);
 		simpleLog(buffer);
 #ifdef CODE_FOR_LIBRARY 
 		char* msg = ALLOCATE_WRAPPER(512);
-		sprintf(msg, buffer);
+		snprintf(msg, 512, "%s", buffer);
 		Tcl_SetResult(interp, msg, TCL_DYNAMIC);
 #endif
 		return TCL_OK;
@@ -922,7 +922,7 @@ TCL_CMD(add)
 
 #ifdef CODE_FOR_LIBRARY 
 		char* msg = ALLOCATE_WRAPPER(512);
-		sprintf(msg, buffer);
+		snprintf(msg, 512, "%s", buffer);
 		Tcl_SetResult(interp, msg, TCL_DYNAMIC);
 #endif
 		return TCL_OK;
@@ -1582,7 +1582,7 @@ TCL_CMD(add)
 
 #ifdef CODE_FOR_LIBRARY 
 			char* msg = ALLOCATE_WRAPPER(512);
-			sprintf(msg, buffer);
+			snprintf(msg, 512, "%s", buffer);
 			Tcl_SetResult(interp, msg, TCL_DYNAMIC);
 			return TCL_OK; /// TCL_ERROR;
 #endif
