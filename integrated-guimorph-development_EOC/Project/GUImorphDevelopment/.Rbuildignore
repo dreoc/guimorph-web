@@ -3,4 +3,6 @@
 ^renv$
 ^renv\.lock$
 ^bak
+\.bak
+-bak$
 template.txt

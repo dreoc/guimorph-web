@@ -900,7 +900,7 @@ bindDeleteGesture <- function(widget, handler) {
 .onAttach <- function(libname, pkgname) {
   gmv <- tryCatch(as.character(utils::packageVersion("geomorph")), error = function(err) "not found")
   packageStartupMessage(
-    "GUImorph ", utils::packageVersion(pkgname), " (beta) - Windows only\n",
+    "GUImorph ", utils::packageVersion(pkgname), " (beta) - Windows and macOS\n",
     "3D geometric morphometric digitizing for the geomorph ecosystem.\n",
     "Using geomorph ", gmv, "\n",
     "Issues / updates: https://github.com/dreoc/GUImorph"
