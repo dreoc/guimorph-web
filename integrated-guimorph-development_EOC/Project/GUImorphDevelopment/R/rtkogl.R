@@ -394,7 +394,17 @@ del <- function(shape, arg1 = -1, arg2 = -1, arg3 = -1)
 
 
 
-#' GUImorph
+#' Launch the GUImorph digitizing interface
+#'
+#' Opens the GUImorph window for 3D geometric morphometric digitizing:
+#' landmarks, curve and surface semilandmarks, GPA, and export in a
+#' geomorph-compatible format.
+#'
+#' @param debug Logical. If \code{TRUE}, print diagnostic output to the
+#'   console while the interface runs.
+#'
+#' @return Invisibly \code{NULL}; called for its side effect of opening the
+#'   interface.
 #' @export
 GUImorph <- function(debug = FALSE) {
   options(guimorph.debug = isTRUE(debug))
