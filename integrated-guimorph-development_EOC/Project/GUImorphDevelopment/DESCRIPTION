@@ -22,6 +22,6 @@ Imports:
 Encoding: UTF-8
 License: GPL (>= 2)
 LazyData: true
-RoxygenNote: 7.1.1
 Suggests:
     testthat
+Config/roxygen2/version: 8.0.0
