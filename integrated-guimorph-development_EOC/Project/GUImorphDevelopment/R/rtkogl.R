@@ -434,7 +434,15 @@ GUImorph <- function(debug = FALSE) {
 # via the tcl_if functions
 #
 
-#' loadDGT
+#' Load a DGT session file
+#'
+#' Placeholder for reading a \code{.dgt} digitizing session. Not currently
+#' called by the interface; retained for a planned C implementation reached
+#' through the tcl_if functions.
+#'
+#' @param fileName Character. Path to the \code{.dgt} file to read.
+#'
+#' @return Invisibly \code{NULL}.
 #' @export
 loadDgt <- function(fileName)
 {

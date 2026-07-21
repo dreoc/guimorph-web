@@ -1,5 +1,9 @@
 pkg_root <- normalizePath(file.path(testthat::test_path(), "..", ".."))
 
+# These tests inspect package source text; skip when only an installed
+# package is available. See helper-pkg-source.R.
+skip_if_no_pkg_source()
+
 # Extract the source lines of a single top-level function definition (from its
 # `name <- function` line up to the line before the next top-level definition,
 # or end of file). Mirrors the source-scan style of test-macos-input-core.R so

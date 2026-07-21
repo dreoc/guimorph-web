@@ -151,6 +151,7 @@ test_that("doUndo curve_place reports segment reversal message", {
 
 
 test_that("onSelectCurve uses inline duplicate landmark warning", {
+  skip_if_no_pkg_source()
   curveFile <- normalizePath(
     file.path(testthat::test_path(), "..", "..", "R", "3dDigitize.curve.r"),
     mustWork = TRUE

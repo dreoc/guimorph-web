@@ -1,5 +1,9 @@
 pkg_root <- normalizePath(file.path(testthat::test_path(), "..", ".."))
 
+# These tests inspect package source text; skip when only an installed
+# package is available. See helper-pkg-source.R.
+skip_if_no_pkg_source()
+
 .byte_signature <- function(path) {
   raw <- readBin(path, what = "raw", n = file.info(path)$size)
   tf <- tempfile(fileext = ".bin")
