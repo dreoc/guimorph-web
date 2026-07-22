@@ -151,10 +151,39 @@ if(WIN32)
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/glut_shim
     )
 elseif(APPLE)
-    # macOS Tcl/Tk prefix (Homebrew tcl-tk by default on Apple Silicon; use
-    # /usr/local/opt/tcl-tk on Intel, or pass -DTKOGL2_MACOS_TCLTK_PREFIX=...).
-    set(TKOGL2_MACOS_TCLTK_PREFIX "/opt/homebrew/opt/tcl-tk"
-        CACHE PATH "macOS Tcl/Tk install prefix (contains include/ and lib/)")
+    # macOS Tcl/Tk prefix. Default is empty so resolution only runs when the user
+    # did NOT pass -DTKOGL2_MACOS_TCLTK_PREFIX=<path>. An explicit flag is the
+    # first-choice prefix and short-circuits every Homebrew probe below (BLD-06).
+    set(TKOGL2_MACOS_TCLTK_PREFIX ""
+        CACHE PATH "macOS Tcl/Tk install prefix; auto-detected when empty (contains include/ and lib/)")
+    if(NOT TKOGL2_MACOS_TCLTK_PREFIX)
+        # Homebrew-optional resolution. Runs ONLY when the flag was not passed.
+        # Priority (stop at first hit):
+        #   (1) $HOMEBREW_PREFIX/opt/tcl-tk when the env var is set and the path exists,
+        #   (2) a `brew --prefix tcl-tk` probe, but ONLY if brew is on PATH,
+        #   (3) the static Apple-Silicon default /opt/homebrew/opt/tcl-tk.
+        # A missing brew must NOT abort configuration -- it falls through to (3).
+        if(DEFINED ENV{HOMEBREW_PREFIX} AND EXISTS "$ENV{HOMEBREW_PREFIX}/opt/tcl-tk")
+            set(TKOGL2_MACOS_TCLTK_PREFIX "$ENV{HOMEBREW_PREFIX}/opt/tcl-tk")
+        else()
+            find_program(TKOGL2_BREW brew)
+            if(TKOGL2_BREW)
+                execute_process(
+                    COMMAND ${TKOGL2_BREW} --prefix tcl-tk
+                    OUTPUT_VARIABLE _tkogl2_brew_prefix
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+                    RESULT_VARIABLE _tkogl2_brew_result)
+                if(_tkogl2_brew_result EQUAL 0 AND _tkogl2_brew_prefix)
+                    set(TKOGL2_MACOS_TCLTK_PREFIX "${_tkogl2_brew_prefix}")
+                endif()
+            endif()
+        endif()
+        if(NOT TKOGL2_MACOS_TCLTK_PREFIX)
+            # Static fallback (Apple Silicon Homebrew default). Intel Macs / non-brew
+            # installs should pass -DTKOGL2_MACOS_TCLTK_PREFIX=<path> explicitly.
+            set(TKOGL2_MACOS_TCLTK_PREFIX "/opt/homebrew/opt/tcl-tk")
+        endif()
+    endif()
     # Homebrew tcl-tk 9.x nests tcl.h/tk.h under include/tcl-tk/ (8.6 kept them at
     # include/). List both so <tk.h> resolves to the Aqua Tk headers instead of the
     # macOS SDK's X11-linked tk.h (which #includes <X11/Xlib.h> and fails to build).
