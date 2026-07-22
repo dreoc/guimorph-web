@@ -1,5 +1,5 @@
-#include <tcl-tk/tcl.h>
-#include <tcl-tk/tk.h>
+#include <tcl.h>
+#include <tk.h>
 
 static int GateWinsysCmd(
     ClientData clientData,
