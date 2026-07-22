@@ -246,10 +246,14 @@ elseif(APPLE)
         PATHS ${TKOGL2_MACOS_TCLTK_PREFIX}/lib NO_DEFAULT_PATH)
 
     if(NOT TKOGL2_MAC_TCLSTUB OR NOT TKOGL2_MAC_TKSTUB)
+        # Single actionable failure (BLD-06): no versioned Tcl/Tk stub lib
+        # (tclstub*/tkstub*) was found under the searched prefix. Name the prefix
+        # that was searched and the override flag literally so the fix is obvious.
         message(FATAL_ERROR
-            "tkogl2: could not find Tcl/Tk stub libs under "
-            "${TKOGL2_MACOS_TCLTK_PREFIX}/lib. Install Tcl/Tk (brew install tcl-tk) "
-            "and pass -DTKOGL2_MACOS_TCLTK_PREFIX=$(brew --prefix tcl-tk).")
+            "tkogl2: no Tcl/Tk stub libraries were found under "
+            "${TKOGL2_MACOS_TCLTK_PREFIX}/lib. Install Tcl/Tk (e.g. brew install tcl-tk) "
+            "and/or pass -DTKOGL2_MACOS_TCLTK_PREFIX=<path-to-tcl-tk> "
+            "(for Homebrew: -DTKOGL2_MACOS_TCLTK_PREFIX=$(brew --prefix tcl-tk)).")
     endif()
 
     target_link_libraries(tkogl2 PRIVATE
