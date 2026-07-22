@@ -29,7 +29,19 @@ resolve_dylib <- function(user_arg = NULL) {
 library(tcltk)
 
 winsys <- tclvalue(.Tcl("tk windowingsystem"))
-stopifnot(identical(winsys, "aqua"))
+if (!identical(winsys, "aqua")) {
+  message(sprintf(
+    paste0(
+      "gate_check: FAIL - `tk windowingsystem` returned \"%s\", expected \"aqua\".\n",
+      "GUImorph requires an R session linked against an Aqua (Cocoa) Tk, not\n",
+      "X11/XQuartz. The interactive OpenGL digitizing viewport cannot embed into\n",
+      "an X11 Tk window.\n",
+      "See docs/AQUA-TK-SETUP.md for how to obtain an Aqua-Tk R session on macOS."
+    ),
+    winsys
+  ))
+  quit(save = "no", status = 1)
+}
 
 dylib_path <- resolve_dylib(args[[1]] %||% NULL)
 tcl("load", dylib_path, "Gateext")
