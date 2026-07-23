@@ -1,8 +1,8 @@
 # =====================================================================
-#  gm_utils.R -- small geometric-morphometric helpers used by GUImorph's
+#  gm_utils.R -- small geometric-morphometric helpers used by GUImorphWeb's
 #  surface / TPS / plotting code.
 #
-#  GUImorph calls live geomorph (>= 4.1.1) for all analysis (gpagen,
+#  GUImorphWeb calls live geomorph (>= 4.1.1) for all analysis (gpagen,
 #  gm.prcomp, two.d.array). These few generic utilities are all that
 #  remained in use from the former vendored copy (geomorph.support.code.r),
 #  which has been retired.

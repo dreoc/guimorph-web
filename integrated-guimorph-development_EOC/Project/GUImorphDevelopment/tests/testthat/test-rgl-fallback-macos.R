@@ -58,11 +58,11 @@ test_that(".rgl_show() helper defines the macOS widget path and the Windows bran
   expect_true(any(grepl("rgl.bringtotop", helper_body, fixed = TRUE)))
 })
 
-test_that("options(rgl.useNULL = TRUE) is .isMacOS()-guarded at GUImorph() startup", {
+test_that("options(rgl.useNULL = TRUE) is .isMacOS()-guarded at GUImorphWeb() startup", {
   rtkogl_file <- file.path(pkg_root, "R", "rtkogl.R")
   src <- readLines(rtkogl_file, warn = FALSE)
 
-  guimorph_body <- .fn_body(src, "GUImorph")
+  guimorph_body <- .fn_body(src, "GUImorphWeb")
   guard_line <- grepl("rgl.useNULL = TRUE", guimorph_body, fixed = TRUE) &
     grepl(".isMacOS()", guimorph_body, fixed = TRUE)
   expect_true(any(guard_line))

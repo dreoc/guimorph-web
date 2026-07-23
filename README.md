@@ -1,18 +1,52 @@
-# GUImorph
+# GUImorphWeb
 
-GUImorph is an R package with a graphical user interface for **3D geometric morphometrics** — load PLY mesh specimens, digitize landmarks, curves, and anchors, then run `geomorph` analyses and export coordinates.
+GUImorphWeb is an R package with a graphical user interface for **3D geometric morphometrics** — load PLY mesh specimens, digitize landmarks, curves, and anchors, then run `geomorph` analyses and export coordinates.
 
-**Platform:** **Windows only.** The GUI requires Windows R 4.6+ and a native OpenGL DLL (`tkogl2.dll`). Linux and macOS are not supported in this beta (v0.9.0).
+> **Current state.** This repository was split from
+> [GUImorph](https://github.com/dreoc/GUImorph) on 2026-07-22 to build a browser
+> rendering path. **No browser code has landed yet.** What runs today is the
+> native OpenGL engine inherited from GUImorph, documented below. The browser
+> migration is a six-phase milestone tracked in `.planning/ROADMAP.md`. Until
+> Phase 6, the native engine is retained deliberately, because Phase 4 needs it
+> as a picking-accuracy reference.
+>
+> GUImorph's native macOS work continues on its own track and is not duplicated
+> here.
 
-## Why GUImorph
+**Platform:** Windows and macOS (arm64). The native GUI requires R 4.6+ and a
+platform OpenGL library (`tkogl2.dll` / `tkogl2.dylib`). Linux is not supported
+by the native engine; the browser path in this milestone makes it nearly free,
+but it is not scoped or tested.
 
-As of **geomorph 4.1**, the interactive 3D digitizing functions (`digit.fixed`, `digitsurface`, `buildtemplate`) are **deprecated** — rgl/OpenGL is no longer supported on current macOS. GUImorph is an rgl-independent, `geomorph`-native digitizer that keeps that template-based surface-semilandmark workflow available and feeds results straight into `geomorph`.
+## Why GUImorphWeb
+
+As of **geomorph 4.1**, the interactive 3D digitizing functions (`digit.fixed`,
+`digitsurface`, `buildtemplate`) are **deprecated**, because rgl and OpenGL are no
+longer supported on current macOS. GUImorph answered that by writing its own
+native OpenGL engine. That works, and it is what ships here today.
+
+It also inherits the problem it was built to escape. Apple retired OpenGL in
+10.14 and has removed more of it in every release since. On current macOS `rgl`
+cannot load at all, and because it sits in `Imports`, it takes the whole package
+down with it. Maintaining a native GL engine across two platforms costs a
+tri-platform CMake build, MSVC and Rtools, two windowing backends, Tcl/Tk version
+matching, and a signing and notarization pipeline.
+
+GUImorphWeb moves rendering and interaction to a browser surface driven from R.
+R keeps file I/O, downsampling, template warping, GPA, and export. A local
+`httpuv` server serves mesh bytes over loopback, three.js renders them, and
+`three-mesh-bvh` accelerates picking. Nothing is fetched at runtime, so it still
+works offline with nothing separate to install. `StereoMorph` already does
+browser-based 2D digitizing inside R for this same user base, so the pattern is
+established.
+
+The `.dgt` format and every R analytical path carry over unchanged.
 
 ---
 
-## Running GUImorph (end users)
+## Running GUImorphWeb (end users)
 
-You do **not** need to compile anything to run GUImorph. The repository ships a prebuilt `tkogl2.dll` under the package `inst/libs/x64/` directory.
+You do **not** need to compile anything to run the native engine. The repository ships a prebuilt `tkogl2.dll` under the package `inst/libs/x64/` directory, inherited from GUImorph.
 
 ### Prerequisites
 
@@ -27,14 +61,14 @@ Restart your terminal after installing R so `R` is on `PATH`.
 ### Option A — Clone and run (recommended)
 
 ```powershell
-git clone https://github.com/dreoc/GUImorph.git C:\dev\GUImorph
-cd C:\dev\GUImorph
+git clone https://github.com/dreoc/guimorph-web.git C:\dev\guimorph-web
+cd C:\dev\guimorph-web
 ```
 
 Open **R** (or RStudio) and run:
 
 ```r
-pkg <- "C:/dev/GUImorph/integrated-guimorph-development_EOC/Project/GUImorphDevelopment"
+pkg <- "C:/dev/guimorph-web/integrated-guimorph-development_EOC/Project/GUImorphDevelopment"
 setwd(pkg)
 
 if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
@@ -42,7 +76,7 @@ renv::restore()
 
 if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
 devtools::load_all(".")
-GUImorph()
+GUImorphWeb()
 ```
 
 ### Option B — Install from GitHub
@@ -51,13 +85,13 @@ GUImorph()
 if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")
 
 remotes::install_github(
-  "dreoc/GUImorph",
+  "dreoc/guimorph-web",
   subdir = "integrated-guimorph-development_EOC/Project/GUImorphDevelopment",
   upgrade = "never"
 )
 
-library(GUImorph)
-GUImorph()
+library(GUImorphWeb)
+GUImorphWeb()
 ```
 
 After `install_github`, you may still need to run `renv::restore()` from the installed package source directory if dependency versions mismatch — Option A is more predictable for first-time setup.
@@ -65,13 +99,13 @@ After `install_github`, you may still need to run `renv::restore()` from the ins
 ### First launch checklist
 
 1. A startup banner shows the version; no `loading tkogl2 failed` warning.
-   The console is quiet by default — run `GUImorph(debug = TRUE)` for verbose diagnostics.
-2. The **3D GUImorph** window opens.
+   The console is quiet by default — run `GUImorphWeb(debug = TRUE)` for verbose diagnostics.
+2. The digitizing window opens.
 3. Load a `.ply` specimen — the mesh renders (not blank/black).
 
 ---
 
-## Using GUImorph
+## Using GUImorphWeb
 
 The window has a 3D viewport on the left and a set of tabs on the right:
 **3D Digitizing**, **Anchors**, **Surface Sliders**, **Curves**, and **GPA**.
@@ -153,7 +187,7 @@ A typical end-to-end session looks like this:
 
 ## Known quirks
 
-These are inherent GUImorph behaviors that can look like bugs:
+These are inherent GUImorphWeb behaviors that can look like bugs:
 
 - **Tabs are disabled until prerequisites are met.** Only the **3D Digitizing**
   tab is active at startup. **Surface Sliders**, **Curves**, and **GPA** unlock once
@@ -173,10 +207,12 @@ These are inherent GUImorph behaviors that can look like bugs:
 - **GPA order matters:** **Plot Aligned Specimens** and **Save Result** require a
   successful **Compute** first (otherwise you'll see "Run Compute first").
 - **GPA plots** open in a separate `rgl` window; if it opens behind the Tk
-  window, use **Alt+Tab** to bring it forward.
+  window, use **Alt+Tab** to bring it forward. On current macOS `rgl` may fail
+  to load entirely. Phase 1 of the browser milestone replaces these plots with a
+  three.js widget and makes `rgl` optional.
 - **Load ply** prompt is titled "Select Images to Digitize" and accepts multiple
   files — selecting several creates a specimen set, navigated with Previous/Next.
 
 ---
 
-*GUImorph 0.9.0 (beta) — Windows R 4.6+, MSVC-built `tkogl2.dll`, modular C engine.*
+*GUImorphWeb 0.10.0. Native engine inherited from GUImorph, Windows and macOS arm64. Browser rendering path not yet implemented; see `.planning/ROADMAP.md`.*

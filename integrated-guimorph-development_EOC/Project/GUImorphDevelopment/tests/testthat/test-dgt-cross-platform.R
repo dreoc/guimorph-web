@@ -35,7 +35,7 @@ test_that("dgt writer output matches parity fixture", {
   # R CMD check only tests/ is copied to the check directory, so system.file() is
   # the only path that resolves there; the source-tree fallback covers
   # devtools::test() against an uninstalled tree.
-  fixture <- system.file("extdata", "folsom3d.dgt", package = "GUImorph")
+  fixture <- system.file("extdata", "folsom3d.dgt", package = "GUImorphWeb")
   if (!nzchar(fixture)) {
     fixture <- file.path(pkg_root, "inst", "extdata", "folsom3d.dgt")
   }

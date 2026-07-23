@@ -1,4 +1,4 @@
-Package: GUImorph
+Package: GUImorphWeb
 Type: Package
 Title: Graphical User Interface for Morphometrics
 Version: 0.10.0

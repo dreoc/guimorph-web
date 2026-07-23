@@ -6,9 +6,9 @@ get_main_date <- function()
 }
 
 
-#' @name GUImorph-package
+#' @name GUImorphWeb-package
 #' @docType package
-#' @aliases GUImorph-package
+#' @aliases GUImorphWeb-package
 #' @title Graphical User Interface for Morphometrics
 #' @author Erik Otarola-Castillo
 #'
@@ -71,7 +71,7 @@ configureGuimorphCenterStyles <- function() {
     y <- max(0L, (sh - wh) %/% 2L)
     tkwm.geometry(wnd, paste0(ww, "x", wh, "+", x, "+", y))
   }, error = function(err) {
-    message("GUImorph: window centering skipped: ", conditionMessage(err))
+    message("GUImorphWeb: window centering skipped: ", conditionMessage(err))
   })
 }
 
@@ -646,13 +646,13 @@ ui.main <- function(e)
 {
   #$nb tab $tab -state disabled
   e$wnd <- tktoplevel(width = 1400, height = 1200)
-  tktitle(e$wnd) <- "GUImorph - 3D Morphometrics"
+  tktitle(e$wnd) <- "GUImorphWeb - 3D Morphometrics"
 
   tryCatch(
     tcl("ttk::style", "theme", "use", GUIMORPH_THEME),
     error = function(err) {
       message(
-        "GUImorph: theme '", GUIMORPH_THEME,
+        "GUImorphWeb: theme '", GUIMORPH_THEME,
         "' unavailable; using Tk default"
       )
     }
@@ -881,7 +881,7 @@ showShortcutsDialog <- function(e)
     title = "Extension warning",
     message = paste0(
       action_label, " selected a .", ext, " file.\n",
-      "GUImorph will still try to process it and validate file contents."
+      "GUImorphWeb will still try to process it and validate file contents."
     ),
     icon = "warning",
     type = "ok"
@@ -3349,7 +3349,7 @@ addPly <- function(e)
   list(path = path, header = header, chunks = chunks)
 }
 
-# Curve/Template blocks compared as RAW TEXT (GUImorph copies them verbatim,
+# Curve/Template blocks compared as RAW TEXT (GUImorphWeb copies them verbatim,
 # and the template's first data row is a non-numeric header "V1" "V2" "V3").
 .mdgt_rawLines <- function(header, start, n) {
   if (n <= 0) return(character(0))

@@ -394,9 +394,9 @@ del <- function(shape, arg1 = -1, arg2 = -1, arg3 = -1)
 
 
 
-#' Launch the GUImorph digitizing interface
+#' Launch the GUImorphWeb digitizing interface
 #'
-#' Opens the GUImorph window for 3D geometric morphometric digitizing:
+#' Opens the GUImorphWeb window for 3D geometric morphometric digitizing:
 #' landmarks, curve and surface semilandmarks, GPA, and export in a
 #' geomorph-compatible format.
 #'
@@ -406,7 +406,7 @@ del <- function(shape, arg1 = -1, arg2 = -1, arg3 = -1)
 #' @return Invisibly \code{NULL}; called for its side effect of opening the
 #'   interface.
 #' @export
-GUImorph <- function(debug = FALSE) {
+GUImorphWeb <- function(debug = FALSE) {
   options(guimorph.debug = isTRUE(debug))
   # macOS rgl has no OpenGL, so the interactive device is dead; switch rgl to the
   # NULL device before any Results button can call open3d() (the option is read at
@@ -533,7 +533,7 @@ loadDgt <- function(fileName)
     # BLD-02: fail loudly and specifically. Without the engine there is no 3D
     # viewport at all, so a quiet warning would leave the user with a silently
     # dead GUI and a Windows-only hint. Abort with an accurate, actionable message.
-    stop("GUImorph: the tkogl2 rendering engine was not found in the installed ",
+    stop("GUImorphWeb: the tkogl2 rendering engine was not found in the installed ",
          "package. Looked for '", chname, "' with extension(s) ",
          paste(exts, collapse = " / "), " under libs/",
          paste(c(archs[nzchar(archs)], "(root)"), collapse = " | "), ". ",
@@ -548,7 +548,7 @@ loadDgt <- function(fileName)
     error = function(e)
       # BLD-02: the file exists but Tcl could not load it. Surface the real
       # reason instead of degrading to a broken viewport.
-      stop("GUImorph: loading the tkogl2 engine at '", file, "' failed: ",
+      stop("GUImorphWeb: loading the tkogl2 engine at '", file, "' failed: ",
            conditionMessage(e), ". This usually means an architecture mismatch ",
            "(e.g. a 32-bit engine under 64-bit R) or a missing runtime dependency ",
            "the engine links against (such as the platform Tk library).",
@@ -806,7 +806,7 @@ set <- function(shape, attr, arg1, arg2, arg3)
 
 
 # gated debug printer: prints only when options(guimorph.debug=TRUE),
-# which GUImorph(debug=TRUE) sets. Preserves every debugging note.
+# which GUImorphWeb(debug=TRUE) sets. Preserves every debugging note.
 dbg <- function(...) if (isTRUE(getOption("guimorph.debug", FALSE))) print(...)
 
 # Package version, read from DESCRIPTION rather than written by hand.
@@ -823,9 +823,9 @@ dbg <- function(...) if (isTRUE(getOption("guimorph.debug", FALSE))) print(...)
   tryCatch(as.character(utils::packageVersion(nm)), error = function(err) "unknown")
 }
 
-# Module load banner, e.g. "GUImorph 0.9.1 - curve".
+# Module load banner, e.g. "GUImorphWeb 0.9.1 - curve".
 .module_banner <- function(module) {
-  dbg(paste0("GUImorph ", .pkg_version(), " - ", module))
+  dbg(paste0("GUImorphWeb ", .pkg_version(), " - ", module))
 }
 
 
@@ -918,9 +918,9 @@ bindDeleteGesture <- function(widget, handler) {
 .onAttach <- function(libname, pkgname) {
   gmv <- tryCatch(as.character(utils::packageVersion("geomorph")), error = function(err) "not found")
   packageStartupMessage(
-    "GUImorph ", utils::packageVersion(pkgname), " (beta) - Windows and macOS\n",
+    "GUImorphWeb ", utils::packageVersion(pkgname), " (beta) - Windows and macOS\n",
     "3D geometric morphometric digitizing for the geomorph ecosystem.\n",
     "Using geomorph ", gmv, "\n",
-    "Issues / updates: https://github.com/dreoc/GUImorph"
+    "Issues / updates: https://github.com/dreoc/guimorph-web"
   )
 }

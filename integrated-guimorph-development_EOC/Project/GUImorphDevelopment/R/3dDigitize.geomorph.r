@@ -313,7 +313,7 @@ exportGeomorph <- function(e) {
   ## put it into the R workspace (same mechanism compute() uses for gm.results)
   assign(objName, gmData, envir = as.environment(1))
 
-  cat(sprintf("\n# GUImorph -> geomorph : object '%s' is now in your workspace\n", objName))
+  cat(sprintf("\n# GUImorphWeb -> geomorph : object '%s' is now in your workspace\n", objName))
   cat(sprintf("#   %d specimens, %d points, %d dims  (curves: %s, surfaces: %s)\n",
               n, dim(gd$land)[1], dim(gd$land)[2],
               if (is.null(gd$curves)) "none" else nrow(gd$curves),

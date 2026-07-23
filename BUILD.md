@@ -1,14 +1,19 @@
-# Building and developing GUImorph
+# Building and developing GUImorphWeb
 
-GUImorph is an R package with a native **Windows DLL** (`tkogl2.dll`) loaded at runtime
-via Tcl/Tk. **End users** can run the GUI without building anything — see [README.md](README.md).
+GUImorphWeb inherits a native OpenGL engine from GUImorph: `tkogl2.dll` on Windows and
+`tkogl2.dylib` on macOS arm64, loaded at runtime via Tcl/Tk. **End users** can run the GUI without building anything — see [README.md](README.md).
 
 This guide is for **contributors** who change C/OpenGL code or maintain the toolchain.
+
+> **Scope note.** The browser milestone in `.planning/ROADMAP.md` retires this entire
+> build surface at Phase 6. Until then the native engine is kept deliberately, because
+> Phase 4 compares browser picking against its `gluUnProject` result. Keep it building;
+> do not extend it.
 
 > **Toolchain note (2026-06):** Build `tkogl2.dll` with **MSVC** (the toolchain that
 > produced the original working DLL). MinGW-w64 builds (WSL cross-compile *or* MSYS2
 > native) currently link successfully but **render incorrectly** (black/blank mesh), so
-> they are not supported for distribution. See `.planning/smoke-test-findings.md`.
+> they are not supported for distribution.
 
 > **DLL in the repo:** A prebuilt MSVC `tkogl2.dll` is **committed** under
 > `GUImorphDevelopment/inst/libs/x64/` so clones work out of the box. `.gitignore` lists
@@ -21,7 +26,7 @@ This guide is for **contributors** who change C/OpenGL code or maintain the tool
 integrated-guimorph-development_EOC/Project/GUImorphDevelopment/
 ```
 
-WSL is **not** required. The default path assumes a normal Windows clone (e.g. `C:\dev\GUImorph`).
+WSL is **not** required. The default path assumes a normal Windows clone (e.g. `C:\dev\guimorph-web`).
 
 For compile internals, see
 [`integrated-guimorph-development_EOC/Project/tkogl2/BUILD.md`](integrated-guimorph-development_EOC/Project/tkogl2/BUILD.md).
@@ -39,8 +44,8 @@ For compile internals, see
 | **CMake** | `winget install -e --id Kitware.CMake` | No — only for C changes |
 
 ```powershell
-git clone https://github.com/dreoc/GUImorph.git C:\dev\GUImorph
-cd C:\dev\GUImorph
+git clone https://github.com/dreoc/guimorph-web.git C:\dev\guimorph-web
+cd C:\dev\guimorph-web
 ```
 
 After installing R via winget, restart your terminal so `R` and `Rscript` are on `PATH`.
@@ -55,7 +60,7 @@ Only needed when modifying `tkogl2` C sources. `build-msvc/` is **gitignored** �
 Open a **Developer PowerShell for VS** (or any PowerShell after running `vcvars64.bat`):
 
 ```powershell
-cd C:\dev\GUImorph\integrated-guimorph-development_EOC\Project\tkogl2
+cd C:\dev\guimorph-web\integrated-guimorph-development_EOC\Project\tkogl2
 cmake -B build-msvc -G "Visual Studio 17 2022" -A x64
 cmake --build build-msvc --config Release
 ```
@@ -116,10 +121,10 @@ Restore path is **Windows R only** — the GUI and `tkogl2.dll` require Windows.
 ### Contributor restore (daily workflow)
 
 ```r
-setwd("C:/dev/GUImorph/integrated-guimorph-development_EOC/Project/GUImorphDevelopment")
+setwd("C:/dev/guimorph-web/integrated-guimorph-development_EOC/Project/GUImorphDevelopment")
 renv::restore()
 devtools::load_all(".")
-GUImorph()
+GUImorphWeb()
 ```
 
 ### First-time renv bootstrap (maintainer only)
@@ -127,14 +132,14 @@ GUImorph()
 Run once when (re)initializing the lockfile — not needed for normal contributors:
 
 ```powershell
-cd C:\dev\GUImorph
+cd C:\dev\guimorph-web
 & "C:\Program Files\R\R-4.6.0\bin\R.exe" --vanilla -f scripts/init-renv.R
 ```
 
 Or from an interactive R session in the package directory:
 
 ```r
-setwd("C:/dev/GUImorph/integrated-guimorph-development_EOC/Project/GUImorphDevelopment")
+setwd("C:/dev/guimorph-web/integrated-guimorph-development_EOC/Project/GUImorphDevelopment")
 source("../../../scripts/init-renv.R")
 ```
 
@@ -154,17 +159,17 @@ This installs DESCRIPTION Imports plus workflow extras (`devtools`, `rgl`, `RRPP
 **Full GUI smoke (post-deploy):**
 
 ```r
-setwd("C:/dev/GUImorph/integrated-guimorph-development_EOC/Project/GUImorphDevelopment")
+setwd("C:/dev/guimorph-web/integrated-guimorph-development_EOC/Project/GUImorphDevelopment")
 renv::restore()
 devtools::load_all(".")
-GUImorph()
+GUImorphWeb()
 # Load a sample PLY (e.g. bundled test data or local C13.1.ply)
 ```
 
 Confirm:
 
 1. Console shows `tkogl2` load path from `.onLoad` (no failure warning)
-2. "3D GUImorph" window opens
+2. "3D GUImorphWeb" window opens
 3. Specimen mesh renders (not blank/black)
 
 ---
@@ -177,17 +182,20 @@ Confirm:
 | `build-msvc` not found | Configure step skipped | Run `cmake -B build-msvc ...` before `cmake --build` |
 | `R` not found after winget | PATH not refreshed | Restart terminal; or use full path to `R.exe` |
 | `rgl` missing after restore | Lockfile not restored | `renv::restore()` from package root |
-| `file.info` / “cannot resolve owner” on `\\wsl$\...` | WSL UNC path metadata | Harmless; prefer `C:\dev\GUImorph\...` clone |
+| `file.info` / “cannot resolve owner” on `\\wsl$\...` | WSL UNC path metadata | Harmless; prefer `C:\dev\guimorph-web\...` clone |
 | Landmarks don't appear on click | UX — single-click is pick | **Double-click** canvas to place landmarks |
-| 26+ warnings on `load_all` | Pre-renv baseline | See `.planning/smoke-test-findings.md` Phase 6 section |
+| 26+ warnings on `load_all` | Pre-renv baseline | Known, inherited from GUImorph |
 
-For maintainer UAT history and warning triage, see `.planning/smoke-test-findings.md`.
+Maintainer UAT history for the native engine lives in the GUImorph repository.
 
 ---
 
-## C source layout (Phase 9)
+## C source layout
 
-Modular `tkogl2` layout after Phase 7 split, Phase 8 marker unification, and Phase 9
+> Phase numbers in this section refer to GUImorph's **legacy C-refactor** sequence, not
+> to the browser milestone phases in `.planning/ROADMAP.md`. They are unrelated.
+
+Modular `tkogl2` layout after the legacy Phase 7 split, Phase 8 marker unification, and Phase 9
 globals/debug cleanup. The god file `tcl_if_ZARF_9.c` is **removed from the CMake build**
 (not a source file). Orphan `*.c.bak` / `*.dll.pre-phase*.bak` files under `src/` or
 `inst/libs/x64/` are local rollback artifacts (gitignored) and can be deleted.
