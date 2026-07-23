@@ -21,7 +21,7 @@ vendored in `inst/htmlwidgets/`, no CDN, no runtime network.
 ### Result Plots and Dependency Demotion
 
 - [ ] **PLT-01**: `plotspecs` (aligned specimens) and `plotMeanShape` render through a bundled three.js htmlwidget with orbit, zoom, and reset view. Read-only: no picking, no overlay editing
-- [ ] **PLT-02**: `rgl` moves from `Imports` to `Suggests` with every call site guarded, so `library(GUImorphWeb)` succeeds and the digitizing workflow runs on a host where `library(rgl)` fails on missing `libGLU`
+- [ ] **PLT-02**: `library(GUImorphWeb)` succeeds and the full digitizing workflow runs on a host where `library(rgl)` fails. This requires removing **Morpho**, not just demoting rgl: Morpho hard-imports rgl, was pulled in wholesale by `import(Morpho)`, and was used for exactly one function (`fastKmeans`), now reimplemented over Rvcg in `R/template_kmeans.R`. `rgl` and `htmlwidgets` move to `Suggests` with all call sites guarded; the unused `vegan` and `parallel` imports are dropped. See `.planning/phases/01-browser-result-plots-rgl-demotion/01-RESEARCH.md`
 - [ ] **PLT-03**: `plotPCA` works without a native graphics device. It stays base-graphics 2D and is **not** converted to WebGL. The single-component ordination crash was already fixed in 0.10.0 (`a8a6cf0`); do not reopen it
 
 ### Transport and Display

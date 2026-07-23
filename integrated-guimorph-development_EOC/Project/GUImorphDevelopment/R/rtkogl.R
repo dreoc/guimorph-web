@@ -876,7 +876,18 @@ bindDeleteGesture <- function(widget, handler) {
 # interactive OpenGL window; macOS (where this rgl build has no OpenGL) captures
 # the NULL-device scene as a WebGL widget and opens it in the default browser.
 .rgl_show <- function() {
+  # rgl and htmlwidgets are Suggests, not Imports: rgl cannot load on current
+  # macOS, and it is needed only for these result plots. Callers already check,
+  # but this helper is guarded too so it stays safe if reused.
+  if (!requireNamespace("rgl", quietly = TRUE)) {
+    stop("3D result plots need the rgl package. Run install.packages(\"rgl\").",
+         call. = FALSE)
+  }
   if (.isMacOS()) {
+    if (!requireNamespace("htmlwidgets", quietly = TRUE)) {
+      stop("Showing 3D plots on macOS needs htmlwidgets. ",
+           "Run install.packages(\"htmlwidgets\").", call. = FALSE)
+    }
     # NULL device on macOS -> render the current scene as a WebGL widget.
     w <- rgl::rglwidget()
     # Random temp name avoids symlink/clobber in the shared tempdir().

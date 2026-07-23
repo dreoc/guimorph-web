@@ -277,7 +277,8 @@ buildTemplate <- function(e)
 
 
 
-	#### 12.14.2017 changed kmeans function from Rs base kmeans to Morpho's fastKmeans
+	#### 12.14.2017 changed kmeans from base kmeans to Morpho::fastKmeans
+	#### 2026-07-23 replaced with .template_kmeans_centers (seeded, Rvcg-only, no rgl)
 	# much faster
 
 
@@ -287,12 +288,12 @@ buildTemplate <- function(e)
 	  template <-
 	  rbind(
 	    lmk,
-	    Morpho::fastKmeans(
+	    .template_kmeans_centers(
 	      x = specimen,
 	      k = as.numeric(e$sliderNum),
 	      iter.max = 100,
 	      project = TRUE
-	    )$centers
+	    )
 	  )
 	}
 
@@ -303,12 +304,12 @@ buildTemplate <- function(e)
 	  template <-
 	    rbind(
 	      lmkAnc,
-	      Morpho::fastKmeans(
+	      .template_kmeans_centers(
 	        x = specimen,
 	        k = as.numeric(e$sliderNum),
 	        iter.max = 100,
 	        project = TRUE
-	      )$centers
+	      )
 	    )
 	}
 
@@ -375,7 +376,7 @@ buildTemplate1 <- function(e)
 	lmk = matrix( as.numeric(lmkV), nrow = rows, ncol = 3, byrow = TRUE)
 	#sliders <- 1000
 
-	template <- rbind(lmk,Morpho::fastKmeans(x=specimen,k=as.numeric(e$sliderNum),iter.max=100,project=TRUE)$centers)
+	template <- rbind(lmk,.template_kmeans_centers(x=specimen,k=as.numeric(e$sliderNum),iter.max=100,project=TRUE))
 	#template <- rbind(lmk,kmeans(x=specimen,centers=e$sliderNum,iter.max=100)$centers)
 	write.table(template,file="template.txt",row.names=F,col.names=TRUE)
 

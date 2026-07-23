@@ -14,7 +14,6 @@ get_main_date <- function()
 #'
 #' @description GUI to R programs to digitize in 3D, conduct geometric morphometric analyses and plotting results based on OpenGL and Tk widget
 
-#' @import parallel
 NULL
 
 #' @import geomorph
@@ -23,7 +22,6 @@ NULL
 #' @import Rvcg
 NULL
 
-#' @import Morpho
 NULL
 
 #' @import tcltk
@@ -32,7 +30,6 @@ NULL
 #' @import tcltk2
 NULL
 
-#' @import vegan
 NULL
 
 # Active ttk theme (clam is themeable on Windows; vista/xpnative/winnative also valid)

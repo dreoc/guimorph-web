@@ -2,10 +2,7 @@
 
 export(GUImorphWeb)
 export(loadDgt)
-import(Morpho)
 import(Rvcg)
 import(geomorph)
-import(parallel)
 import(tcltk)
 import(tcltk2)
-import(vegan)

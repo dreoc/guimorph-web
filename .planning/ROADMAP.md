@@ -50,9 +50,11 @@ rgl itself cannot load.
 
   1. `plotspecs` (aligned specimens) and `plotMeanShape` render through a bundled
      three.js htmlwidget with orbit, zoom, and reset view. Read-only.
-  2. `rgl` moves from `Imports` to `Suggests` and every call site is guarded, so
-     `library(GUImorphWeb)` succeeds and the digitizing workflow runs on a host
-     where `library(rgl)` fails on missing `libGLU`.
+  2. `library(GUImorphWeb)` succeeds and the full digitizing workflow runs on a
+     host where `library(rgl)` fails. Morpho is removed (it hard-imports rgl and
+     was used for one function, now reimplemented over Rvcg); `rgl` and
+     `htmlwidgets` move to `Suggests` with all call sites guarded; the unused
+     `vegan` and `parallel` imports are dropped.
   3. `plotPCA` continues to work without a native device and stays base-graphics
      2D. The single-component ordination crash was fixed in 0.10.0 (`a8a6cf0`)
      and must not regress.
@@ -81,6 +83,17 @@ main thread and any rgl plot silently unbound the engine's, producing a black
 canvas and total pick failure. Moving result plots off rgl removes the cause. Keep
 the per-frame rebind in the retained engine anyway, since the engine is the Phase
 4 oracle and must stay trustworthy.
+
+**Note (scope grew after research)**: PLT-02 was written as an rgl demotion. The
+dependency survey found Morpho was the actual blocker. `fastKmeans` is
+reimplemented in `R/template_kmeans.R` over Rvcg, verified at exact numerical
+parity against Morpho at k = 500/1000/2000 with a median 1.4x speedup. Full
+evidence in `01-RESEARCH.md`.
+
+**Note (behaviour change deliberately excluded)**: all three template call sites
+pass `iter.max = 100`, which research showed is too low to converge at low slider
+counts. Raising it changes existing template output, so it is tracked separately
+rather than folded into a dependency change.
 
 **Why first**: touches zero acquisition data, cannot corrupt a session, fixes a
 live load failure, and teaches the stack where mistakes are cheap.

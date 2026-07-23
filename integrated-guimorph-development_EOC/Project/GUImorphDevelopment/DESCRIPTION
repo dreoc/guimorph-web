@@ -10,18 +10,15 @@ Description: GUI to R programs to digitize in 3D, conduct geometric morphometric
     and macOS; landmark, curve and surface semilandmark data are written in a
     format directly compatible with geomorph.
 Imports:
-    rgl,
-    htmlwidgets,
     geomorph (>= 4.1.1),
-    Morpho,
-    parallel,      
     Rvcg,
     tcltk,
-    tcltk2,
-    vegan
+    tcltk2
 Encoding: UTF-8
 License: GPL (>= 2)
 LazyData: true
 Suggests:
+    rgl,
+    htmlwidgets,
     testthat
 Config/roxygen2/version: 8.0.0
