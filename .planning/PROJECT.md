@@ -1,95 +1,116 @@
-# GUImorph
+# GUImorphWeb
 
 ## What This Is
 
-GUImorph is an R package with a Tcl/Tk graphical interface for **3D geometric morphometrics**: load PLY mesh specimens, digitize landmarks / curves / anchors / surface semilandmarks, run `geomorph` analyses (GPA, PCA, mean shape), and export coordinates. It exists because `geomorph`'s interactive 3D digitizing functions were deprecated when rgl/OpenGL stopped working on modern macOS — GUImorph is an rgl-independent, `geomorph`-native digitizer that keeps that template-based surface-semilandmark workflow alive. It is used by morphometrics researchers.
+GUImorphWeb is an R package for **3D geometric morphometrics** that renders and
+digitizes in a browser surface driven from R. Load PLY mesh specimens, digitize
+landmarks, curves, anchors, and surface semilandmarks, run `geomorph` analyses
+(GPA, PCA, mean shape), and export coordinates in geomorph-native form.
+
+It is a sibling project to GUImorph, not a branch of it. GUImorph digitizes
+through a native OpenGL engine (`tkogl2`) embedded in a Tcl/Tk window. That
+engine is maintained separately and continues on its own track. GUImorphWeb takes
+the same R analytical layer and the same `.dgt` data format, and replaces the
+native rendering and interaction layer with three.js in a browser, served over
+loopback by `httpuv`.
+
+The two projects share a data contract and diverge below it.
+
+## Why This Exists
+
+Apple retired OpenGL in 10.14 and has removed more of it in every release since.
+On current macOS, `rgl` cannot load at all (missing `libGLU`), which takes any
+package that lists it in `Imports` down with it. The wider R 3D ecosystem is
+migrating toward WebGL widgets: the `rgl` maintainer points users to
+`rglwidget()`, and the `geomorph` discussions land in the same place. Browser
+rendering is the one path that is not being deprecated out from under the field
+on either platform.
+
+`StereoMorph` already does browser-based 2D digitizing inside R for this same user
+base, so the pattern is established rather than novel.
 
 ## Core Value
 
-A researcher can digitize a 3D specimen and feed the result straight into `geomorph` — the interactive digitizing viewport must render the mesh and place landmarks correctly.
+A researcher can digitize a 3D specimen and feed the result straight into
+`geomorph`, on a stock machine, with no XQuartz, no Homebrew, no compiler, no
+external application, and no runtime network access.
+
+## Architecture
+
+R keeps what it is good at: file I/O, PLY parsing, k-means downsampling, template
+warping, GPA, and export. The browser takes mesh display, orbit, picking, and
+overlays.
+
+- **Server**: `httpuv`, loopback only, serves PLY bytes over HTTP. Never
+  JSON-encoded.
+- **Renderer**: three.js. WebGL is the baseline target; WebGPU is opportunistic
+  through three.js's automatic fallback, not a dependency.
+- **Picking**: `three-mesh-bvh` raycast. Resolution-independent, so the entire
+  HiDPI backing-pixel class of defect cannot occur.
+- **Bundling**: JS vendored in `inst/htmlwidgets/`. No CDN. Works offline.
+
+## Inherited From GUImorph
+
+Carried over and reused as-is:
+
+- The full R analytical layer (`geomorph`, `Morpho`, `Rvcg` integration)
+- The `.dgt` session format, reader, and writer
+- `exportGeomorph()` and the `.csv`/`.rds` export paths
+- The parity test suite (`test-dgt-cross-platform.R`, `test-export-parity.R`,
+  `test-gpa-parity.R`) and `tests/fixtures/parity/`
+- The native `tkogl2` engine, retained temporarily as the picking-parity oracle
+  and removed at Phase 6
+
+Carried over as lessons, though the code carrying them is retired:
+
+- Multi-model indexing defects came from operations defaulting to `models[0]`
+  instead of `&models[id]`
+- Flattening surface semilandmarks requires `as.vector(t(surfaces[,,id]))`; the
+  transpose is not optional
+- NextEngine PLY exports carry unreferenced stray vertices, including origin-null
+  points at (0,0,0), which become GPA outliers if captured as template points
+- Anchors are hand-placed points forced into the k-means template to guarantee
+  topographically significant features are represented, not curve boundary
+  markers
 
 ## Requirements
 
 ### Validated
 
-<!-- Inferred from existing code (brownfield). Windows build, beta v0.9.0. -->
+<!-- Inherited from GUImorph, already working in the R layer. -->
 
-- ✓ Load one or more PLY meshes as a specimen set and render in an embedded OpenGL viewport — existing
-- ✓ Digitize fixed landmarks by double-click, with move/delete/undo, labels, colors, missing-landmark marking — existing
-- ✓ Place anchors on a dedicated tab (optional workflow) — existing
-- ✓ Define curves as 3-landmark-per-segment triplets and compute curve geometry — existing
-- ✓ Define surface semilandmarks / template build with downsampling — existing
-- ✓ Run Generalized Procrustes Analysis via `geomorph::gpagen` with sliding, principal-axis alignment, tangent-space projection options — existing
-- ✓ Plot aligned specimens, PCA morphospace, and reconstructed mean shape — existing
-- ✓ Save/load sessions to `.dgt`; add PLY to / merge `.dgt` datasets — existing
-- ✓ Export aligned coordinates + centroid size to `.csv` and geomorph-ready `.rds` — existing
-- ✓ Tab gating enforces workflow prerequisites (Surface Sliders/Curves/GPA unlock after landmarks complete) — existing
-- ✓ Ships a prebuilt MSVC `tkogl2.dll` so Windows end users run without compiling — existing
-- ✓ GUImorph renders a PLY mesh in the embedded digitizing viewport on macOS (not blank/black), arm64 — Validated in Phase 4 (first light, confirmed live in a `GUImorph()` session: real specimen + tetrahedron, legacy `GL_VERSION: 2.1 Metal`)
-- ✓ A reproducible macOS build + load path exists (arm64 `tkogl2.dylib` builds via CMake against Homebrew Aqua Tk and loads via `.onLoad`) — Validated in Phase 4 (BLD-01/BLD-03 arm64 half; GATE-01 Aqua runtime proof closed)
+- ✓ PLY specimen sets load and parse in R
+- ✓ `geomorph::gpagen` GPA with sliding, principal-axis alignment, and
+  tangent-space options
+- ✓ `.dgt` session save, load, merge, and add-PLY
+- ✓ `.csv` aligned-coordinate and `.rds` geomorph-ready export
+- ✓ Cross-platform `.dgt` byte parity, Windows to macOS direction
 
 ### Active
 
-<!-- Milestone: cross-platform rendering, macOS first, full feature parity. -->
+<!-- Milestone v1.0: browser rendering migration. See ROADMAP.md. -->
 
-- [ ] Landmark/anchor digitizing (double-click place, move, delete, undo) works on macOS with pixel-accurate Retina picking (basic placement demonstrated in Phase 4; PICK-01 backing-coordinate accuracy is Phase 5)
-- [ ] Curves and surface-slider workflows work on macOS
-- [ ] GPA / PCA / mean-shape analysis and `rgl` result plots work on macOS
-- [ ] `.dgt` save/load and `.csv`/`.rds` export work on macOS
-- [ ] Crisp full-Retina rendering (non-layer-backed child NSView / CAOpenGLLayer) — Phase 4 ships a point-resolution surface that fills the canvas; crisp Retina deferred
-- [ ] Distributable universal2 artifact + signing/notarization (BLD-03 distribution half, deferred D-06/D-07)
-- [ ] Full feature parity with the Windows build on macOS
+- [ ] Result plots render through a three.js widget with `rgl` optional
+- [ ] PLY meshes served over loopback and rendered in the browser
+- [ ] Offline packaging, port selection, browser launch, and clean teardown
+- [ ] Browser picking agrees with the native engine's unproject within tolerance
+- [ ] Full digitizing workflow in the browser with byte-identical `.dgt` output
+- [ ] Browser shell replaces the Tk chrome; native engine removed
 
 ### Out of Scope
 
-- Linux support this milestone — macOS is the primary pain point (rgl/OpenGL deprecation origin); Linux is a follow-on milestone
-- Rewriting the analysis layer — `geomorph`/`Morpho`/`Rvcg` pipeline is validated and reused as-is
-- Replacing Tcl/Tk with another GUI toolkit — the R/Tk controller layer stays; only the native windowing/GL glue is in question
-- Web/browser version — desktop-only remains the delivery model
+- Maintaining the native macOS OpenGL path. That work continues in GUImorph on
+  its own track and is not duplicated here.
+- Metal-backed native rendering. This architecture makes it unnecessary.
+- Rewriting the `geomorph` / `Morpho` / `Rvcg` analysis pipeline. Validated,
+  reused as-is.
+- Linux as an explicit milestone target. The architecture makes it nearly free,
+  but it is not scoped or tested here.
 
-## Context
+## Relationship to GUImorph
 
-- **Codebase map:** see `.planning/codebase/` (STACK, ARCHITECTURE, STRUCTURE, CONVENTIONS, TESTING, INTEGRATIONS, CONCERNS).
-- **Architecture:** layered "R GUI over Tcl/Tk calling into a native C OpenGL DLL". R (`R/3dDigitize.*.r`, `rtkogl.R`) drives Tk widgets and marshals imperative commands over the Tcl bridge (8 commands: `add`, `show`, `setWindow`, `setSpecimen`, `setDownSample`, `setDot`, `del`, `loadDgt`) into `tkogl2.dll`. Analysis delegated to the `geomorph` ecosystem.
-- **The portability blocker:** the native engine embeds OpenGL into a Tk frame's window via **Win32 HWND + WGL** (`src/tcl_window.c`). macOS needs a different window/context path (NSOpenGL/CGL or a portable layer such as GLFW/SDL). This native windowing glue — not the OpenGL draw code or the R layer — is the core cross-platform work.
-- **Rendering approach undecided:** whether to adopt a portable windowing/GL layer (GLFW/SDL, keep the C engine) or write per-platform native glue (NSOpenGL/CGL) is an open decision — flagged for research.
-- **Known concerns** (`.planning/codebase/CONCERNS.md`): unsafe PLY parsing (`strcpy`/`sscanf`/`sprintf`), 3916-line `tcl_dispatch.c`, pervasive `GBL_*` global state, fixed-capacity caps (25 landmark sets, 10 curve sets, 5 model slots), MinGW builds render black/blank (only MSVC supported on Windows), vendored duplicate R sources under `tkogl2/R/`.
-- **macOS renders `rgl` result plots today** (rgl still works for static plotting); the gap is the interactive digitizing viewport.
+`upstream` remote points at `dreoc/GUImorph`. R-layer fixes made there can be
+cherry-picked in. Native-engine work there is deliberately not merged.
 
-## Constraints
-
-- **Compatibility**: Must keep the Windows build working — macOS support is additive, not a replacement.
-- **Tech stack**: R 4.6+, Tcl/Tk, C99 native engine, `geomorph >= 4.1.1`; dependencies pinned via `renv.lock`. macOS build must integrate with the same R/Tcl `.onLoad` loading model (`tcl("load", file, "Tkogl2")`).
-- **Dependencies**: On macOS, OpenGL is deprecated by Apple (still present up to current macOS); the chosen rendering path must run on Apple Silicon + Intel Macs and survive Apple's OpenGL deprecation trajectory.
-- **Toolchain**: macOS build needs a documented, reproducible toolchain (Xcode command-line tools / CMake) analogous to the Windows MSVC path.
-- **Compatibility**: `.dgt` session files and exports must remain cross-platform compatible with the Windows build.
-
-## Key Decisions
-
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| Target macOS first (Linux deferred) | macOS is the origin motivation — rgl/OpenGL digitizing deprecated there | — Pending |
-| Full feature parity target (not MVP slice) | A partial digitizer isn't useful to researchers; parity is the bar | — Pending |
-| Keep R/Tk + geomorph layers; only rework native windowing/GL glue | Analysis + GUI logic are validated; the blocker is Win32/WGL embedding | — Pending |
-| Rendering approach: native NSOpenGL behind a `gfx` seam (not a portable toolkit) | Portable toolkits (GLFW/SDL) own their own windows and can't render into Tk's `NSView` | ✓ Resolved — legacy-2.1 `NSOpenGLContext` on a child `NSView`; first light achieved Phase 4 |
-| Planning docs local-only (`.planning/` gitignored) | Repo already gitignores `.planning/`; keeps planning out of the public package repo | ✓ Good |
-
-## Evolution
-
-This document evolves at phase transitions and milestone boundaries.
-
-**After each phase transition** (via `/gsd-transition`):
-1. Requirements invalidated? → Move to Out of Scope with reason
-2. Requirements validated? → Move to Validated with phase reference
-3. New requirements emerged? → Add to Active
-4. Decisions to log? → Add to Key Decisions
-5. "What This Is" still accurate? → Update if drifted
-
-**After each milestone** (via `/gsd-complete-milestone`):
-1. Full review of all sections
-2. Core Value check — still the right priority?
-3. Audit Out of Scope — reasons still valid?
-4. Update Context with current state
-
----
-*Last updated: 2026-07-17 after Phase 4 (macOS NSGL first light)*
+Nothing in this project should be expected to merge back into GUImorph. They
+diverge at the rendering layer by design.

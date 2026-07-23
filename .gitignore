@@ -104,9 +104,6 @@ desktop.ini
 # ===========================================================================
 # Editor / agent local files (Cursor + GSD planning)
 # ===========================================================================
-.cursorrules
-.cursor/
-.planning/
 
 # ===========================================================================
 # MSVC CMake build tree (build/ is ignored above; this is the VS generator path)

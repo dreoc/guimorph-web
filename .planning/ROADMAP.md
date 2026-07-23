@@ -1,8 +1,25 @@
-# Roadmap: GUImorph — macOS Cross-Platform Parity
+# Roadmap: GUImorphWeb — Browser Rendering
 
 ## Overview
 
-This milestone ports GUImorph's native Win32/WGL OpenGL digitizing engine to macOS at full feature parity, without breaking the existing Windows build. The work is a dependency-ordered port of a mature codebase (horizontal layers, not vertical MVP slices): first prove that R can run against an Aqua (Cocoa) Tk and isolate the Windows window/context code behind a platform seam; then make the Tk drawable reachable by pathname; stand up a tri-platform build so Objective-C can compile; implement the macOS NSOpenGL backend until a PLY mesh renders ("first light"); fix Retina picking and macOS input quirks to reach full digitizing/analysis/data parity; and finally restore result-plot rendering via an rgl fallback. Every build phase carries a "Windows build still works" regression checkpoint (macOS is additive, not a replacement).
+This milestone builds GUImorphWeb's browser rendering and interaction layer on top
+of GUImorph's existing R analytical layer and `.dgt` format. R keeps file I/O,
+downsampling, template warping, GPA, and export. The browser takes mesh display,
+orbit, picking, and overlays. A local `httpuv` server serves mesh bytes over
+loopback, a bundled three.js htmlwidget renders them, and `three-mesh-bvh`
+accelerates raycast picking. Nothing is fetched at runtime, so the package works
+offline and still runs entirely from an R session.
+
+The sequencing is front-loaded with low-risk, independently shippable work.
+Phases 1 through 3 touch no acquisition data and each fix something real on
+current macOS. Phase 4 is the technical gate: browser picking must agree with the
+native engine's `gluUnProject` within tolerance. If that gate fails, the milestone
+stops there having still delivered result plots, mesh display, and packaging, and
+the loss is three phases rather than six.
+
+The native `tkogl2` engine is inherited and retained through Phase 5, not because
+it is being maintained, but because it is the only trustworthy source of reference
+coordinates for the Phase 4 gate. It is deleted at Phase 6.
 
 ## Phases
 
@@ -13,161 +30,229 @@ This milestone ports GUImorph's native Win32/WGL OpenGL digitizing engine to mac
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [x] **Phase 1: Aqua-Tk Deployment Gate + Windows Rendering Seam** - Prove R+Aqua-Tk on macOS and isolate WGL behind a platform seam (Windows CMP-01 validation deferred) (completed 2026-07-13)
-- [x] **Phase 2: Pathname-Based Tk Drawable Resolution** - Reach the native drawable by widget pathname through Tk stubs (verified on Windows 2026-07-15) (completed 2026-07-15)
-- [x] **Phase 3: Tri-Platform Build + Generalized Load + Drop GLUT** - CMake `.dylib` toolchain, extension-aware `.onLoad`, remove GLUT *(Windows verified 2026-07-16; macOS `.dylib` build in Phase 4)*
-- [x] **Phase 4: macOS NSGL Backend — First Light** - Render a PLY mesh in the embedded macOS viewport (universal2, distributable) (completed 2026-07-17)
-- [x] **Phase 5: Retina Picking, Input Fixes & Digitizing/Analysis/Data Parity** - Pixel-accurate picking + macOS input + full workflow parity (completed 2026-07-19)
-- [x] **Phase 6: rgl Result-Plot Fallback on macOS** - GPA/PCA/mean-shape plots via rgl NULL/`rglwidget` (completed 2026-07-20)
+- [ ] **Phase 1: Result Plots + rgl Demotion** - Move the two 3D result plots to a three.js widget and make `rgl` optional so the package loads where rgl cannot
+- [ ] **Phase 2: Transport and Mesh Display** - `httpuv` serves the PLY over loopback; three.js renders and orbits it
+- [ ] **Phase 3: Offline Packaging and Lifecycle** - Bundle the JS, select a port, launch the browser, tear down on session end
+- [ ] **Phase 4: Picking Parity** - BVH raycast returns hit coordinates matching the native `gluUnProject` result within tolerance
+- [ ] **Phase 5: Full Digitizing and Data Parity** - Curves, anchors, surfaces, undo, multi-specimen, GPA and export from the browser, with byte-identical `.dgt`
+- [ ] **Phase 6: Shell and Native Retirement** - Replace the Tk chrome, then delete `tkogl2` and drop `rgl`
 
 ## Phase Details
 
-### Phase 1: Aqua-Tk Deployment Gate + Windows Rendering Seam
+### Phase 1: Result Plots + rgl Demotion
 
-**Goal**: Confirm and document a supported "R + Aqua Tk" configuration on macOS, and isolate all native window/context creation behind a platform seam with the existing Win32/WGL code moved behind it unchanged.
+**Goal**: Render the two 3D result plots through a bundled three.js htmlwidget, and
+make `rgl` an optional dependency so the package loads and runs on a host where
+rgl itself cannot load.
 **Depends on**: Nothing (first phase)
-**Requirements**: GATE-01, GATE-02, RND-01, CMP-01
+**Requirements**: PLT-01, PLT-02, PLT-03, CMP-01
 **Success Criteria** (what must be TRUE):
 
-  1. An R session on macOS reports `tk windowingsystem == aqua` and can `load` a trivial Aqua Tk C extension (X11/XQuartz path ruled out).
-  2. A documented, reproducible "R + Aqua Tk" setup exists that a researcher can follow (which Tcl/Tk flavor ships and how to obtain it).
-  3. All WGL/HDC/HGLRC/`SwapBuffers` code is moved out of `tcl_window.c`/`onDisplay` into `gfx_backend_wgl.c` behind `gfx_backend.h` (create / make_current / swap / resize / destroy); the core includes only the seam.
-  4. Windows build still works: the MSVC `tkogl2.dll` builds and renders a PLY mesh identically to before the seam extraction.
+  1. `plotspecs` (aligned specimens) and `plotMeanShape` render through a bundled
+     three.js htmlwidget with orbit, zoom, and reset view. Read-only.
+  2. `rgl` moves from `Imports` to `Suggests` and every call site is guarded, so
+     `library(GUImorphWeb)` succeeds and the digitizing workflow runs on a host
+     where `library(rgl)` fails on missing `libGLU`.
+  3. `plotPCA` continues to work without a native device, stays base-graphics 2D,
+     and no longer crashes on a single-component ordination.
+  4. Visual parity: the three.js aligned-specimen and mean-shape output is
+     comparable to the inherited rgl output on the same GPA result.
+  5. Native oracle still loads (CMP-01): the retained `tkogl2` engine still builds
+     and renders on Windows.
 
-**Plans**: 5/5 plans complete
-**Wave 1**
+**Plans**: TBD
 
-- [x] 01-01-PLAN.md — RND-01: extract WGL window/context code behind the 5-function `gfx_backend.h` seam (`gfx_backend_wgl.c`), behavior-preserving
-- [x] 01-02-PLAN.md — GATE-01: Aqua-Tk deployment spike + trivial Tk-linked C extension + scriptable `gate_check.R` assert
+**Note (scope)**: Only two result plots are rgl. `plotPCA` is base graphics
+rendered through `.plot_show()`, and the inherited test suite asserts it makes no
+`rgl::` calls. Converting it to three.js would break that assertion and apply a
+3D renderer to a 2D scatter.
 
-**Wave 2** *(blocked on Wave 1 completion)*
+**Note (the real unblock)**: The inherited macOS fallback routes 3D plots through
+`rgl.useNULL = TRUE` plus `rglwidget()`. That design works. The breakage sits
+upstream of it: on current macOS `rgl` fails to load at all, and because it is in
+`Imports`, package load fails before any fallback can run. PLT-02 is the
+requirement that actually unblocks those machines, and it is worth shipping even
+if PLT-01 slips.
 
-- [x] 01-03-PLAN.md — GATE-02: reproducible R + Aqua Tk setup doc + lock D-01/D-02 distribution decision
-- [x] 01-04-PLAN.md — CMP-01: regression fixture committed; off-box Windows MSVC build/render regression deferred to pending backlog
+**Note (context bug class)**: GUImorph carries a fix (`129b42a`) that rebinds the
+GL context per frame, because rgl and the native engine share a context on the R
+main thread and any rgl plot silently unbound the engine's, producing a black
+canvas and total pick failure. Moving result plots off rgl removes the cause. Keep
+the per-frame rebind in the retained engine anyway, since the engine is the Phase
+4 oracle and must stay trustworthy.
 
-**Gap Closure** *(from 01-VERIFICATION.md — two BLOCKER gaps)*
+**Why first**: touches zero acquisition data, cannot corrupt a session, fixes a
+live load failure, and teaches the stack where mistakes are cheap.
 
-- [x] 01-05-PLAN.md — RND-01: remove residual `HWND` typing from core (`tcl_window.c`/`.h`) so the seam boundary is complete; resolve the `// TBD ??` debt marker on `model_t.count` in `def_ZARF_9.h` (behavior-preserving)
+### Phase 2: Transport and Mesh Display
 
-**Note**: CMP-01 (Windows-regression checkpoint) is owned here and its "Windows still works" criterion recurs in every phase. Research flag: which supported R + Aqua-Tk config ships to researchers is this milestone's central open question — resolved empirically via the Plan 02 spike. CMP-01 (Plan 04) is off-box (delegated to a Windows maintainer); Plans 01+02 are Wave 1 (parallel, independent workstreams), Plans 03+04 are Wave 2.
-
-### Phase 2: Pathname-Based Tk Drawable Resolution
-
-**Goal**: Resolve the Tk drawable by frame pathname (not `winfo id`) through Tk stubs so the platform-native drawable (HWND on Windows, `NSView` on macOS) is reachable.
+**Goal**: Serve a PLY specimen from R over a local HTTP server and render it in the
+browser with orbit, zoom, and reset. No overlays, no picking.
 **Depends on**: Phase 1
-**Requirements**: RND-02
+**Requirements**: WEB-01, WEB-02, CMP-01
 **Success Criteria** (what must be TRUE):
 
-  1. `setWindow "id"` accepts a Tk widget pathname; C resolves `Tk_NameToWindow` → `Tk_WindowId` and branches to the per-platform drawable accessor (`Tk_GetHWND` / `Tk_MacOSXGetNSWindowForDrawable`).
-  2. `Tk_InitStubs` + `tkstub` linkage is in place and the R bridge passes the frame pathname instead of `winfo id`.
-  3. Windows build still works: the pathname-based resolution reaches the HWND and renders a PLY mesh with no regression (removing the fragile int→HWND cast previously blamed for blank viewports).
+  1. An `httpuv` server started from R binds to loopback only, on an unprivileged
+     port, and serves the PLY file as bytes over HTTP. The mesh is never
+     JSON-encoded.
+  2. The served endpoint is guarded by a per-session random path or token, so
+     another process on the same host cannot enumerate and read specimen files.
+  3. three.js `PLYLoader` fetches and renders the mesh, with orbit, zoom, and
+     reset view.
+  4. The 6-specimen reference set loads and orbits on stock macOS and stock
+     Windows, with no XQuartz, no Homebrew, and no Tcl/Tk in the render path.
+  5. Native oracle still loads (CMP-01).
 
-**Plans**: 1/1 complete (all three criteria met; criterion 3 verified on Windows R 4.6.1, 2026-07-15)
+**Plans**: TBD
 
-- [x] 02-01-PLAN.md — RND-02: R bridge passes frame pathname; `tcl_window.c` resolves `Tk_NameToWindow` → `Tk_MakeWindowExist` → `Tk_WindowId` → per-platform accessor (`Tk_GetHWND` / `Tk_MacOSXGetNSWindowForDrawable`). Verified on Windows (render + picking + 6 landmarks). Built in direct Tk-link mode (import lib from R's tk86.dll); x64 tkstub for stubs mode deferred to Phase 3.
+**Note (risk: mesh size)**: NextEngine scans are large. Serve the file over HTTP
+and let the loader stream it. Do not marshal vertices through R-to-JS JSON. If
+transfer time is unacceptable on the reference set, evaluate binary PLY fast-path
+or Draco before adding complexity elsewhere.
 
-**Note**: Criterion 3 (Windows renders unchanged) is the recurring CMP-01 checkpoint and is off-box (no MSVC/Windows host available). Introducing `<tk.h>` adds one on-box build dependency — the Tk `X11/` shim on the include path (`TKOGL2_TK_XLIB_INCLUDE`) — captured in the pending todo.
+**Note (PLY hygiene)**: NextEngine exports carry unreferenced stray vertices,
+including origin-null points at (0,0,0). These already corrupt GPA when captured
+as k-means template points. Confirm the browser loader does not silently
+reintroduce them into the bounding box or camera framing.
 
-### Phase 3: Tri-Platform Build + Generalized Load + Drop GLUT
+### Phase 3: Offline Packaging and Lifecycle
 
-**Goal**: Establish the macOS toolchain and loading path so Objective-C Cocoa code can compile, link, and load, without breaking Windows.
+**Goal**: Ship the JS inside the package and make server launch, browser open, and
+teardown reliable on a locked-down machine.
 **Depends on**: Phase 2
-**Requirements**: BLD-01, BLD-02, BLD-04
+**Requirements**: WEB-03, WEB-04, CMP-01
 **Success Criteria** (what must be TRUE):
 
-  1. A tri-platform CMake build (WIN32 / APPLE / UNIX branches) produces a Mach-O `tkogl2.dylib` (`-dynamiclib`) on macOS, linking `-framework OpenGL/AppKit/Foundation` against a stub macOS backend.
-  2. `.onLoad` computes the platform library extension via `[info sharedlibextension]` (`.dll`/`.dylib`/`.so`) instead of hardcoding `.dll`, and surfaces load failure loudly instead of silently degrading.
-  3. GLUT is removed from the draw path (`glutSolidSphere` → `gluSphere`), so no GLUT dependency is required on macOS.
-  4. Windows build still works: the MSVC `tkogl2.dll` builds under the unified CMake and renders unchanged.
+  1. three.js and `three-mesh-bvh` are vendored into `inst/htmlwidgets/` with
+     licence files. No CDN reference, no runtime network access.
+  2. A clean `install.packages()` on a fresh R opens a working viewport with the
+     machine fully offline, on both Windows and macOS.
+  3. Port selection survives a port already in use, and the failure mode is a
+     clear R-level error rather than a silent hang.
+  4. The server is torn down on viewport close, on session exit, and on R session
+     end. No orphaned listener survives.
+  5. The launch path degrades legibly when the default browser is missing,
+     misconfigured, or blocked, and when a host firewall prompts on first bind.
+  6. Native oracle still loads (CMP-01).
 
-**Plans**:
+**Plans**: TBD
 
-- [x] 03-01-PLAN.md — BLD-01/BLD-02/BLD-04: tri-platform CMake (WIN32/APPLE/else) emitting `tkogl2.dylib` against `-framework OpenGL/AppKit/Foundation`; compiling NSGL stub (`gfx_backend_nsgl.m`, real context in Phase 4); extension-aware, loud-failing `.onLoad` (`[info sharedlibextension]` + `stop()`); GLUT dropped from the draw path (`gluSphere`, vestige removed, labels Windows-guarded). **Windows verified 2026-07-16** (rebuild renders unchanged incl. 6-specimen `.dgt`); macOS `.dylib` build lands in Phase 4 (first Mac build).
+**Note (deployment reality)**: Target users are archaeology and forensics labs,
+often on managed machines. A clean `install.packages()` is not the bar. Criteria 3
+through 5 exist because firewall prompts, locked default browsers, and proxy
+configuration are the realistic failure modes, and each presents to the user as
+"the software is broken."
 
-### Phase 4: macOS NSGL Backend — First Light
+**Note (WebGPU)**: WebGL stays the baseline target. WebGPU is opportunistic only,
+through three.js's automatic fallback. Do not make it a dependency here.
 
-**Goal**: Implement the Cocoa NSOpenGL backend so a loaded PLY mesh renders (not blank/black) in the embedded macOS viewport, and produce a distributable universal2 artifact.
+### Phase 4: Picking Parity
+
+**Goal**: Return mesh hit coordinates from a browser raycast that agree with the
+native engine's unproject result, and render placed landmarks as overlay geometry.
 **Depends on**: Phase 3
-**Requirements**: RND-03, RND-04, BLD-03
+**Requirements**: PICK-01, PICK-02, PICK-03, CMP-01
 **Success Criteria** (what must be TRUE):
 
-  1. `gfx_backend_nsgl.m` creates an `NSOpenGLContext` on Tk's embedded `NSView` using a **legacy 2.1 GL profile**, presents via `[NSOpenGLContext flushBuffer]`, and runs all GL/Cocoa work on the main thread inside Tk's event cycle.
-  2. Loading a PLY specimen renders the mesh in the embedded macOS digitizing viewport (not blank/black) on both Apple Silicon and Intel Macs.
-  3. The library is built `universal2` (arm64 + x86_64) and the distribution path handles quarantine / library validation (sign + notarize, or a documented `xattr` workaround).
-  4. Windows build still works: the Windows build renders PLY meshes unchanged.
+  1. A BVH-accelerated raycast against the loaded mesh returns a hit coordinate
+     to R, at interactive rates on the reference specimens.
+  2. Placement only: a landmark dot renders as overlay geometry at the returned
+     coordinate, with correct depth behavior under rotation.
+  3. **The gate.** On the same specimen at the same click position, the browser
+     coordinate matches the native engine's `gluUnProject` result within a
+     documented numeric tolerance, stated in mesh units and justified against
+     inter-observer digitizing error.
+  4. Parity holds on a HiDPI display with no backing-scale correction, since
+     raycasting is resolution-independent.
+  5. Native oracle still loads (CMP-01). This is the phase where that matters
+     most.
 
-**Plans**: 3/3 plans complete
+**Plans**: TBD
 
-**Wave 1**
+**Note (this is the decision point)**: If criterion 3 cannot be met, stop here.
+Phases 1 through 3 remain shipped and valuable, GUImorph remains the digitizing
+path, and the loss is bounded at three phases.
 
-- [x] 04-01-PLAN.md — BLD-03 (arm64 env): install Aqua Tk toolchain (D-09), pass the committed Aqua gate (`gate_check: PASS`, closes GATE-01 runtime proof), and produce the first clean arm64 `tkogl2.dylib` from the Phase 3 stub (closes the pending macOS BLD-01 build)
+**Note (expected cost)**: The predictable difficulty is coordinate-space
+convention between the native engine's model transform and three.js's. Budget time
+for sign and axis-order debugging. Build a fixture of known click positions with
+recorded native results *before* writing the comparison, not after.
 
-**Wave 2** *(depends on 04-01)*
+**Note (oracle validity)**: GUImorph's native path was validated on Windows
+2026-07-18 (full workflow, 6-specimen `.dgt` round-trip, 212 live picks, 0
+failed). Record the exact engine commit used to generate reference coordinates in
+the fixture, so a later change cannot silently invalidate the comparison.
 
-- [x] 04-02-PLAN.md — RND-03/RND-04/BLD-03: fill `gfx_backend_nsgl.m` with a legacy-2.1 `NSOpenGLContext` (create/attach `setView:`, make-current + GL_VERSION legacy guard, `flushBuffer` present, Retina viewport via `convertRectToBacking:`), rebuild + static-verify the arm64 dylib (`MH_DYLIB`/`arm64`), deploy where `.onLoad` searches
+### Phase 5: Full Digitizing and Data Parity
 
-**Wave 3** *(depends on 04-02)*
-
-- [x] 04-03-PLAN.md — RND-03/RND-04: first-light manual acceptance in a live `GUImorph()` session (tetrahedron smoke → real specimen, D-08), confirm legacy GL_VERSION + Retina fill; child-`NSView` fallback ready if the layer-backed direct attach is blank
-
-**Note**: BLD-03 is only PARTIALLY addressed here (arm64 build only). universal2 x86_64, signing, notarization, and the `xattr` quarantine workaround are DEFERRED to a later distribution step (D-06, D-07) and do not block phase closure. Verification is build/static automation + a manual/visual live-session render (no unit-test harness for the native GL path). CMP-01 (Windows still works) is off-box — only `gfx_backend_nsgl.m` changes.
-
-### Phase 5: Retina Picking, Input Fixes & Digitizing/Analysis/Data Parity
-
-**Goal**: Make picking pixel-accurate on Retina and fix macOS input quirks so the full digitizing, analysis-compute, and data/session workflows reach parity with the Windows build.
+**Goal**: Complete the acquisition workflow in the browser and prove the output
+bytes are identical to the native path.
 **Depends on**: Phase 4
-**Requirements**: PICK-01, PICK-02, PICK-03, PICK-04, PICK-05, DIG-01, DIG-02, DIG-03, DIG-04, DIG-05, ANL-01, DAT-01, DAT-02, DAT-03
+**Requirements**: DGT-01, DGT-02, DGT-03, DAT-01, DAT-02, CMP-01
 **Success Criteria** (what must be TRUE):
 
-  1. On a HiDPI/Retina display the mesh fills the viewport and landmark picks land on-target — `glViewport` and screen→world unproject scale by `backingScaleFactor` (PICK-01, the prerequisite for all picking-based digitizing parity).
-  2. Fixed-landmark digitizing (place / drag-move / delete / undo / labels / colors / missing), anchors, curves, surface sliders, and tab gating all work on macOS — including right-click delete (aqua button 2/3 swap; `Button-2` + `Control-Button-1`) and wheel zoom/scroll (fixed `%D`/120 truncation) across every tab.
-  3. File open/save dialogs work for `.ply`/`.dgt`/`.pts` (custom extensions selectable, no crash on odd extensions), ⌘ accelerators work alongside Ctrl, and GPA (`geomorph::gpagen`) with sliding, principal-axis alignment, and tangent-space options runs on macOS.
-  4. `.dgt` save/load/merge and `.csv`/`.rds` export work on macOS, and `.dgt` files/exports are byte-compatible with Windows-authored files (endianness/serialization round-trip verified both directions).
-  5. Windows build still works: the full digitizing → GPA → export workflow runs unchanged on the Windows build. **VERIFIED 2026-07-18** — rebuilt Windows DLL: full workflow, 6-specimen `.dgt` round-trip (uniform 1000-point surfaces), wheel = 1 step/notch, portrait canvas correct, 212 live picks / 0 failed across 3 rgl plots. Required one new in-milestone fix, `gfx_make_current` per frame (`129b42a`).
+  1. Curve definition works with the existing three-click selection and the
+     cyan/red/blue visual feedback, and anchors can be placed (DGT-01).
+  2. Surface semilandmark display, delete, undo, and multi-specimen switching all
+     work in the browser (DGT-02).
+  3. GPA (`geomorph::gpagen`) and `.csv`/`.rds` export are driven from the browser
+     UI and produce results identical to the native path on the same input
+     (DGT-03).
+  4. A `.dgt` written through the browser path is byte-identical to one written
+     through the native path from the same session (DAT-01).
+  5. A GUImorph-authored `.dgt` opens correctly here, and a GUImorphWeb-authored
+     `.dgt` opens correctly in GUImorph, verified against
+     `tests/fixtures/parity/` (DAT-02).
+  6. Full workflow end to end: PLY load, landmarks, curves, surfaces, GPA, export.
+  7. Native oracle still loads (CMP-01). Retired after this phase.
 
-**Plans**: 4/4 plans complete
-**Wave 1**
+**Plans**: TBD
 
-- [x] 05-01-PLAN.md — Retina coordinate authority + core macOS input normalization (PICK-01/02/03)
+**Note (external dependency)**: Criterion 5 is only as strong as GUImorph's own
+cross-platform `.dgt` parity, which is closed Windows to macOS but not macOS to
+Windows. Track that, do not own it. If it is still open when this phase lands,
+state the limitation rather than claiming a contract that is half-proven.
 
-**Wave 2** *(depends on 05-01)*
+**Note (surface flattening)**: Flattening surface semilandmarks for display
+requires `as.vector(t(surfaces[,,id]))`. Omitting the transpose scrambles point
+order. Cover it with a regression test rather than with care.
 
-- [x] 05-02-PLAN.md — Dialog/shortcut parity + tab-gating stability (PICK-04/05, DIG-05)
+### Phase 6: Shell and Native Retirement
 
-**Wave 3** *(depends on 05-01, 05-02)*
-
-- [x] 05-03-PLAN.md — Landmark/anchor/curve/surface interaction parity + GPA compute parity (DIG-01/02/03/04, ANL-01)
-
-**Wave 4** *(depends on 05-03)*
-
-- [x] 05-04-PLAN.md — `.dgt` + export compatibility hardening and cross-platform byte-parity gate (DAT-01/02/03)
-
-**Note**: DAT-03 remains a blocking bidirectional parity gate requiring off-box Windows evidence (D-16 recurring checkpoint). Windows-side artifact is ready: `testdgt_6_phase5test.DGT` (6 specimens, uniform surface counts) is verified locally and can go to Austin as-is; the return leg needs a macOS-authored `.dgt` opened on Windows.
-
-**Note (GL context, `129b42a`)**: `gfx_make_current` was only ever called at `setWindow`. `wglMakeCurrent` and `-[NSOpenGLContext makeCurrentContext]` bind per *thread*, so any rgl plot on the R main thread silently unbound the engine's context: black canvas, every pick rejected, recoverable only by restarting GUImorph. `onDisplay` now rebinds per frame. This is a **prerequisite for Phase 6**, which puts rgl and the engine in the same process by design.
-
-### Phase 6: rgl Result-Plot Fallback on macOS
-
-**Goal**: Make GPA/PCA/mean-shape result plots render on macOS via an rgl NULL/`rglwidget` fallback, since interactive XQuartz rgl is broken on current macOS.
+**Goal**: Replace the Tk chrome, then remove the native engine and its entire build
+surface.
 **Depends on**: Phase 5
-**Requirements**: ANL-02
+**Requirements**: UI-01, UI-02, UI-03
 **Success Criteria** (what must be TRUE):
 
-  1. Aligned-specimen, PCA morphospace, and mean-shape plots render on macOS via `options(rgl.useNULL = TRUE, rgl.printRglwidget = TRUE)` → `rglwidget()` (WebGL) instead of failing on broken XQuartz GLX.
-  2. Plot functions are audited so they do not rely on `select3d()` / `rgl.snapshot()` (unsupported in NULL mode), or those usages are replaced.
-  3. Windows build still works: result plots render unchanged on the Windows build.
+  1. Tabs, dialogs, specimen navigation, and the status bar are reimplemented in
+     the browser shell, at feature parity with the Tk chrome (UI-01).
+  2. The complete workflow runs with the native engine uninstalled and absent from
+     the library path (UI-02).
+  3. `tkogl2` is deleted from the package and `rgl` is removed from dependencies
+     entirely (UI-03). CMP-01 is retired here, deliberately.
+  4. A migration note ships in `NEWS.md` for users on the native path, with a
+     documented version to pin if they need to stay.
 
-**Plans**: 2/2 plans complete
+**Plans**: TBD
 
-**Wave 1**
+**Note (do not skip criterion 4)**: A third party already installed the GUImorph
+Windows binary successfully. Anyone mid-project needs a pinnable version and a
+stated path forward before the native engine disappears.
 
-- [x] 06-01-PLAN.md — ANL-02: add platform-guarded `.rgl_show()` helper (macOS `rglwidget()`→`saveWidget(selfcontained=FALSE)`→`browseURL()`→`close3d()`; Windows unchanged `rgl.bringtotop`) + `.isMacOS()`-guarded `options(rgl.useNULL=TRUE)` at startup, wire into `plotspecs`/`plotMeanShape`, promote `htmlwidgets` in DESCRIPTION, add `test-rgl-fallback-macos.R` (source-scan audit + headless widget smoke)
+## What Disappears at Phase 6
 
-**Wave 2** *(depends on 06-01)*
+The tri-platform CMake, MSVC and Rtools, the WGL and NSGL backends, the
+`gfx_backend.h` seam, Tcl/Tk version and Aqua/X11 matching, XQuartz, deployment
+targets, universal2, notarization, Gatekeeper, the DLL and dylib
+commit-and-deploy dance, and the class of defect where the build tree and the
+deployed binary disagree.
 
-- [x] 06-02-PLAN.md — ANL-02/CMP-01: human-verify checkpoints — live macOS render of aligned-specimen + mean-shape widgets and PCA quartz window; off-box Windows result-plot regression
+## What Survives Untouched
 
-**Note**: Research (06-RESEARCH.md, HIGH/verified live) resolved the flag: neither 3-D plot function uses `select3d`/`rgl.snapshot`/`snapshot3d`, so ANL-02 criterion 2 is already satisfied (the audit test keeps it true). `plotPCA` is base-graphics via quartz — it needs a live confirmation, not an `rglwidget` rewrite (ROADMAP's "PCA via rglwidget" framing is a mismatch). Only `plotspecs` and `plotMeanShape` get the widget fallback. No new package installs. This phase corrects PROJECT.md's stale "macOS renders rgl plots today" assumption.
+Every R analytical path, the `.dgt` format, the parity suite and its fixtures, the
+`geomorph` integration and `exportGeomorph()`, and the accumulated lessons from
+the three engine defect classes, even though the code carrying them goes.
 
 ## Progress
 
@@ -176,15 +261,34 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Aqua-Tk Gate + Rendering Seam | 5/5 | Complete   | 2026-07-13 |
-| 2. Pathname Drawable Resolution | 1/1 | Complete   | 2026-07-15 |
-| 3. Tri-Platform Build + Load + Drop GLUT | 1/1 | Complete (Windows verified; macOS `.dylib` build in Phase 4) | 2026-07-16 |
-| 4. macOS NSGL Backend — First Light | 3/3 | Complete    | 2026-07-17 |
-| 5. Retina Picking, Input & Parity | 4/4 | Complete    | 2026-07-19 |
-| 6. rgl Result-Plot Fallback | 2/2 | Complete    | 2026-07-20 |
+| 1. Result Plots + rgl Demotion | 0/TBD | Not started | - |
+| 2. Transport and Mesh Display | 0/TBD | Not started | - |
+| 3. Offline Packaging and Lifecycle | 0/TBD | Not started | - |
+| 4. Picking Parity | 0/TBD | Not started | - |
+| 5. Full Digitizing and Data Parity | 0/TBD | Not started | - |
+| 6. Shell and Native Retirement | 0/TBD | Not started | - |
 
 ## Notes
 
-- **Hard ordering (non-negotiable):** the Aqua-Tk deployment gate (Phase 1) blocks all GL work; the seam must exist before any backend (1 → 2 → 3 → 4); Retina-correct picking (PICK-01, Phase 5) blocks all picking-based digitizing parity.
-- **Deferred / out of milestone:** Offscreen FBO + Tk-photo-blit fallback backend (v2 escape hatch behind the same seam), Linux (GLX/X11) support, Metal-backed rendering.
-- **Side-track (not a v1 requirement):** hardening the unsafe PLY parser (`strcpy`/`sscanf`/`sprintf`) under clang ASan/UBSan is parallelizable and independent of the port spine. It maps to no v1 requirement and is intentionally kept out of the port's blast radius; track separately if pursued.
+- **Hard ordering (non-negotiable):** transport (Phase 2) blocks picking (Phase 4),
+  because there is nothing to raycast against until a mesh renders. Picking parity
+  (Phase 4) blocks all digitizing parity (Phase 5). Data parity (Phase 5) blocks
+  retirement (Phase 6).
+- **Shippable stopping points:** Phases 1, 2, and 3 are each independently
+  shippable and each fix something real on current macOS. Phase 4 is the gate.
+  Phases 5 and 6 are all-or-nothing together, since a half-migrated acquisition
+  path is worse than either whole path.
+- **Relationship to GUImorph:** GUImorph's native macOS work continues on its own
+  track and is not duplicated, merged, or blocked here. The only thing flowing
+  between the projects is the `.dgt` data contract and R-layer fixes, which can be
+  cherry-picked from the `upstream` remote.
+- **Positioning consequence:** GUImorph's stated differentiator is running entirely
+  inside R with no external application and no JSON round-trip. A loopback server
+  plus a bundled browser surface preserves the substance of that claim: launched
+  from R, offline, native geomorph output, nothing separate to install. It does
+  change the mechanism, and public and commercial framing should describe it
+  accurately rather than restate the native-GL claim. StereoMorph establishes the
+  precedent for browser-based digitizing inside R with this same user base.
+- **Deferred:** Linux support, which this architecture makes nearly free but which
+  is not scoped here. Metal-backed native rendering, which this architecture makes
+  unnecessary.
