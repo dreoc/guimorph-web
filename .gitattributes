@@ -1,0 +1,16 @@
+# Byte-exact test fixtures.
+#
+# tests/fixtures/parity/ holds .dgt files whose exact bytes ARE the test.
+# test-dgt-cross-platform.R md5s them raw via .byte_signature(). With
+# core.autocrlf=true on Windows (the default for many installs), git would
+# rewrite the macOS-authored LF fixture to CRLF on checkout and silently
+# destroy the evidence the test exists to check.
+#
+# -text disables all end-of-line conversion while keeping the files diffable.
+*.dgt   -text
+*.DGT   -text
+
+# Session data written by GUImorphWeb. Same reasoning: the writer's exact
+# output is what round-trip tests compare.
+*.ply   -text
+*.pts   -text

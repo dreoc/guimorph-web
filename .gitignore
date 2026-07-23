@@ -161,3 +161,9 @@ test_data/
 
 # --- machine-specific template (regenerated per project) ---
 integrated-guimorph-development_EOC/Project/GUImorphDevelopment/template.txt
+
+# ===========================================================================
+# Build artifacts that must never be committed
+# ===========================================================================
+*.tar.gz
+*.Rcheck/
