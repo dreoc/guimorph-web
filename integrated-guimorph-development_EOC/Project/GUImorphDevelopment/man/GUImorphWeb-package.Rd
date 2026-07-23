@@ -3,10 +3,9 @@
 \docType{package}
 \name{GUImorphWeb-package}
 \alias{GUImorphWeb-package}
-\alias{GUImorphWeb}
 \title{Graphical User Interface for Morphometrics}
 \description{
-GUI to R programs to digitize in 3D, conduct geometric morphomteric analyses and plotting results based on OpenGL and Tk widget
+GUI to R programs to digitize in 3D, conduct geometric morphometric analyses and plotting results based on OpenGL and Tk widget
 }
 \author{
 Erik Otarola-Castillo

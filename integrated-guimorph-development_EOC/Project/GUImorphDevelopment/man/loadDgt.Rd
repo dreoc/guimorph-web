@@ -2,10 +2,18 @@
 % Please edit documentation in R/rtkogl.R
 \name{loadDgt}
 \alias{loadDgt}
-\title{loadDGT}
+\title{Load a DGT session file}
 \usage{
 loadDgt(fileName)
 }
+\arguments{
+\item{fileName}{Character. Path to the \code{.dgt} file to read.}
+}
+\value{
+Invisibly \code{NULL}.
+}
 \description{
-loadDGT
+Placeholder for reading a \code{.dgt} digitizing session. Not currently
+called by the interface; retained for a planned C implementation reached
+through the tcl_if functions.
 }
