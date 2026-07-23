@@ -5,4 +5,11 @@
 ^bak
 \.bak
 -bak$
+^DATA_LOG_FILES
+^startGUI\.R$
+^activedatalist\.rds$
+^\.gitignore$
+\.dll\.
+\.dylib\.
+^inst/libs/i386
 template.txt

@@ -394,7 +394,17 @@ del <- function(shape, arg1 = -1, arg2 = -1, arg3 = -1)
 
 
 
-#' GUImorph
+#' Launch the GUImorph digitizing interface
+#'
+#' Opens the GUImorph window for 3D geometric morphometric digitizing:
+#' landmarks, curve and surface semilandmarks, GPA, and export in a
+#' geomorph-compatible format.
+#'
+#' @param debug Logical. If \code{TRUE}, print diagnostic output to the
+#'   console while the interface runs.
+#'
+#' @return Invisibly \code{NULL}; called for its side effect of opening the
+#'   interface.
 #' @export
 GUImorph <- function(debug = FALSE) {
   options(guimorph.debug = isTRUE(debug))
@@ -424,7 +434,15 @@ GUImorph <- function(debug = FALSE) {
 # via the tcl_if functions
 #
 
-#' loadDGT
+#' Load a DGT session file
+#'
+#' Placeholder for reading a \code{.dgt} digitizing session. Not currently
+#' called by the interface; retained for a planned C implementation reached
+#' through the tcl_if functions.
+#'
+#' @param fileName Character. Path to the \code{.dgt} file to read.
+#'
+#' @return Invisibly \code{NULL}.
 #' @export
 loadDgt <- function(fileName)
 {

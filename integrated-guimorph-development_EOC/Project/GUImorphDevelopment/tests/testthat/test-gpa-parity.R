@@ -1,5 +1,9 @@
 pkg_root <- normalizePath(file.path(testthat::test_path(), "..", ".."))
 
+# These tests inspect package source text; skip when only an installed
+# package is available. See helper-pkg-source.R.
+skip_if_no_pkg_source()
+
 test_that("compute forwards parity-critical gpagen options", {
   geomorph_file <- file.path(pkg_root, "R", "3dDigitize.geomorph.r")
   src <- readLines(geomorph_file, warn = FALSE)

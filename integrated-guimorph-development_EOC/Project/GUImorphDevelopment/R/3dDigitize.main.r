@@ -8,11 +8,11 @@ get_main_date <- function()
 
 #' @name GUImorph-package
 #' @docType package
-#' @aliases GUImorph
+#' @aliases GUImorph-package
 #' @title Graphical User Interface for Morphometrics
 #' @author Erik Otarola-Castillo
 #'
-#' @description GUI to R programs to digitize in 3D, conduct geometric morphomteric analyses and plotting results based on OpenGL and Tk widget
+#' @description GUI to R programs to digitize in 3D, conduct geometric morphometric analyses and plotting results based on OpenGL and Tk widget
 
 #' @import parallel
 NULL

@@ -2,10 +2,20 @@
 % Please edit documentation in R/rtkogl.R
 \name{GUImorph}
 \alias{GUImorph}
-\title{GUImorph}
+\title{Launch the GUImorph digitizing interface}
 \usage{
-GUImorph()
+GUImorph(debug = FALSE)
+}
+\arguments{
+\item{debug}{Logical. If \code{TRUE}, print diagnostic output to the
+console while the interface runs.}
+}
+\value{
+Invisibly \code{NULL}; called for its side effect of opening the
+  interface.
 }
 \description{
-GUImorph
+Opens the GUImorph window for 3D geometric morphometric digitizing:
+landmarks, curve and surface semilandmarks, GPA, and export in a
+geomorph-compatible format.
 }

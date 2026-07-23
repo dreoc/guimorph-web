@@ -1,5 +1,9 @@
 pkg_root <- normalizePath(file.path(testthat::test_path(), "..", ".."))
 
+# These tests inspect package source text; skip when only an installed
+# package is available. See helper-pkg-source.R.
+skip_if_no_pkg_source()
+
 .byte_signature <- function(path) {
   raw <- readBin(path, what = "raw", n = file.info(path)$size)
   tf <- tempfile(fileext = ".bin")
@@ -27,7 +31,15 @@ test_that("dgt writer output matches parity fixture", {
   source(file.path(pkg_root, "R", "3dDigitize.curve.r"), local = TRUE)
   source(file.path(pkg_root, "R", "3dDigitize.surface.r"), local = TRUE)
 
-  fixture <- file.path(pkg_root, "tests", "fixtures", "parity", "reference-session.dgt")
+  # Ships in inst/extdata, so it is reachable from an installed package. During
+  # R CMD check only tests/ is copied to the check directory, so system.file() is
+  # the only path that resolves there; the source-tree fallback covers
+  # devtools::test() against an uninstalled tree.
+  fixture <- system.file("extdata", "folsom3d.dgt", package = "GUImorph")
+  if (!nzchar(fixture)) {
+    fixture <- file.path(pkg_root, "inst", "extdata", "folsom3d.dgt")
+  }
+  skip_if_not(file.exists(fixture), "folsom3d.dgt fixture not available")
   out <- tempfile(fileext = ".dgt")
   file.create(out)
 
