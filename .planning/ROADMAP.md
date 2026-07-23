@@ -30,7 +30,7 @@ coordinates for the Phase 4 gate. It is deleted at Phase 6.
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Result Plots + rgl Demotion** - Move the two 3D result plots to a three.js widget and make `rgl` optional so the package loads where rgl cannot
+- [ ] **Phase 1: Result Plots + rgl Demotion** - Vendor three.js, move the two 3D result plots to a widget, and make `rgl` optional so the package loads where rgl cannot
 - [ ] **Phase 2: Transport and Mesh Display** - `httpuv` serves the PLY over loopback; three.js renders and orbits it
 - [ ] **Phase 3: Offline Packaging and Lifecycle** - Bundle the JS, select a port, launch the browser, tear down on session end
 - [ ] **Phase 4: Picking Parity** - BVH raycast returns hit coordinates matching the native `gluUnProject` result within tolerance
@@ -45,11 +45,14 @@ Decimal phases appear between their surrounding integers in numeric order.
 make `rgl` an optional dependency so the package loads and runs on a host where
 rgl itself cannot load.
 **Depends on**: Nothing (first phase)
-**Requirements**: PLT-01, PLT-02, PLT-03, CMP-01
+**Requirements**: WEB-00, PLT-01, PLT-02, PLT-03, CMP-01
 **Success Criteria** (what must be TRUE):
 
-  1. `plotspecs` (aligned specimens) and `plotMeanShape` render through a bundled
-     three.js htmlwidget with orbit, zoom, and reset view. Read-only.
+  1. three.js and `three-mesh-bvh` are vendored into `inst/htmlwidgets/` with
+     licences, and a minimal widget wrapper (scene, camera, orbit, resize, reset)
+     renders from R with no network access (WEB-00).
+  1b. `plotspecs` (aligned specimens) and `plotMeanShape` render through that
+     wrapper as point clouds, with orbit, zoom, and reset view. Read-only.
   2. `library(GUImorphWeb)` succeeds and the full digitizing workflow runs on a
      host where `library(rgl)` fails. Morpho is removed (it hard-imports rgl and
      was used for one function, now reimplemented over Rvcg); `rgl` and
@@ -95,6 +98,21 @@ pass `iter.max = 100`, which research showed is too low to converge at low slide
 counts. Raising it changes existing template output, so it is tracked separately
 rather than folded into a dependency change.
 
+**Note (vendoring moved here)**: WEB-03 originally owned "vendor three.js
+offline." Phase 1 is the first phase that needs it, so it moved here as WEB-00
+and Phase 3 keeps only the clean-install and offline verification. The wrapper
+built here is reused by WEB-02 (mesh display) and PICK-01 (raycast), so this is
+the first increment of Phase 2 rather than a detour before it.
+
+**Note (sequencing, considered and rejected)**: deferring PLT-01 until after the
+Phase 4 gate was considered, on the grounds that it is user value rather than
+risk reduction. Rejected for two reasons. It shares nearly all its machinery with
+WEB-02, differing only in that point clouds need no HTTP transport, so doing it
+first builds toward Phase 2 instead of competing with it. And it is the value
+that survives if the gate fails: after PLT-02, a machine where rgl cannot load
+can digitize but cannot draw 3-D result plots at all, and PLT-01 is what restores
+them.
+
 **Why first**: touches zero acquisition data, cannot corrupt a session, fixes a
 live load failure, and teaches the stack where mistakes are cheap.
 
@@ -137,10 +155,9 @@ teardown reliable on a locked-down machine.
 **Requirements**: WEB-03, WEB-04, CMP-01
 **Success Criteria** (what must be TRUE):
 
-  1. three.js and `three-mesh-bvh` are vendored into `inst/htmlwidgets/` with
-     licence files. No CDN reference, no runtime network access.
-  2. A clean `install.packages()` on a fresh R opens a working viewport with the
-     machine fully offline, on both Windows and macOS.
+  1. A clean `install.packages()` on a fresh R opens a working viewport with the
+     machine fully offline, on both Windows and macOS. (The vendoring itself
+     landed in Phase 1 as WEB-00.)
   3. Port selection survives a port already in use, and the failure mode is a
      clear R-level error rather than a silent hang.
   4. The server is torn down on viewport close, on session exit, and on R session
@@ -292,6 +309,11 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
   shippable and each fix something real on current macOS. Phase 4 is the gate.
   Phases 5 and 6 are all-or-nothing together, since a half-migrated acquisition
   path is worse than either whole path.
+- **Reference architecture:** `landmarking-EOC`, the author's Flask + browser 2D
+  landmarking tool, already implements this architecture for the same users. The
+  state-ownership, port, offline, browser-launch, and testing decisions are
+  inherited from it rather than re-derived. See
+  `.planning/research/REFERENCE-ARCHITECTURE.md`.
 - **Relationship to GUImorph:** GUImorph's native macOS work continues on its own
   track and is not duplicated, merged, or blocked here. The only thing flowing
   between the projects is the `.dgt` data contract and R-layer fixes, which can be

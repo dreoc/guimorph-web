@@ -20,7 +20,8 @@ vendored in `inst/htmlwidgets/`, no CDN, no runtime network.
 
 ### Result Plots and Dependency Demotion
 
-- [ ] **PLT-01**: `plotspecs` (aligned specimens) and `plotMeanShape` render through a bundled three.js htmlwidget with orbit, zoom, and reset view. Read-only: no picking, no overlay editing
+- [ ] **WEB-00**: three.js and `three-mesh-bvh` are vendored into `inst/htmlwidgets/` with licence files, and a minimal htmlwidget wrapper (scene, camera, orbit, resize, reset view) renders from R with no network access. Owned by Phase 1 because PLT-01 is the first thing that needs it; WEB-02 and PICK-01 reuse the same wrapper
+- [ ] **PLT-01**: `plotspecs` (aligned specimens) and `plotMeanShape` render through the WEB-00 widget as point clouds with orbit, zoom, and reset view. Read-only: no picking, no overlay editing. GPA results are small enough to pass as JSON, so this needs no HTTP transport
 - [ ] **PLT-02**: `library(GUImorphWeb)` succeeds and the full digitizing workflow runs on a host where `library(rgl)` fails. This requires removing **Morpho**, not just demoting rgl: Morpho hard-imports rgl, was pulled in wholesale by `import(Morpho)`, and was used for exactly one function (`fastKmeans`), now reimplemented over Rvcg in `R/template_kmeans.R`. `rgl` and `htmlwidgets` move to `Suggests` with all call sites guarded; the unused `vegan` and `parallel` imports are dropped. See `.planning/phases/01-browser-result-plots-rgl-demotion/01-RESEARCH.md`
 - [ ] **PLT-03**: `plotPCA` works without a native graphics device. It stays base-graphics 2D and is **not** converted to WebGL. The single-component ordination crash was already fixed in 0.10.0 (`a8a6cf0`); do not reopen it
 
@@ -28,7 +29,7 @@ vendored in `inst/htmlwidgets/`, no CDN, no runtime network.
 
 - [ ] **WEB-01**: An `httpuv` server started from R binds to loopback on an unprivileged port and serves the PLY as bytes over HTTP, never JSON-encoded, behind a per-session random path or token
 - [ ] **WEB-02**: three.js `PLYLoader` fetches and renders the served mesh with orbit, zoom, and reset view, on stock macOS and stock Windows, with no XQuartz, Homebrew, or Tcl/Tk in the render path
-- [ ] **WEB-03**: three.js and `three-mesh-bvh` are vendored offline into `inst/htmlwidgets/` with licences, and a clean `install.packages()` on a fresh R opens a working viewport with the machine offline
+- [ ] **WEB-03**: a clean `install.packages()` on a fresh R opens a working viewport with the machine fully offline, on both Windows and macOS (the vendoring itself lands in Phase 1 as WEB-00)
 - [ ] **WEB-04**: Port selection, browser launch, and teardown (viewport close, session exit, R session end) are reliable on a managed machine: occupied ports fail with a clear R-level error rather than a hang, no orphaned listener survives, and a missing, misconfigured, or blocked default browser degrades legibly
 
 ### Picking
@@ -77,7 +78,8 @@ vendored in `inst/htmlwidgets/`, no CDN, no runtime network.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PLT-01 | Phase 1 | Not started |
+| WEB-00 | Phase 1 | Not started |
+| PLT-01 | Phase 1 | Not started — depends on WEB-00 |
 | PLT-02 | Phase 1 | Not started |
 | PLT-03 | Phase 1 | Not started |
 | WEB-01 | Phase 2 | Not started |
@@ -97,7 +99,7 @@ vendored in `inst/htmlwidgets/`, no CDN, no runtime network.
 | UI-03 | Phase 6 | Not started |
 | CMP-01 | Phase 1 (recurs through Phase 5) | Not started |
 
-**Coverage:** 20/20 v1 requirements mapped, no orphans, no duplicates. CMP-01 is
+**Coverage:** 21/21 v1 requirements mapped, no orphans, no duplicates. CMP-01 is
 owned by Phase 1 for mapping but enforced as a "native oracle still works"
 success criterion in every phase through Phase 5.
 
