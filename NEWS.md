@@ -1,3 +1,15 @@
+# GUImorphWeb
+
+GUImorphWeb starts from **GUImorph 0.10.0** (2026-07-20), the most refined state
+of that project: macOS arm64 support, the geomorph `.rds` export, curve
+rendering fixes, the per-frame GL context rebind, and the cross-platform `.dgt`
+parity suite. For changes before the split, see
+[GUImorph](https://github.com/dreoc/GUImorph).
+
+Entries below this point are GUImorph's own history, retained for reference.
+
+---
+
 # GUImorph 0.9.0
 
 First public beta (Windows only).

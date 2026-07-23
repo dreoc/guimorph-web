@@ -53,8 +53,9 @@ rgl itself cannot load.
   2. `rgl` moves from `Imports` to `Suggests` and every call site is guarded, so
      `library(GUImorphWeb)` succeeds and the digitizing workflow runs on a host
      where `library(rgl)` fails on missing `libGLU`.
-  3. `plotPCA` continues to work without a native device, stays base-graphics 2D,
-     and no longer crashes on a single-component ordination.
+  3. `plotPCA` continues to work without a native device and stays base-graphics
+     2D. The single-component ordination crash was fixed in 0.10.0 (`a8a6cf0`)
+     and must not regress.
   4. Visual parity: the three.js aligned-specimen and mean-shape output is
      comparable to the inherited rgl output on the same GPA result.
   5. Native oracle still loads (CMP-01): the retained `tkogl2` engine still builds

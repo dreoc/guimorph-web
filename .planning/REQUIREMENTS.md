@@ -22,7 +22,7 @@ vendored in `inst/htmlwidgets/`, no CDN, no runtime network.
 
 - [ ] **PLT-01**: `plotspecs` (aligned specimens) and `plotMeanShape` render through a bundled three.js htmlwidget with orbit, zoom, and reset view. Read-only: no picking, no overlay editing
 - [ ] **PLT-02**: `rgl` moves from `Imports` to `Suggests` with every call site guarded, so `library(GUImorphWeb)` succeeds and the digitizing workflow runs on a host where `library(rgl)` fails on missing `libGLU`
-- [ ] **PLT-03**: `plotPCA` works without a native graphics device. It stays base-graphics 2D and is **not** converted to WebGL. The inherited single-component ordination crash is fixed while this function is open
+- [ ] **PLT-03**: `plotPCA` works without a native graphics device. It stays base-graphics 2D and is **not** converted to WebGL. The single-component ordination crash was already fixed in 0.10.0 (`a8a6cf0`); do not reopen it
 
 ### Transport and Display
 

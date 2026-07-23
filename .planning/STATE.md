@@ -50,8 +50,9 @@ failed). That validation is what makes the engine usable as a reference oracle.
 
 - **`.dgt` cross-platform parity, macOS to Windows direction** is not closed in
   GUImorph. DAT-02 here depends on it. Track, do not own.
-- **PCA single-component crash** is inherited and scheduled for Phase 1, since
-  `plotPCA` is already being modified there.
+- **NEWS.md and README drifted** through 0.10.0. Reconstructed at split time,
+  but the release had no NEWS entry and shipped `exportGeomorph()` undocumented.
+  Treat release notes as a gate, not an afterthought.
 
 ## Current Position
 

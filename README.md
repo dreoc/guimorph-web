@@ -171,7 +171,7 @@ A typical end-to-end session looks like this:
 4. **PCA (morphospace)** plots PC1/PC2 of the aligned coordinates; **Plot Mean
    Shape** reconstructs and renders the consensus surface (Radius factor /
    Wireframe controls adjust the surface).
-5. **Save Result** to export the aligned coordinates to a `.csv`.
+5. **Save Result** to export the aligned coordinates and centroid size to a `.csv`.
 
 ### 7. Save and reload your work
 
@@ -182,6 +182,14 @@ A typical end-to-end session looks like this:
   (their template, curves, and per-specimen point counts must match).
 - **File → Load DGT File** restores a session. If the file contains anchors,
   **Place Anchors** is re-checked automatically and locked, and all tabs open.
+- **File → Export to geomorph (.rds)** writes a plethodon-style list
+  (`land` p x k x n array, `curves`, `surfaces`, `specimen.names`) via
+  `saveRDS`. Load it with `readRDS()` and pass straight to `geomorph`:
+
+  ```r
+  d <- readRDS("session.rds")
+  gpa <- geomorph::gpagen(d$land, curves = d$curves, surfaces = d$surfaces)
+  ```
 
 ---
 
