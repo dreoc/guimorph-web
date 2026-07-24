@@ -74,7 +74,8 @@
     if (is.null(mesh$color)) "#cccccc" else mesh$color,
     if (isTRUE(mesh$wireframe)) "true" else "false")
 
-  html <- sprintf(GMW_VIEW3D_TEMPLATE, title, background, cloud_js, mesh_js)
+  html <- sprintf(GMW_VIEW3D_TEMPLATE, title, background, background,
+                  cloud_js, mesh_js)
   f <- file.path(dir, "index.html")
   writeLines(html, f, useBytes = TRUE)
   utils::browseURL(f)
@@ -98,11 +99,14 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
 <script>
 (function(){
   var THREE = GMW.THREE, OrbitControls = GMW.OrbitControls;
-  var CLOUDS = %s, MESH = %s;
+  var BG = "%s", CLOUDS = %s, MESH = %s;
 
   var canvas = document.getElementById("c");
   var renderer = new THREE.WebGLRenderer({canvas:canvas, antialias:true});
   renderer.setPixelRatio(window.devicePixelRatio || 1);
+  // Canvas covers the page, so the CSS background never shows; the clear
+  // colour is what paints. Default white, matching rgl.
+  renderer.setClearColor(new THREE.Color(BG), 1);
   var scene = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera(45, 1, 0.01, 5000);
   var group = new THREE.Group();
