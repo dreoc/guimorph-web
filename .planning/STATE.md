@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Browser Rendering
-current_phase: 1
-status: executing
-stopped_at: "PLT-02 and PLT-03 landed; WEB-00 and PLT-01 remain"
+current_phase: 2
+status: planning
+stopped_at: "Phase 1 complete; Phase 2 not yet planned"
 last_updated: "2026-07-23T00:00:00.000Z"
-last_activity: 2026-07-23
-last_activity_desc: "PLT-02 complete (Morpho removed, fastKmeans reimplemented); reference architecture adopted from landmarking-EOC"
+last_activity: 2026-07-24
+last_activity_desc: "Phase 1 complete and verified on Windows + macOS; engine load made non-fatal"
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 0
   completed_plans: 0
-  percent: 0
-current_phase_name: Result Plots + rgl Demotion
+  percent: 17
+current_phase_name: Local Transport + Mesh Display
 ---
 
 # Project State
@@ -56,24 +56,37 @@ The most consequential consequence: R keeps the `.dgt` writer, so DAT-01 and
 DAT-02 compare one writer against itself rather than two implementations against
 each other.
 
-## Phase 1 Progress
+## Phase 1: complete
 
-**Done.**
+All four requirements shipped. Full detail in
+`.planning/phases/01-browser-result-plots-rgl-demotion/01-SUMMARY.md`.
 
-- **PLT-02** — Morpho removed from the dependency graph. It hard-imported rgl and
-  was used for one function (`fastKmeans`), now reimplemented over Rvcg in
-  `R/template_kmeans.R` at exact numerical parity, median 1.4x faster, and
-  deterministic under a fixed seed. `vegan` and `parallel` removed as unused.
-  `rgl` and `htmlwidgets` demoted to `Suggests` with all call sites guarded.
-  geomorph confirmed rgl-free at 4.1.1. Test suite unchanged: 106 pass.
-- **PLT-03** — already satisfied by inherited work. `plotPCA` routes through
-  `.plot_show()`, stays base-graphics, and the single-component crash was fixed
-  in GUImorph 0.10.0 (`a8a6cf0`). Needs verification, not work.
+- **WEB-00** — three.js + three-mesh-bvh vendored as one classic-script bundle
+  by the pinned toolchain in `scripts/vendor/`, byte-reproducible across Node
+  versions. `R/view3d.R` opens a plain page over it. Renders from `file://` on
+  Windows and macOS, which is the constraint the bundling exists for.
+- **PLT-01** — both 3-D result plots through the browser; zero `rgl::` calls
+  left in `3dDigitize.geomorph.r`.
+- **PLT-02** — Morpho removed (it was the only thing pulling rgl into Imports),
+  `fastKmeans` reimplemented over Rvcg at exact parity and median 1.4x faster.
+  Imports down to geomorph, Rvcg, tcltk, tcltk2.
+- **PLT-03** — inherited and verified; `plotPCA` stays base-graphics 2-D.
 
-**Remaining.**
+Two things came out of the macOS run that were not in the plan: the native
+engine load is now non-fatal, so a broken `tkogl2.dylib` no longer takes the
+browser paths down with it; and `otool -L` on `rgl.so` established *why* rgl is
+a hard macOS dependency (three load-time libraries under `/opt/X11`), which
+confirmed the premise PLT-02 rests on after it had been wrongly doubted.
 
-- **WEB-00** — vendor three.js and `three-mesh-bvh`, build the widget wrapper.
-- **PLT-01** — route `plotspecs` and `plotMeanShape` through that wrapper.
+## Phase 2: next
+
+**Local Transport + Mesh Display (WEB-01, WEB-02).** `httpuv` serves a PLY over
+loopback; three.js `PLYLoader` renders it. Port selection and the
+server-owns-state design are inherited from `research/REFERENCE-ARCHITECTURE.md`
+rather than re-derived. `B7_1_clean.ply` (363,283 verts, 30 MB ASCII) is
+committed and is the worst-case transfer test.
+
+Phase 4 picking parity remains the gate for the whole milestone.
 
 ## Open Items
 
