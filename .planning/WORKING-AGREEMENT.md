@@ -13,7 +13,9 @@ Phase 1 because every item below was learned the expensive way.
 | Secondary | macOS 26.5.2, arm64, R 4.6.1, XQuartz installed, repo at `~/dev/guimorph-web` |
 | Specimens | Folsom PLYs at `C:\dev\Folsom3D` (also committed under `tests/fixtures/parity/`) |
 
-`Rscript` is **not** on PATH on Windows. See "Improvements worth making" below.
+R is installed at `C:\Users\eotarola\R-4.6.1` (user profile, **not**
+`C:\Program Files\R`), and `C:\Users\eotarola\R-4.6.1\bin\x64` is on the user
+PATH, so `Rscript` works from PowerShell.
 
 ## How work is delivered
 
@@ -109,27 +111,18 @@ parse and still be wrong. It only removes one failure mode.
 
 ## Improvements worth making
 
-**Get `Rscript` onto PATH on Windows.** Highest-leverage change available. Find
-it and add the directory permanently:
-
-```powershell
-(Get-ChildItem "C:\Program Files\R" -Filter Rscript.exe -Recurse -ErrorAction SilentlyContinue).FullName
-[Environment]::SetEnvironmentVariable(
-  "Path",
-  [Environment]::GetEnvironmentVariable("Path", "User") + ";C:\Program Files\R\R-4.6.1\bin\x64",
-  "User")
-```
-
-Restart the shell, then verify: `Rscript --version`
-
-With that in place, verification becomes one line in the shell Erik is already
-in, instead of a GUI round-trip:
+**`Rscript` is on PATH** as of the end of Phase 1, so verification is one line
+in the shell Erik is already in rather than a switch to RGui:
 
 ```powershell
 Rscript -e "devtools::test('integrated-guimorph-development_EOC/Project/GUImorphDevelopment')"
-Rscript -e "devtools::load_all('...'); GUImorphWeb:::.gmw_engine$ok"
+Rscript -e "devtools::load_all('integrated-guimorph-development_EOC/Project/GUImorphDevelopment'); GUImorphWeb:::.gmw_engine$ok"
 Rscript scripts\check-template-kmeans-parity.R C:\dev\Folsom3D\A6_1_clean.ply
 ```
+
+If it ever stops resolving, R is at `C:\Users\eotarola\R-4.6.1\bin\x64`. Note
+that `SetEnvironmentVariable` writes to the registry, so a running shell keeps
+its old environment; a new window is required.
 
 Note that `R CMD check` and `devtools::test()` still need the package's
 dependencies installed, which they are.
