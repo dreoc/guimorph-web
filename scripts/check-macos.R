@@ -64,13 +64,26 @@ results$loaded <- loaded
 
 if (loaded) {
   ok("GUImorphWeb loaded.")
-  pulled_rgl <- "rgl" %in% loadedNamespaces()
-  if (pulled_rgl) {
-    no("rgl IS in loadedNamespaces() after load. Something still pulls it in.")
+
+  # This MUST run in a fresh process. Section 2 called loadNamespace("rgl") to
+  # find out whether rgl works, which leaves rgl in loadedNamespaces() for the
+  # rest of this session -- so checking it here would just find the rgl this
+  # script loaded and report a failure that is not real.
+  pulled_rgl <- tryCatch(
+    callr::r(function(p) {
+      suppressMessages(devtools::load_all(p, quiet = TRUE))
+      "rgl" %in% loadedNamespaces()
+    }, args = list(p = normalizePath(PKG))),
+    error = function(e) { inf("subprocess check failed: ",
+                              conditionMessage(e)); NA })
+  if (isTRUE(pulled_rgl)) {
+    no("rgl IS in loadedNamespaces() in a clean process. Something pulls it in.")
     inf("Find it with: sapply(loadedNamespaces(), function(p) ",
         "'rgl' %in% names(getNamespaceInfo(p, 'imports')))")
+  } else if (isFALSE(pulled_rgl)) {
+    ok("rgl is NOT loaded in a clean process. Nothing pulls it in.")
   } else {
-    ok("rgl is NOT in loadedNamespaces(). Nothing pulls it in.")
+    inf("inconclusive, see above")
   }
   results$pulled_rgl <- pulled_rgl
 
@@ -129,7 +142,7 @@ if (loaded) {
 
 # --- verdict ----------------------------------------------------------------
 cat("\n== VERDICT ==\n")
-if (isTRUE(results$loaded) && identical(results$pulled_rgl, FALSE)) {
+if (isTRUE(results$loaded) && isFALSE(results$pulled_rgl)) {
   if (isTRUE(results$rgl_loads)) {
     cat("   PARTIAL. Package loads and never touches rgl, but rgl works on\n")
     cat("   this machine, so the Tahoe failure was not reproduced. PLT-02\n")
