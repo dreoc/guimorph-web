@@ -128,15 +128,71 @@ parity check assert equality rather than approximation.
   changes existing template output, so it is a behaviour change and belongs in
   its own commit with its own parity evidence.
 
-## Verification still owed
+## Verification (macOS 26.5.2, arm64, R 4.6.1)
 
-`geomorph (>= 4.1.1)` is assumed rgl-free on the basis of current CRAN metadata.
-Confirm against the installed version before closing the phase:
+### Why rgl is a hard dependency on macOS, mechanically
 
-```r
-packageDescription("geomorph")$Imports
-packageDescription("geomorph")$Depends
+`otool -L` on the installed `rgl.so`:
+
+```
+/opt/X11/lib/libGLU.1.dylib
+/opt/X11/lib/libGL.1.dylib
+/opt/X11/lib/libX11.6.dylib
+/System/Library/Frameworks/GLKit.framework/.../GLKit
 ```
 
-If rgl appears there, PLT-02 is still blocked and geomorph needs the same
-treatment.
+Three of rgl's shared-library dependencies live under `/opt/X11`, which is
+XQuartz. These are ordinary load-time dependencies, so on a Mac without XQuartz
+`dyn.load()` cannot resolve them, `library(rgl)` errors, and **any package with
+rgl in `Imports` fails to load with it**. That is the failure PLT-02 exists to
+remove, and it is structural rather than incidental.
+
+Two distinct macOS behaviours follow, and they were conflated during this work:
+
+| XQuartz | rgl | Effect on a package importing rgl |
+|---|---|---|
+| absent | cannot load: unresolved `/opt/X11` libraries | package cannot load at all |
+| present | loads, then `rgl.init()` fails `GLXBadContext` and falls back to the null device | package loads; interactive 3-D is dead |
+
+The test machine has XQuartz, so it exhibits the second row. It cannot reproduce
+the first, which is why PLT-02 could not be closed empirically there. The
+`otool` linkage settles it anyway: the first row is a property of how rgl is
+built, not a machine-specific accident.
+
+**Correction to the record.** Mid-phase this document's premise was doubted on
+the evidence of that XQuartz-equipped Mac, and the removal of Morpho was briefly
+described as dependency hygiene rather than a fix for a load failure. The
+linkage above shows the original premise was correct. Removing Morpho is
+load-bearing: it was the only thing pulling rgl into `Imports`, and with it gone
+the package no longer requires XQuartz to load on macOS.
+
+### What the macOS run did verify
+
+- **Package loads with a broken native engine.** `tkogl2.dylib` is built against
+  Tcl 9.0 while R 4.6.1's tcltk links a different major version, so the engine
+  refuses to load. `.onLoad` previously called `stop()`, which took every
+  browser path down with it. It now records the diagnostic and defers refusal to
+  `GUImorphWeb()`. The package loads, and result plots, the viewport, GPA and
+  export all work without the engine. Pinned by a regression test.
+- **`file://` works on macOS.** The viewport opened at
+  `file:///private/var/folders/.../index.html` and rendered. This is the
+  constraint the classic-script bundle exists for, now confirmed on both
+  platforms: three.js ships ES modules only from 0.160, and ES modules are
+  CORS-blocked on `file://`.
+- **Rvcg reads the PLY fixtures** at full resolution (A6_1: 71014 verts,
+  142008 faces), so the Phase 2 mesh path has its input on macOS.
+- **geomorph is rgl-free at 4.1.1.** `Imports` is graphics, grDevices, stats,
+  utils, jpeg, ape, parallel, ggplot2, plotly; `Depends` is RRPP, R, Matrix.
+
+### Still owed
+
+- **A Mac without XQuartz.** The `otool` linkage predicts `library(rgl)` fails
+  and `library(GUImorphWeb)` succeeds there. That is the last empirical step for
+  PLT-02, and it is now a prediction with a stated mechanism rather than an
+  assumption.
+- **`"rgl" %in% loadedNamespaces()` after a clean `load_all`.** The first
+  version of `scripts/check-macos.R` tested this in a session where its own
+  earlier step had already called `loadNamespace("rgl")`, so it reported a
+  failure that was an artefact of the script. Now run in a `callr` subprocess.
+- **`tkogl2.dylib` rebuilt against R's Tcl.** Needed for macOS digitizing;
+  independent of Phase 1.
