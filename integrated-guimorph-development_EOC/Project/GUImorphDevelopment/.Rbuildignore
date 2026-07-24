@@ -13,3 +13,4 @@
 \.dylib\.
 ^inst/libs/i386
 template.txt
+\.ply$
