@@ -1,0 +1,27 @@
+{
+  "generated": "2026-07-23",
+  "generator": "scripts/vendor/build.mjs",
+  "output": "guimorphweb-three.js",
+  "globalName": "GMW",
+  "format": "iife",
+  "bytes": 807350,
+  "sha256": "956f03323925b8ff67945e32e8c785b37fa43f7f0ac194aa2abdc154e73f26dd",
+  "packages": {
+    "three": "0.185.1",
+    "three-mesh-bvh": "0.9.13"
+  },
+  "builtWith": {
+    "esbuild": "0.28.1",
+    "node": "v24.18.0"
+  },
+  "exports": [
+    "THREE",
+    "OrbitControls",
+    "PLYLoader"
+  ],
+  "notes": [
+    "Classic script, no top-level import/export, so it loads from file:// as well as http://.",
+    "three-mesh-bvh prototype patches are applied at bundle time; Mesh.raycast is already accelerated.",
+    "three.js ships ES modules only from 0.160; this bundle exists because ES modules are CORS-blocked on file://."
+  ]
+}

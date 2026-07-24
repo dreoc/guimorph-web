@@ -48,9 +48,12 @@ rgl itself cannot load.
 **Requirements**: WEB-00, PLT-01, PLT-02, PLT-03, CMP-01
 **Success Criteria** (what must be TRUE):
 
-  1. three.js and `three-mesh-bvh` are vendored into `inst/htmlwidgets/` with
-     licences, and a minimal widget wrapper (scene, camera, orbit, resize, reset)
-     renders from R with no network access (WEB-00).
+  1. three.js (with OrbitControls and PLYLoader) and `three-mesh-bvh` are vendored
+     into `inst/htmlwidgets/` as one classic-script bundle with licences and a
+     version manifest, built by the pinned toolchain in `scripts/vendor/`. A
+     minimal R wrapper writes a plain HTML page and opens it with `browseURL()`,
+     with no network access and without returning `htmlwidgets` to Imports
+     (WEB-00).
   1b. `plotspecs` (aligned specimens) and `plotMeanShape` render through that
      wrapper as point clouds, with orbit, zoom, and reset view. Read-only.
   2. `library(GUImorphWeb)` succeeds and the full digitizing workflow runs on a
@@ -97,6 +100,17 @@ evidence in `01-RESEARCH.md`.
 pass `iter.max = 100`, which research showed is too low to converge at low slider
 counts. Raising it changes existing template output, so it is tracked separately
 rather than folded into a dependency change.
+
+**Note (classic script, not ES modules)**: three.js dropped its UMD build; 0.185
+ships ES modules only, and ES modules are CORS-blocked on `file://`. A plain HTML
+page opened with `browseURL()` therefore cannot `import` three.js. Rather than
+pull HTTP transport forward into Phase 1, the vendoring step bundles three,
+OrbitControls, PLYLoader, and three-mesh-bvh into a single ~790 KB IIFE exposing
+one global. It loads from `file://` and over `httpuv` alike, so Phase 1 stays
+transport-free and Phase 2 reuses the same artifact. BVH prototype patches are
+applied at bundle time, so `Mesh.raycast` is already accelerated when Phase 4
+arrives. Cost: vendoring needs Node and esbuild, maintainer-only, once per
+three.js upgrade. Users never compile anything.
 
 **Note (vendoring moved here)**: WEB-03 originally owned "vendor three.js
 offline." Phase 1 is the first phase that needs it, so it moved here as WEB-00

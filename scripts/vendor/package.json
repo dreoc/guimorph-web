@@ -1,0 +1,16 @@
+{
+  "name": "guimorphweb-vendor",
+  "private": true,
+  "description": "Maintainer-only toolchain that bundles three.js into inst/htmlwidgets/. Not required to install or run GUImorphWeb.",
+  "type": "module",
+  "scripts": {
+    "vendor": "node build.mjs"
+  },
+  "dependencies": {
+    "three": "0.185.1",
+    "three-mesh-bvh": "0.9.13"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.1"
+  }
+}
