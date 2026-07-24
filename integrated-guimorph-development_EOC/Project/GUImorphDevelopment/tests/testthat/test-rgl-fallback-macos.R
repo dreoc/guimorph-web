@@ -28,44 +28,63 @@ test_that("3-D plot file uses no interactive-selection / snapshot rgl calls (ANL
   expect_false(any(grepl("snapshot3d", src, fixed = TRUE)))
 })
 
-test_that("plotspecs and plotMeanShape display via .rgl_show(), not rgl.bringtotop directly", {
+test_that("plotspecs and plotMeanShape render through the three.js viewport, not rgl", {
   digitize_file <- file.path(pkg_root, "R", "3dDigitize.geomorph.r")
   src <- readLines(digitize_file, warn = FALSE)
 
-  # bringtotop must live only inside the rtkogl.R helper, never in the plot bodies.
+  # PLT-01: the whole file is rgl-free. This is stronger than the old assertion,
+  # which only required that rgl be reached through a helper.
+  expect_false(any(grepl("rgl::", src, fixed = TRUE)))
   expect_false(any(grepl("rgl.bringtotop", src, fixed = TRUE)))
 
   plotspecs_body <- .fn_body(src, "plotspecs")
   meanshape_body <- .fn_body(src, "plotMeanShape")
-  expect_true(any(grepl(".rgl_show(", plotspecs_body, fixed = TRUE)))
-  expect_true(any(grepl(".rgl_show(", meanshape_body, fixed = TRUE)))
+  expect_true(any(grepl(".gmw_view3d(", plotspecs_body, fixed = TRUE)))
+  expect_true(any(grepl(".gmw_view3d(", meanshape_body, fixed = TRUE)))
+
+  # plotPCA stays base-graphics 2-D through .plot_show() (PLT-03).
+  expect_true(any(grepl(".plot_show(", .fn_body(src, "plotPCA"), fixed = TRUE)))
 })
 
-test_that(".rgl_show() helper defines the macOS widget path and the Windows branch", {
+test_that(".gmw_view3d() writes a page over the vendored bundle and opens it", {
+  view_file <- file.path(pkg_root, "R", "view3d.R")
+  expect_true(file.exists(view_file))
+  src <- readLines(view_file, warn = FALSE)
+
+  expect_true(any(grepl("^\\.gmw_view3d <- function", src)))
+
+  body <- .fn_body(src, ".gmw_view3d")
+  # Copies the vendored bundle beside the page, then opens it. No network, and
+  # no htmlwidgets: rgl and htmlwidgets are Suggests, not Imports (PLT-02).
+  expect_true(any(grepl("guimorphweb-three.js", body, fixed = TRUE)))
+  expect_true(any(grepl("browseURL", body, fixed = TRUE)))
+  expect_false(any(grepl("saveWidget", body, fixed = TRUE)))
+  expect_false(any(grepl("http", body, fixed = TRUE)))
+
+  # The bundle itself must be committed, with its licences and manifest.
+  wd <- file.path(pkg_root, "inst", "htmlwidgets")
+  expect_true(file.exists(file.path(wd, "guimorphweb-three.js")))
+  expect_true(file.exists(file.path(wd, "VENDOR-MANIFEST.json")))
+  expect_true(file.exists(file.path(wd, "LICENSE.three.txt")))
+})
+
+test_that("a failed native engine load does not abort package load", {
+  # Found on macOS 26.5.2: tkogl2.dylib is built against Tcl 9.0 while R 4.6.1's
+  # tcltk links a different major version, so the engine will not load. .onLoad
+  # used to stop() there, which took the browser paths down with it even though
+  # they need no native engine. The failure is now deferred to the one entry
+  # point that does need it.
   rtkogl_file <- file.path(pkg_root, "R", "rtkogl.R")
   src <- readLines(rtkogl_file, warn = FALSE)
 
-  expect_true(any(grepl("^.rgl_show <- function", src)))
+  onload_body <- .fn_body(src, ".onLoad")
+  expect_false(any(grepl("stop(", onload_body, fixed = TRUE)))
+  expect_true(any(grepl("packageStartupMessage", onload_body, fixed = TRUE)))
+  expect_true(any(grepl(".gmw_engine$ok", onload_body, fixed = TRUE)))
 
-  helper_body <- .fn_body(src, ".rgl_show")
-  # macOS branch: NULL device -> WebGL widget written without pandoc, opened in browser.
-  expect_true(any(grepl("rglwidget", helper_body, fixed = TRUE)))
-  expect_true(any(grepl("saveWidget", helper_body, fixed = TRUE)))
-  expect_true(any(grepl("selfcontained = FALSE", helper_body, fixed = TRUE)))
-  expect_true(any(grepl("browseURL", helper_body, fixed = TRUE)))
-  expect_true(any(grepl("close3d", helper_body, fixed = TRUE)))
-  # Windows branch: byte-identical interactive path preserved (CMP-01).
-  expect_true(any(grepl("rgl.bringtotop", helper_body, fixed = TRUE)))
-})
-
-test_that("options(rgl.useNULL = TRUE) is .isMacOS()-guarded at GUImorphWeb() startup", {
-  rtkogl_file <- file.path(pkg_root, "R", "rtkogl.R")
-  src <- readLines(rtkogl_file, warn = FALSE)
-
-  guimorph_body <- .fn_body(src, "GUImorphWeb")
-  guard_line <- grepl("rgl.useNULL = TRUE", guimorph_body, fixed = TRUE) &
-    grepl(".isMacOS()", guimorph_body, fixed = TRUE)
-  expect_true(any(guard_line))
+  # Digitizing, and only digitizing, refuses when the engine is absent.
+  expect_true(any(grepl(".gmw_require_engine()",
+                        .fn_body(src, "GUImorphWeb"), fixed = TRUE)))
 })
 
 test_that("plotPCA stays base-graphics (no rgl:: calls)", {
@@ -122,24 +141,4 @@ test_that(".plot_show() on macOS writes a PNG and opens it without a native wind
   expect_true(file.exists(opened))
   expect_gt(file.info(opened)$size, 0)
   expect_match(opened, "\\.png$")
-})
-
-test_that("NULL-mode rglwidget -> saveWidget(selfcontained = FALSE) writes a non-empty file", {
-  skip_if_not_installed("rgl")
-  skip_if_not_installed("htmlwidgets")
-
-  old <- options(rgl.useNULL = TRUE)
-  on.exit(options(old), add = TRUE)
-
-  rgl::open3d()
-  on.exit(try(rgl::close3d(), silent = TRUE), add = TRUE)
-  rgl::points3d(matrix(stats::rnorm(30), ncol = 3))
-  rgl::aspect3d("iso")
-
-  w <- rgl::rglwidget()
-  f <- tempfile(fileext = ".html")
-  htmlwidgets::saveWidget(w, f, selfcontained = FALSE)
-
-  expect_true(file.exists(f))
-  expect_gt(file.info(f)$size, 0)
 })

@@ -407,11 +407,8 @@ del <- function(shape, arg1 = -1, arg2 = -1, arg3 = -1)
 #'   interface.
 #' @export
 GUImorphWeb <- function(debug = FALSE) {
+  .gmw_require_engine()
   options(guimorph.debug = isTRUE(debug))
-  # macOS rgl has no OpenGL, so the interactive device is dead; switch rgl to the
-  # NULL device before any Results button can call open3d() (the option is read at
-  # open3d() time). Guarded to macOS so the Windows interactive window is unchanged.
-  if (.isMacOS()) options(rgl.useNULL = TRUE)
   e <- new.env()
   class(e) <- "main"
   ui(e)
@@ -485,6 +482,34 @@ loadDgt <- function(fileName)
 
 
 #loads tkogl2 functions during loading
+# ---------------------------------------------------------------------------
+#  Native engine status.
+#
+#  GUImorph made a failed tkogl2 load fatal, correctly: the native engine WAS
+#  the only viewport, so a package that loaded without it was a dead GUI.
+#
+#  That is no longer true here. Result plots, the three.js viewport, GPA, and
+#  export need no native engine, and from Phase 2 the browser becomes the
+#  viewport outright. Making the load fatal blocks every browser path on any
+#  machine where the engine will not load, which is exactly the situation this
+#  milestone exists to escape. So the failure is recorded and deferred to the
+#  one entry point that genuinely needs it.
+# ---------------------------------------------------------------------------
+.gmw_engine <- new.env(parent = emptyenv())
+.gmw_engine$ok  <- FALSE
+.gmw_engine$msg <- "the engine was never initialised"
+
+#' Stop unless the native tkogl2 engine loaded. Called by digitizing entry
+#' points only; browser paths must not call this.
+#' @noRd
+.gmw_require_engine <- function() {
+  if (isTRUE(.gmw_engine$ok)) return(invisible(TRUE))
+  stop("GUImorphWeb: 3D digitizing needs the native tkogl2 engine, which did ",
+       "not load.\n  ", .gmw_engine$msg,
+       "\n  Result plots and the browser viewport do not need it and still work.",
+       call. = FALSE)
+}
+
 .onLoad <- function(libname, pkgname)
 {
   chname <- "tkogl2"
@@ -530,30 +555,39 @@ loadDgt <- function(fileName)
   dbg("-----------------")
 
   if (!nzchar(file)) {
-    # BLD-02: fail loudly and specifically. Without the engine there is no 3D
-    # viewport at all, so a quiet warning would leave the user with a silently
-    # dead GUI and a Windows-only hint. Abort with an accurate, actionable message.
-    stop("GUImorphWeb: the tkogl2 rendering engine was not found in the installed ",
+    # Record and return: digitizing will refuse via .gmw_require_engine(), but
+    # the browser paths load fine without it.
+    .gmw_engine$ok  <- FALSE
+    .gmw_engine$msg <- paste0(
+      "The tkogl2 engine was not found in the installed ",
          "package. Looked for '", chname, "' with extension(s) ",
          paste(exts, collapse = " / "), " under libs/",
          paste(c(archs[nzchar(archs)], "(root)"), collapse = " | "), ". ",
          "3D digitizing cannot work without it. If you built from source, deploy ",
          "the engine (", chname, tcl.ext, ") into inst/libs/", 
          if (any(nzchar(archs))) paste0(archs[nzchar(archs)][1], "/") else "",
-         " and reinstall.", call. = FALSE)
+         " and reinstall.")
+    packageStartupMessage(.gmw_engine$msg)
+    return(invisible())
   }
 
-  tryCatch(
-    tcl("load", file, "Tkogl2"),
-    error = function(e)
-      # BLD-02: the file exists but Tcl could not load it. Surface the real
-      # reason instead of degrading to a broken viewport.
-      stop("GUImorphWeb: loading the tkogl2 engine at '", file, "' failed: ",
-           conditionMessage(e), ". This usually means an architecture mismatch ",
-           "(e.g. a 32-bit engine under 64-bit R) or a missing runtime dependency ",
-           "the engine links against (such as the platform Tk library).",
-           call. = FALSE)
-  )
+  tryCatch({
+    tcl("load", file, "Tkogl2")
+    .gmw_engine$ok  <- TRUE
+    .gmw_engine$msg <- ""
+  }, error = function(e) {
+    # The file exists but Tcl refused it: architecture mismatch, a Tcl major
+    # version mismatch between the engine build and R's own Tcl, or a missing
+    # runtime dependency. Report it, do not abort the package.
+    .gmw_engine$ok  <- FALSE
+    .gmw_engine$msg <- paste0(
+      "Loading the tkogl2 engine at '", file, "' failed: ",
+      conditionMessage(e),
+      "\n  Common causes: an architecture mismatch, an engine built against a ",
+      "different Tcl major version than R's tcltk links, or a missing runtime ",
+      "dependency such as the platform Tk library.")
+    packageStartupMessage("GUImorphWeb: ", .gmw_engine$msg)
+  })
   invisible()
 }
 
@@ -872,37 +906,10 @@ bindDeleteGesture <- function(widget, handler) {
   }
 }
 
-# Platform-guarded display for a freshly built 3-D rgl scene. Windows keeps the
-# interactive OpenGL window; macOS (where this rgl build has no OpenGL) captures
-# the NULL-device scene as a WebGL widget and opens it in the default browser.
-.rgl_show <- function() {
-  # rgl and htmlwidgets are Suggests, not Imports: rgl cannot load on current
-  # macOS, and it is needed only for these result plots. Callers already check,
-  # but this helper is guarded too so it stays safe if reused.
-  if (!requireNamespace("rgl", quietly = TRUE)) {
-    stop("3D result plots need the rgl package. Run install.packages(\"rgl\").",
-         call. = FALSE)
-  }
-  if (.isMacOS()) {
-    if (!requireNamespace("htmlwidgets", quietly = TRUE)) {
-      stop("Showing 3D plots on macOS needs htmlwidgets. ",
-           "Run install.packages(\"htmlwidgets\").", call. = FALSE)
-    }
-    # NULL device on macOS -> render the current scene as a WebGL widget.
-    w <- rgl::rglwidget()
-    # Random temp name avoids symlink/clobber in the shared tempdir().
-    f <- tempfile(pattern = "guimorph-rgl-", fileext = ".html")
-    # selfcontained = FALSE is mandatory: pandoc is absent on the target box, so
-    # the TRUE default (used by print()/saveWidget) errors instead of writing.
-    htmlwidgets::saveWidget(w, f, selfcontained = FALSE)
-    # browseURL has no shell surface (unlike system("open ...")).
-    utils::browseURL(f)
-    # Free the NULL device so scenes don't accumulate across a session.
-    rgl::close3d()
-  } else {
-    rgl::rgl.bringtotop(stay = TRUE)
-  }
-}
+# NOTE: .rgl_show() lived here. PLT-01 routed both 3-D result plots through the
+# three.js viewport (.gmw_view3d in view3d.R), so the rgl NULL-device/rglwidget
+# fallback it implemented has no caller and was removed. .plot_show() below is
+# still live: plotPCA is base-graphics 2-D and does not involve rgl.
 
 # Platform-guarded display for a base-graphics (2-D) plot (e.g. the PCA
 # morphospace). Windows keeps the interactive dev.new() window. macOS renders to
