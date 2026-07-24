@@ -374,22 +374,19 @@ save <- function(e) {
 plotspecs <- function(e) {
   gm.res <- .gm_results_or_warn(e)
   if (is.null(gm.res)) return()
-  if (!requireNamespace("rgl", quietly = TRUE)) {
-    tkmessageBox(title = "Plot error",
-      message = "3D plots need the rgl package. Run install.packages(\"rgl\").",
-      icon = "error", type = "ok"); return()
-  }
   aligned   <- .gm_aligned_coords(gm.res)
   consensus <- gm.res$consensus
   ptcex   <- as.numeric(tclvalue(e$ptcex))
   meancex <- as.numeric(tclvalue(e$meancex))
   n <- dim(aligned)[3]
-  cols <- grDevices::rainbow(n)
-  rgl::open3d()
-  for (i in seq_len(n)) rgl::points3d(aligned[, , i], color = cols[i], size = ptcex * 3)
-  rgl::points3d(consensus, color = "red", size = meancex * 4)
-  rgl::aspect3d("iso")
-  .rgl_show()
+  # rainbow() returns 9-char #RRGGBBAA; THREE.Color only parses #RGB or #RRGGBB.
+  cols <- substr(grDevices::rainbow(n), 1L, 7L)
+  clouds <- lapply(seq_len(n), function(i) {
+    list(coords = aligned[, , i], color = cols[i], size = ptcex * 3)
+  })
+  clouds[[n + 1L]] <- list(coords = consensus, color = "#ff0000",
+                           size = meancex * 4)
+  .gmw_view3d(clouds = clouds, title = "Plot Aligned Specimens")
 }
 
 plotPCA <- function(e) {
@@ -458,9 +455,9 @@ plotPCA <- function(e) {
 plotMeanShape <- function(e) {
   gm.res <- .gm_results_or_warn(e)
   if (is.null(gm.res)) return()
-  if (!requireNamespace("rgl", quietly = TRUE) || !requireNamespace("Rvcg", quietly = TRUE)) {
+  if (!requireNamespace("Rvcg", quietly = TRUE)) {
     tkmessageBox(title = "Mean shape",
-      message = "Needs rgl and Rvcg. Run install.packages(c(\"rgl\",\"Rvcg\")).",
+      message = "Needs Rvcg. Run install.packages(\"Rvcg\").",
       icon = "error", type = "ok"); return()
   }
   M <- as.matrix(gm.res$consensus)
@@ -477,9 +474,11 @@ plotMeanShape <- function(e) {
     return()
   }
   wire <- as.character(tclvalue(e$meshWire)) == "1"
-  rgl::open3d()
-  if (wire) rgl::wire3d(mesh, color = "black") else rgl::shade3d(mesh, color = "lightgray")
-  rgl::points3d(M, color = "red", size = 4)
-  rgl::aspect3d("iso")
-  .rgl_show()
+  .gmw_view3d(
+    clouds = list(list(coords = M, color = "#ff0000", size = 4)),
+    mesh = list(vertices  = t(mesh$vb[1L:3L, , drop = FALSE]),
+                faces     = mesh$it,
+                color     = if (wire) "#000000" else "#d3d3d3",
+                wireframe = wire),
+    title = "Plot Mean Shape")
 }
