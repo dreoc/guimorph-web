@@ -43,6 +43,45 @@
   p
 }
 
+#' Build the GUImorphWeb three.js viewport page as an HTML string
+#'
+#' Assembles \code{GMW_VIEW3D_TEMPLATE} into a self-contained page and returns
+#' it as a character scalar. Kept separate from \code{.gmw_view3d} so callers
+#' that serve the page over HTTP (Phase 2 transport, \code{mesh_url}) can obtain
+#' the markup without the file:// tempdir + browseURL delivery.
+#'
+#' @param clouds list of point layers, each
+#'   \code{list(coords = <p x 3 matrix>, color = "#rrggbb", size = <numeric>)}.
+#' @param mesh optional inlined mesh \code{list(vertices = <p x 3>,
+#'   faces = <3 x f>, color = "#rrggbb", wireframe = <logical>)}.
+#' @param mesh_url optional same-origin URL/filename of a PLY to fetch and render
+#'   as a solid shaded surface. When non-empty, geometry is loaded asynchronously
+#'   via \code{GMW.PLYLoader} and the camera is framed after the load completes.
+#' @param title window/page title.
+#' @param background page background colour.
+#' @return the HTML page as a length-1 character string.
+#' @keywords internal
+#' @noRd
+.gmw_view3d_html <- function(clouds = list(), mesh = NULL, mesh_url = "",
+                             title = "GUImorphWeb", background = "#ffffff") {
+  cloud_js <- vapply(clouds, function(cl) {
+    sprintf("{p:%s,c:'%s',s:%s}",
+            .gmw_flat(cl$coords),
+            if (is.null(cl$color)) "#000000" else cl$color,
+            format(if (is.null(cl$size)) 3 else cl$size))
+  }, character(1))
+  cloud_js <- paste0("[", paste(cloud_js, collapse = ","), "]")
+
+  mesh_js <- if (is.null(mesh)) "null" else sprintf(
+    "{v:%s,f:%s,c:'%s',w:%s}",
+    .gmw_flat(mesh$vertices), .gmw_faces(mesh$faces),
+    if (is.null(mesh$color)) "#cccccc" else mesh$color,
+    if (isTRUE(mesh$wireframe)) "true" else "false")
+
+  sprintf(GMW_VIEW3D_TEMPLATE, title, background, background,
+          cloud_js, mesh_js, mesh_url)
+}
+
 #' Render point clouds and an optional mesh in a browser viewport
 #'
 #' @param clouds list of point layers, each
@@ -60,22 +99,8 @@
   dir.create(dir)
   file.copy(.gmw_bundle_path(), file.path(dir, "guimorphweb-three.js"))
 
-  cloud_js <- vapply(clouds, function(cl) {
-    sprintf("{p:%s,c:'%s',s:%s}",
-            .gmw_flat(cl$coords),
-            if (is.null(cl$color)) "#000000" else cl$color,
-            format(if (is.null(cl$size)) 3 else cl$size))
-  }, character(1))
-  cloud_js <- paste0("[", paste(cloud_js, collapse = ","), "]")
-
-  mesh_js <- if (is.null(mesh)) "null" else sprintf(
-    "{v:%s,f:%s,c:'%s',w:%s}",
-    .gmw_flat(mesh$vertices), .gmw_faces(mesh$faces),
-    if (is.null(mesh$color)) "#cccccc" else mesh$color,
-    if (isTRUE(mesh$wireframe)) "true" else "false")
-
-  html <- sprintf(GMW_VIEW3D_TEMPLATE, title, background, background,
-                  cloud_js, mesh_js)
+  html <- .gmw_view3d_html(clouds = clouds, mesh = mesh, mesh_url = "",
+                           title = title, background = background)
   f <- file.path(dir, "index.html")
   writeLines(html, f, useBytes = TRUE)
   utils::browseURL(f)
@@ -98,8 +123,8 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
 <script src="guimorphweb-three.js"></script>
 <script>
 (function(){
-  var THREE = GMW.THREE, OrbitControls = GMW.OrbitControls;
-  var BG = "%s", CLOUDS = %s, MESH = %s;
+  var THREE = GMW.THREE, OrbitControls = GMW.OrbitControls, PLYLoader = GMW.PLYLoader;
+  var BG = "%s", CLOUDS = %s, MESH = %s, MESH_URL = "%s";
 
   var canvas = document.getElementById("c");
   var renderer = new THREE.WebGLRenderer({canvas:canvas, antialias:true});
@@ -124,6 +149,36 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
     return g;
   }
 
+  var controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+
+  // Camera pull-back distance from framing. Hoisted to the IIFE scope so that
+  // reset() and the r-key handler resolve it whether framing runs synchronously
+  // (point-cloud / inlined-mesh path) or is deferred into the async PLY load
+  // callback (mesh-URL path).
+  var dist = 1;
+
+  function reset(){
+    camera.position.set(0, 0, dist);
+    camera.near = dist / 100; camera.far = dist * 100;
+    camera.updateProjectionMatrix();
+    controls.target.set(0,0,0);
+    controls.update();
+  }
+
+  // Frame the whole scene: centre at the bounding-sphere centre and pull the
+  // camera back far enough that the sphere fits the vertical FOV. Equivalent to
+  // rgl aspect3d("iso") plus an automatic fit. Called after geometry is present
+  // -- synchronously for clouds/inlined mesh, deferred for the mesh-URL path.
+  function frameScene(){
+    var box = new THREE.Box3().setFromObject(group);
+    var sphere = box.getBoundingSphere(new THREE.Sphere());
+    var home = sphere.radius > 0 ? sphere.radius : 1;
+    dist = home / Math.sin((camera.fov * Math.PI / 180) / 2) * 1.15;
+    group.position.sub(sphere.center);
+    reset();
+  }
+
   CLOUDS.forEach(function(cl){
     var g = attr(cl.p);
     group.add(new THREE.Points(g, new THREE.PointsMaterial({
@@ -140,26 +195,32 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
     })));
   }
 
-  // Frame the whole scene: centre at the bounding-sphere centre and pull the
-  // camera back far enough that the sphere fits the vertical FOV. Equivalent to
-  // rgl aspect3d("iso") plus an automatic fit.
-  var box = new THREE.Box3().setFromObject(group);
-  var sphere = box.getBoundingSphere(new THREE.Sphere());
-  var home = sphere.radius > 0 ? sphere.radius : 1;
-  var dist = home / Math.sin((camera.fov * Math.PI / 180) / 2) * 1.15;
-  group.position.sub(sphere.center);
-
-  var controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-
-  function reset(){
-    camera.position.set(0, 0, dist);
-    camera.near = dist / 100; camera.far = dist * 100;
-    camera.updateProjectionMatrix();
-    controls.target.set(0,0,0);
-    controls.update();
+  if (MESH_URL) {
+    // Async fetch of a served PLY (same-origin, avoids CORS). The reference
+    // meshes carry no vertex normals, so compute them in the callback or the
+    // Lambert surface renders black. Scan RGB is intentionally ignored: the
+    // material sets colour + DoubleSide only (per-vertex scan colour stays
+    // off). Framing is deferred to here: the geometry is absent at first paint.
+    new PLYLoader().load(MESH_URL, function(geometry){
+      geometry.computeVertexNormals();
+      group.add(new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({
+        color: "#cccccc", side: THREE.DoubleSide
+      })));
+      frameScene();
+    }, function(e){
+      // onProgress: e.loaded / e.total (the 30 MB worst case streams here).
+      if (e && e.lengthComputable) {
+        var pct = Math.round((e.loaded / e.total) * 100);
+        document.getElementById("h").textContent = "Loading mesh " + pct + "%%";
+      }
+    }, function(e){
+      // onError: surface a legible message in the HUD instead of failing silent.
+      var msg = (e && e.message) ? e.message : String(e);
+      document.getElementById("h").textContent = "Failed to load mesh: " + msg;
+    });
+  } else {
+    frameScene();
   }
-  reset();
 
   function resize(){
     var w = canvas.clientWidth, h = canvas.clientHeight;
