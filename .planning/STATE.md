@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Browser Rendering
 status: ready_to_execute
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-07-31T18:08:34.907Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-07-31T18:20:00.000Z"
 progress:
   total_phases: 6
   completed_phases: 0
@@ -79,13 +79,26 @@ browser paths down with it; and `otool -L` on `rgl.so` established *why* rgl is
 a hard macOS dependency (three load-time libraries under `/opt/X11`), which
 confirmed the premise PLT-02 rests on after it had been wrongly doubted.
 
-## Phase 2: next
+## Phase 2: both plans executed, manual UAT pending
 
-**Local Transport + Mesh Display (WEB-01, WEB-02).** `httpuv` serves a PLY over
-loopback; three.js `PLYLoader` renders it. Port selection and the
+**Local Transport + Mesh Display (WEB-01, WEB-02).** Both plans are executed:
+02-01 shipped the three.js `PLYLoader` mesh-from-URL render branch; 02-02 shipped
+the transport. `.gmw_serve_mesh()` (`R/transport.R`) starts a background `httpuv`
+listener bound to `127.0.0.1` on an unprivileged port and serves one specimen PLY
+as raw bytes via `staticPaths`, behind a per-session >=128-bit random path token,
+retaining the live handle in `.gmw_server` against GC. Port selection and the
 server-owns-state design are inherited from `research/REFERENCE-ARCHITECTURE.md`
-rather than re-derived. `B7_1_clean.ply` (363,283 verts, 30 MB ASCII) is
-committed and is the worst-case transfer test.
+rather than re-derived. `httpuv` is now a locked Import.
+
+**Owed before the phase closes:**
+- Manual browser UAT (`02-VALIDATION.md`, Manual-Only): all 6 reference specimens
+  load and orbit/zoom/`r`-reset shaded (not black) on stock macOS and stock
+  Windows; the worst-case `B7_1_clean.ply` (363,283 verts, 30 MB ASCII) transfers
+  and frames acceptably. Now unblocked by `.gmw_serve_mesh()`.
+- Re-run the CMP-01 `library(GUImorphWeb)` load gate on a host with a display —
+  the headless sandbox could not (`tcltk2` GUI init blocks with no window server);
+  the `httpuv`-specific half of CMP-01 (importable + Imports + locked) is verified.
+- Teardown/port-recovery/browser-degradation are deliberately Phase 3 / WEB-04.
 
 Phase 4 picking parity remains the gate for the whole milestone.
 
@@ -107,14 +120,21 @@ Phase 4 picking parity remains the gate for the whole milestone.
 - **Roxygen debt.** 22 S3 methods need `@exportS3Method`; `@docType "package"` is
   deprecated. Inherited, surfaces as `R CMD check` noise.
 
+- **`renv` installed in site-library (workspace-local side effect).** Installed
+  during 02-02 to generate the `httpuv` lock entry; it now makes bare
+  `R`/`Rscript` hang on startup under a restricted network (`.Rprofile` →
+  `activate.R`). Workaround: run R with `--no-init-file`. No committed file
+  changed. Remove the installed `renv` package to restore clean bare-R startup,
+  or leave it and use `--no-init-file`. Harmless on a normal networked machine.
+
 - **`iter.max = 100` is too low at low slider counts.** All three template call
   sites pass it; research showed neither implementation converges at k = 500.
   Raising it changes template output, so it needs its own commit and evidence.
 
 ## Session
 
-**Last session:** 2026-07-31T18:08:34.898Z
-**Stopped at:** Completed 02-01-PLAN.md
+**Last session:** 2026-07-31T18:20:00.000Z
+**Stopped at:** Completed 02-02-PLAN.md
 **Resume file:** None
 
 ## Performance Metrics
@@ -122,3 +142,4 @@ Phase 4 picking parity remains the gate for the whole milestone.
 | Phase | Plan | Duration | Notes |
 |-------|------|----------|-------|
 | Phase 02 P01 | 22 min | 2 tasks | 2 files |
+| Phase 02 P02 | ~95 min | 3 tasks | 5 files (httpuv transport, token guard, tests) |

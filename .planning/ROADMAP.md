@@ -157,14 +157,14 @@ browser with orbit, zoom, and reset. No overlays, no picking.
 
   5. Native oracle still loads (CMP-01).
 
-**Plans**: 1/2 plans executed
+**Plans**: 2/2 plans executed (phase manual UAT pending)
 **Wave 1**
 
 - [x] 02-01-PLAN.md — Mesh-from-URL render branch in the three.js template (WEB-02 render: async PLYLoader, computed normals, deferred framing, D-03/D-04 solid Lambert)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 02-02-PLAN.md — httpuv loopback transport server with per-session token guard, httpuv dependency, and transport test suite (WEB-01, WEB-02 delivery, CMP-01)
+- [x] 02-02-PLAN.md — httpuv loopback transport server with per-session token guard, httpuv dependency, and transport test suite (WEB-01, WEB-02 delivery, CMP-01)
 
 **Note (risk: mesh size)**: NextEngine scans are large. Serve the file over HTTP
 and let the loader stream it. Do not marshal vertices through R-to-JS JSON. If
@@ -338,7 +338,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Result Plots + rgl Demotion | 0/TBD | Not started | - |
-| 2. Transport and Mesh Display | 1/2 | In Progress|  |
+| 2. Transport and Mesh Display | 2/2 | In Progress (UAT pending) |  |
 | 3. Offline Packaging and Lifecycle | 0/TBD | Not started | - |
 | 4. Picking Parity | 0/TBD | Not started | - |
 | 5. Full Digitizing and Data Parity | 0/TBD | Not started | - |
