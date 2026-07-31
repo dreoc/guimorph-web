@@ -13,7 +13,8 @@ Imports:
     geomorph (>= 4.1.1),
     Rvcg,
     tcltk,
-    tcltk2
+    tcltk2,
+    httpuv
 Encoding: UTF-8
 License: GPL (>= 2)
 LazyData: true
