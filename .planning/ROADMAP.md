@@ -56,16 +56,20 @@ rgl itself cannot load.
      (WEB-00).
   1b. `plotspecs` (aligned specimens) and `plotMeanShape` render through that
      wrapper as point clouds, with orbit, zoom, and reset view. Read-only.
+
   2. `library(GUImorphWeb)` succeeds and the full digitizing workflow runs on a
      host where `library(rgl)` fails. Morpho is removed (it hard-imports rgl and
      was used for one function, now reimplemented over Rvcg); `rgl` and
      `htmlwidgets` move to `Suggests` with all call sites guarded; the unused
      `vegan` and `parallel` imports are dropped.
+
   3. `plotPCA` continues to work without a native device and stays base-graphics
      2D. The single-component ordination crash was fixed in 0.10.0 (`a8a6cf0`)
      and must not regress.
+
   4. Visual parity: the three.js aligned-specimen and mean-shape output is
      comparable to the inherited rgl output on the same GPA result.
+
   5. Native oracle still loads (CMP-01): the retained `tkogl2` engine still builds
      and renders on Windows.
 
@@ -141,15 +145,26 @@ browser with orbit, zoom, and reset. No overlays, no picking.
   1. An `httpuv` server started from R binds to loopback only, on an unprivileged
      port, and serves the PLY file as bytes over HTTP. The mesh is never
      JSON-encoded.
+
   2. The served endpoint is guarded by a per-session random path or token, so
      another process on the same host cannot enumerate and read specimen files.
+
   3. three.js `PLYLoader` fetches and renders the mesh, with orbit, zoom, and
      reset view.
+
   4. The 6-specimen reference set loads and orbits on stock macOS and stock
      Windows, with no XQuartz, no Homebrew, and no Tcl/Tk in the render path.
+
   5. Native oracle still loads (CMP-01).
 
-**Plans**: TBD
+**Plans**: 1/2 plans executed
+**Wave 1**
+
+- [x] 02-01-PLAN.md — Mesh-from-URL render branch in the three.js template (WEB-02 render: async PLYLoader, computed normals, deferred framing, D-03/D-04 solid Lambert)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 02-02-PLAN.md — httpuv loopback transport server with per-session token guard, httpuv dependency, and transport test suite (WEB-01, WEB-02 delivery, CMP-01)
 
 **Note (risk: mesh size)**: NextEngine scans are large. Serve the file over HTTP
 and let the loader stream it. Do not marshal vertices through R-to-JS JSON. If
@@ -172,12 +187,16 @@ teardown reliable on a locked-down machine.
   1. A clean `install.packages()` on a fresh R opens a working viewport with the
      machine fully offline, on both Windows and macOS. (The vendoring itself
      landed in Phase 1 as WEB-00.)
+
   3. Port selection survives a port already in use, and the failure mode is a
      clear R-level error rather than a silent hang.
+
   4. The server is torn down on viewport close, on session exit, and on R session
      end. No orphaned listener survives.
+
   5. The launch path degrades legibly when the default browser is missing,
      misconfigured, or blocked, and when a host firewall prompts on first bind.
+
   6. Native oracle still loads (CMP-01).
 
 **Plans**: TBD
@@ -201,14 +220,18 @@ native engine's unproject result, and render placed landmarks as overlay geometr
 
   1. A BVH-accelerated raycast against the loaded mesh returns a hit coordinate
      to R, at interactive rates on the reference specimens.
+
   2. Placement only: a landmark dot renders as overlay geometry at the returned
      coordinate, with correct depth behavior under rotation.
+
   3. **The gate.** On the same specimen at the same click position, the browser
      coordinate matches the native engine's `gluUnProject` result within a
      documented numeric tolerance, stated in mesh units and justified against
      inter-observer digitizing error.
+
   4. Parity holds on a HiDPI display with no backing-scale correction, since
      raycasting is resolution-independent.
+
   5. Native oracle still loads (CMP-01). This is the phase where that matters
      most.
 
@@ -238,16 +261,21 @@ bytes are identical to the native path.
 
   1. Curve definition works with the existing three-click selection and the
      cyan/red/blue visual feedback, and anchors can be placed (DGT-01).
+
   2. Surface semilandmark display, delete, undo, and multi-specimen switching all
      work in the browser (DGT-02).
+
   3. GPA (`geomorph::gpagen`) and `.csv`/`.rds` export are driven from the browser
      UI and produce results identical to the native path on the same input
      (DGT-03).
+
   4. A `.dgt` written through the browser path is byte-identical to one written
      through the native path from the same session (DAT-01).
+
   5. A GUImorph-authored `.dgt` opens correctly here, and a GUImorphWeb-authored
      `.dgt` opens correctly in GUImorph, verified against
      `tests/fixtures/parity/` (DAT-02).
+
   6. Full workflow end to end: PLY load, landmarks, curves, surfaces, GPA, export.
   7. Native oracle still loads (CMP-01). Retired after this phase.
 
@@ -272,10 +300,13 @@ surface.
 
   1. Tabs, dialogs, specimen navigation, and the status bar are reimplemented in
      the browser shell, at feature parity with the Tk chrome (UI-01).
+
   2. The complete workflow runs with the native engine uninstalled and absent from
      the library path (UI-02).
+
   3. `tkogl2` is deleted from the package and `rgl` is removed from dependencies
      entirely (UI-03). CMP-01 is retired here, deliberately.
+
   4. A migration note ships in `NEWS.md` for users on the native path, with a
      documented version to pin if they need to stay.
 
@@ -307,7 +338,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Result Plots + rgl Demotion | 0/TBD | Not started | - |
-| 2. Transport and Mesh Display | 0/TBD | Not started | - |
+| 2. Transport and Mesh Display | 1/2 | In Progress|  |
 | 3. Offline Packaging and Lifecycle | 0/TBD | Not started | - |
 | 4. Picking Parity | 0/TBD | Not started | - |
 | 5. Full Digitizing and Data Parity | 0/TBD | Not started | - |
@@ -319,19 +350,23 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
   because there is nothing to raycast against until a mesh renders. Picking parity
   (Phase 4) blocks all digitizing parity (Phase 5). Data parity (Phase 5) blocks
   retirement (Phase 6).
+
 - **Shippable stopping points:** Phases 1, 2, and 3 are each independently
   shippable and each fix something real on current macOS. Phase 4 is the gate.
   Phases 5 and 6 are all-or-nothing together, since a half-migrated acquisition
   path is worse than either whole path.
+
 - **Reference architecture:** `landmarking-EOC`, the author's Flask + browser 2D
   landmarking tool, already implements this architecture for the same users. The
   state-ownership, port, offline, browser-launch, and testing decisions are
   inherited from it rather than re-derived. See
   `.planning/research/REFERENCE-ARCHITECTURE.md`.
+
 - **Relationship to GUImorph:** GUImorph's native macOS work continues on its own
   track and is not duplicated, merged, or blocked here. The only thing flowing
   between the projects is the `.dgt` data contract and R-layer fixes, which can be
   cherry-picked from the `upstream` remote.
+
 - **Positioning consequence:** GUImorph's stated differentiator is running entirely
   inside R with no external application and no JSON round-trip. A loopback server
   plus a bundled browser surface preserves the substance of that claim: launched
@@ -339,6 +374,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
   change the mechanism, and public and commercial framing should describe it
   accurately rather than restate the native-GL claim. StereoMorph establishes the
   precedent for browser-based digitizing inside R with this same user base.
+
 - **Deferred:** Linux support, which this architecture makes nearly free but which
   is not scoped here. Metal-backed native rendering, which this architecture makes
   unnecessary.
