@@ -42,6 +42,12 @@ if (!exists("dbg", mode = "function")) {
 # session. Mirrors the .gmw_engine idiom in rtkogl.R.
 .gmw_server <- new.env(parent = emptyenv())
 
+# Package-level lifecycle flags, kept SEPARATE from .gmw_server so that
+# ls(.gmw_server) stays purely token -> handle and no bookkeeping key is ever
+# mistaken for a live server handle by .gmw_stop_token() (RESEARCH Open
+# Question 1). Currently holds `finalizer_registered`; plan 02 adds more.
+.gmw_lifecycle <- new.env(parent = emptyenv())
+
 #' A URL-safe, >=128-bit random path segment for the per-session guard
 #'
 #' Returns \code{n} characters drawn uniformly from a 62-symbol URL-safe
@@ -145,9 +151,90 @@ if (!exists("dbg", mode = "function")) {
   # Retain the handle for the session so gc() does not stop the listener.
   assign(token, server, envir = .gmw_server)
 
+  # Register the session-end teardown finalizer exactly once (lazily, on the
+  # first serve). reg.finalizer(onexit = TRUE) is the ONLY hook that fires at
+  # q() -- .onUnload() does NOT run at R session end (verified ?ns-hooks) -- so
+  # this is what guarantees a quit R session leaves no orphaned listener. The
+  # flag lives in .gmw_lifecycle, never in .gmw_server, so the registry stays
+  # purely token -> handle.
+  if (!isTRUE(.gmw_lifecycle$finalizer_registered)) {
+    reg.finalizer(.gmw_server, function(e) .gmw_stop_token(NULL), onexit = TRUE)
+    .gmw_lifecycle$finalizer_registered <- TRUE
+  }
+
   url <- sprintf("http://127.0.0.1:%d/%s/", port, token)
   dbg(paste0("gmw serve: ", url))
   message("Viewport: ", url)
   if (isTRUE(open)) utils::browseURL(url)
   invisible(url)
 }
+
+# ---------------------------------------------------------------------------
+#  Teardown (WEB-04) -- a closed listener must never orphan.
+#
+#  One registry-driven stop helper (.gmw_stop_token) backs three of the four
+#  D-01 triggers: the explicit user call gmw_close(), R session end (via the
+#  reg.finalizer(onexit = TRUE) registered lazily in .gmw_serve_mesh above), and
+#  namespace unload/detach (.onUnload). The fourth trigger -- the browser
+#  tab-close /close beacon (D-02) -- lands in plan 02 and reuses this same
+#  helper. Teardown iterates .gmw_server ONLY; it never uses httpuv's
+#  process-wide stop-all, which would also stop any shiny/plumber listeners a
+#  user is running in the same R process (T-3-03).
+# ---------------------------------------------------------------------------
+
+#' Stop one live viewport server, or all of them
+#'
+#' Iterates the token-keyed \code{.gmw_server} registry. With \code{token = NULL}
+#' every live listener is stopped; with a token, exactly that one (D-03/D-04 --
+#' each viewport is independent, so stopping one leaves the others running). For
+#' each entry BOTH \code{httpuv::stopServer()} and \code{rm()} always run, each
+#' guarded, so the registry can never lie about what is still live (RESEARCH
+#' Pitfall 1). Never uses httpuv's process-wide stop-all (T-3-03) -- that would
+#' stop other packages' listeners in the same process.
+#' @param token optional single token; \code{NULL} stops all.
+#' @return \code{invisible(TRUE)}.
+#' @keywords internal
+#' @noRd
+.gmw_stop_token <- function(token = NULL) {
+  toks <- if (is.null(token)) ls(.gmw_server) else token
+  for (t in toks) {
+    srv <- tryCatch(get(t, envir = .gmw_server), error = function(e) NULL)
+    if (!is.null(srv)) try(httpuv::stopServer(srv), silent = TRUE)
+    if (exists(t, envir = .gmw_server)) rm(list = t, envir = .gmw_server)
+  }
+  invisible(TRUE)
+}
+
+#' Close the GUImorphWeb viewport server(s)
+#'
+#' Stops the background loopback listener(s) started for the browser viewport.
+#' Called with no argument it stops every live viewport; called with a
+#' \code{token} it stops exactly that one and leaves any other viewports
+#' running. Each viewport is fully independent (its own port, token, and server
+#' handle), so closing one never disturbs another. Teardown also happens
+#' automatically when R exits or the package namespace is unloaded, so calling
+#' this by hand is optional tidy-up rather than a requirement.
+#' @param token optional token identifying a single viewport -- the segment in
+#'   its \code{http://127.0.0.1:<port>/<token>/} URL. \code{NULL} (the default)
+#'   stops all live viewports.
+#' @return \code{invisible(TRUE)}.
+#' @examples
+#' \dontrun{
+#' gmw_close()        # stop every live viewport
+#' gmw_close(token)   # stop just the viewport with this token
+#' }
+#' @export
+gmw_close <- function(token = NULL) .gmw_stop_token(token)
+
+#' Package unload hook: stop every live viewport listener
+#'
+#' Fires on \code{unloadNamespace()} / \code{detach(unload = TRUE)}, closing the
+#' detach-mid-session orphan path (D-01). It does NOT run at normal R session
+#' end -- that path is covered by the \code{reg.finalizer(onexit = TRUE)}
+#' registered in \code{.gmw_serve_mesh} (verified \code{?ns-hooks}). Defined here
+#' in transport.R, beside \code{.gmw_server}; it is never added to rtkogl.R,
+#' whose \code{.onLoad} engine-load path must stay untouched (CMP-01).
+#' @param libpath the library path being unloaded (signature per \code{?ns-hooks}).
+#' @keywords internal
+#' @noRd
+.onUnload <- function(libpath) .gmw_stop_token(NULL)
