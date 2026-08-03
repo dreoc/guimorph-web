@@ -1,3 +1,38 @@
+# =====================================================================
+# MANUAL UAT  (WEB-03 render + CMP-01 display-host load) -- human-check only
+# ---------------------------------------------------------------------
+# Neither step below can be automated without CI on real Windows + macOS
+# display hosts (human_verify_mode = end-of-phase; D-10 verification-only).
+# Run each on a fully-offline stock machine, R started with `--no-init-file`
+# (STATE.md: a site-library `renv` makes bare R startup hang under a
+# restricted network). Do NOT fabricate an automated pass for either. Sign
+# off in .planning/phases/03-offline-packaging-and-lifecycle/03-VALIDATION.md
+# (Manual-Only) when all pass. These steps are mirrored there verbatim.
+#
+# Step A -- WEB-03 offline render UAT (carries the Phase-2 owed render UAT):
+#   On a fully-offline stock macOS AND a fully-offline stock Windows:
+#     1. Build the tarball (`R CMD build .` or pkgbuild::build()).
+#     2. Install it OFFLINE, network physically off:
+#          install.packages(<tarball>, repos = NULL, type = "source",
+#                           dependencies = FALSE)
+#     3. Open a viewport for EACH of the 6 reference specimens; confirm each
+#        renders SHADED (not black), orbits, zooms, and `r`-resets.
+#     4. Confirm the worst case `B7_1_clean.ply` (~30 MB, 363,283 verts)
+#        transfers and frames acceptably (this is the ~30 MB case the fast
+#        automated smoke deliberately leaves out -- it uses the ~0.77 MB
+#        B12_1_clean.ply fixture).
+#     5. Confirm the tab-close beacon stops the server: close the browser tab
+#        and verify `httpuv::listServers()` empties for that token; then
+#        `gmw_close()` stops all remaining listeners.
+#
+# Step B -- CMP-01 display-host load gate (owed from Phase 2):
+#   On a host WITH a display, `library(GUImorphWeb)` succeeds and
+#   `GUImorphWeb:::.gmw_engine$ok` is UNCHANGED by the Phase-3 lifecycle work
+#   (the native tkogl2 oracle still loads where the platform supports it). On
+#   an unsupported host `.gmw_engine$ok` is FALSE and non-fatal for the browser
+#   paths -- that is expected, not a failure of this gate.
+# =====================================================================
+
 # WEB-03 offline-install smoke test (filter name: "offline").
 #
 # This is the SLOW integration check for WEB-03 (RESEARCH Open Question 2): it
