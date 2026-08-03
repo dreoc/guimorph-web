@@ -104,6 +104,38 @@ if (!exists("dbg", mode = "function")) {
   port
 }
 
+#' Build the /close request handler for one viewport server
+#'
+#' Returns the per-server \code{call} closure that captures its own \code{token}
+#' (each server closes over exactly its own). The closure pattern-matches the
+#' trailing \code{/close} on the request path (\code{req$PATH_INFO}) and, on a
+#' match, schedules that token's teardown via \code{later::later} and returns
+#' \code{204} immediately. It only pattern-matches the path; it NEVER joins the
+#' request path to the filesystem via \code{file.path}/\code{normalizePath}/
+#' \code{readBin} (V5/T-3-01) -- and it NEVER calls \code{httpuv::stopServer()}
+#' synchronously:
+#' a synchronous stop resets the in-flight connection (RESEARCH Pitfall 2), so
+#' the stop is deferred and the \code{204} flushes first (\code{sendBeacon}
+#' ignores the body anyway). Any other path is a plain \code{404}.
+#'
+#' \code{later::later} is called fully qualified; \code{later} is a transitive
+#' \code{httpuv} dependency and needs no new \code{import()} (RESEARCH Standard
+#' Stack).
+#' @param token the per-server token this handler closes over.
+#' @return a \code{function(req)} httpuv \code{call} handler.
+#' @keywords internal
+#' @noRd
+.gmw_close_handler <- function(token) {
+  force(token)
+  function(req) {
+    if (grepl("/close$", req$PATH_INFO)) {
+      later::later(function() .gmw_stop_token(token), 0.5)
+      return(list(status = 204L, headers = list(), body = ""))
+    }
+    list(status = 404L, headers = list("Content-Type" = "text/plain"), body = "")
+  }
+}
+
 #' Serve one specimen PLY over a loopback, token-guarded httpuv static path
 #'
 #' The Phase 2 entry point. Copies the vendored bundle, the specimen (as the
@@ -139,13 +171,21 @@ if (!exists("dbg", mode = "function")) {
 
   port  <- .gmw_pick_port()
   token <- .gmw_token()
+  # Mixed static + one dynamic route (RESEARCH Pattern 2, D-02). The static
+  # byte mount stays byte-for-byte as Phase 2 shipped it (its options are
+  # unchanged, T-2-02); alongside it, excludeStaticPath() routes exactly the one
+  # /<token>/close subpath to R instead of the C++ static thread, and the `call`
+  # handler answers it. excludeStaticPath() is preferred over
+  # staticPathOptions(fallthrough = TRUE) -- it scopes exactly one subpath to R
+  # rather than routing every missing file there (RESEARCH Alternatives).
   server <- httpuv::startServer(
     host = "127.0.0.1", port = port,
     app = list(
       staticPaths = stats::setNames(
-        list(httpuv::staticPath(dir)),
-        paste0("/", token)
-      )
+        list(httpuv::staticPath(dir), httpuv::excludeStaticPath()),
+        c(paste0("/", token), paste0("/", token, "/close"))
+      ),
+      call = .gmw_close_handler(token)
     )
   )
   # Retain the handle for the session so gc() does not stop the listener.

@@ -169,6 +169,37 @@ test_that("a request without the per-session token path is refused, not served",
   expect_false(served_bytes(wrong))
 })
 
+test_that("/close handler returns 204 and schedules a stop of its own token", {
+  skip_if_no_pkg_source()
+  skip_if(!file.exists(fixture), "B12_1_clean.ply fixture missing")
+
+  # Register a real server so the scheduled stop has a token to remove. The
+  # /close route runs on the R main thread via later, so it CANNOT be reached by
+  # a same-process curl (RESEARCH Pitfall 5: R is blocked, the callback never
+  # runs). Invoke the production `call` closure directly with a synthetic req.
+  s <- serve_tmp()
+  on.exit(teardown_server(s), add = TRUE)
+
+  handler <- .gmw_close_handler(s$token)
+
+  resp <- handler(list(PATH_INFO = paste0("/", s$token, "/close")))
+  expect_equal(resp$status, 204L)
+  # 204 returned first; the stop is deferred, not synchronous (Pitfall 2).
+  expect_true(s$token %in% ls(.gmw_server))
+
+  # Wait out the ~0.5s defer, then drain the later queue -> the deferred
+  # .gmw_stop_token(token) runs and the server is torn down (its own token only).
+  # (run_now returns as soon as any ready callback fires, so sleep past the delay
+  # first to guarantee ours is due.)
+  Sys.sleep(0.6)
+  later::run_now()
+  expect_false(s$token %in% ls(.gmw_server))
+
+  # Any non-close path is a plain 404 (never a filesystem read of the path).
+  miss <- handler(list(PATH_INFO = paste0("/", s$token, "/other")))
+  expect_equal(miss$status, 404L)
+})
+
 test_that("port selection walks forward from the preferred port (no socket bound)", {
   # Preferred port busy -> next free port, without binding anything.
   expect_identical(.gmw_pick_port(prefer = 8080L, probe = gmw_probe_stub(busy = 8080L)), 8081L)
