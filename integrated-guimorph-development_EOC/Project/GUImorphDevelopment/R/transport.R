@@ -96,9 +96,9 @@ if (!exists("dbg", mode = "function")) {
   while (!isTRUE(probe(port))) {
     port <- port + 1L
     if (port > 49151L) {
-      stop("GUImorphWeb: could not find a free port walking forward from ",
-           prefer, ".\n  Free a port in the 1024-49151 range and retry.",
-           call. = FALSE)
+      stop("GUImorphWeb: no free port from ", prefer, " through 49151.\n",
+           "  Free a port in that range, or omit `port` to auto-pick a ",
+           "random one.", call. = FALSE)
     }
   }
   port
@@ -148,11 +148,16 @@ if (!exists("dbg", mode = "function")) {
 #' @param title window/page title.
 #' @param background page background colour.
 #' @param open when \code{TRUE}, open the URL with \code{utils::browseURL}.
+#' @param port optional preferred loopback port (D-08). \code{NULL} (the default)
+#'   auto-picks a random free port via \code{httpuv::randomPort()}; an integer is
+#'   the "fixed port allowed through a lab firewall" case -- selection walks
+#'   forward from it through the existing \code{.gmw_pick_port} backup, and if no
+#'   port is free through 49151 it raises a clear error rather than hanging (D-09).
 #' @return the served \code{http://127.0.0.1:<port>/<token>/} URL, invisibly.
 #' @keywords internal
 #' @noRd
 .gmw_serve_mesh <- function(ply_path, title = "GUImorphWeb",
-                            background = "#ffffff", open = TRUE) {
+                            background = "#ffffff", open = TRUE, port = NULL) {
   if (!file.exists(ply_path)) {
     stop("GUImorphWeb: cannot serve the mesh -- the PLY file was not found.\n",
          "  Looked for: ", ply_path,
@@ -169,7 +174,9 @@ if (!exists("dbg", mode = "function")) {
                            background = background)
   writeLines(html, file.path(dir, "index.html"), useBytes = TRUE)
 
-  port  <- .gmw_pick_port()
+  # NULL keeps the randomPort() default; an integer walks forward from it
+  # through the existing selector -- no new selection logic (D-08).
+  port  <- .gmw_pick_port(prefer = port)
   token <- .gmw_token()
   # Mixed static + one dynamic route (RESEARCH Pattern 2, D-02). The static
   # byte mount stays byte-for-byte as Phase 2 shipped it (its options are

@@ -215,6 +215,16 @@ test_that("port selection walks forward from the preferred port (no socket bound
   expect_lte(p, 49151L)
 })
 
+test_that("port exhaustion raises a clear range-naming error, never a hang (D-09)", {
+  # Every port reported busy -> walk-forward reaches 49151 and stops with a
+  # clear error whose message names BOTH the tried starting port and the 49151
+  # ceiling (proving the range is named, and that it errors rather than hangs).
+  expect_error(.gmw_pick_port(prefer = 40000L, probe = function(p) FALSE), "40000")
+  expect_error(.gmw_pick_port(prefer = 40000L, probe = function(p) FALSE), "49151")
+  # Actionable next step: the error points at omitting `port` to auto-pick.
+  expect_error(.gmw_pick_port(prefer = 40000L, probe = function(p) FALSE), "omit")
+})
+
 test_that(".gmw_serve_mesh opens the loopback token URL without a real browser", {
   skip_if(!file.exists(fixture), "B12_1_clean.ply fixture missing")
 
