@@ -56,7 +56,80 @@ test_that("server binds 127.0.0.1 on an unprivileged port; source is loopback-on
   expect_true(any(grepl("127.0.0.1", src, fixed = TRUE)))
   expect_false(any(grepl("0.0.0.0", src, fixed = TRUE)))
   expect_true(any(grepl("staticPath", src, fixed = TRUE)))
-  expect_false(any(grepl("PATH_INFO", src, fixed = TRUE)))
+
+  # Re-scoped from the stale Phase-2 "the token request-path variable never
+  # appears" proxy (RESEARCH Pitfall 3): plan 02 legitimately reads the request
+  # path in the /close handler, so its mere presence is no longer a violation.
+  # The real invariant (V5/T-2-02) is that no request-derived path is ever
+  # joined to the filesystem -- so no source line that references the request
+  # path may also call file.path()/normalizePath()/readBin().
+  reqpath_lines <- grep("PATH_INFO", src, fixed = TRUE, value = TRUE)
+  joins_fs <- vapply(reqpath_lines, function(ln) {
+    any(vapply(c("file.path", "normalizePath", "readBin"),
+               function(fn) grepl(fn, ln, fixed = TRUE), logical(1)))
+  }, logical(1))
+  expect_false(any(joins_fs))
+})
+
+test_that("gmw_close(token) stops one, gmw_close() stops all", {
+  skip_if_no_pkg_source()
+  skip_if(!file.exists(fixture), "B12_1_clean.ply fixture missing")
+
+  s1 <- serve_tmp()
+  s2 <- serve_tmp()
+  # Guarantee no listener leaks even if an assertion below fails.
+  on.exit(gmw_close(), add = TRUE)
+
+  # Stop exactly one token -> the other viewport stays live (D-03/D-04).
+  gmw_close(s1$token)
+  live <- ls(.gmw_server)
+  expect_false(s1$token %in% live)
+  expect_true(s2$token %in% live)
+
+  # Stop-all -> the registry AND httpuv's own list agree: no orphan (Pitfall 1).
+  gmw_close()
+  expect_equal(length(ls(.gmw_server)), 0L)
+  expect_equal(length(httpuv::listServers()), 0L)
+})
+
+test_that(".onUnload stops all live servers", {
+  skip_if_no_pkg_source()
+  skip_if(!file.exists(fixture), "B12_1_clean.ply fixture missing")
+
+  s <- serve_tmp()
+  on.exit(gmw_close(), add = TRUE)
+
+  .onUnload("")
+  expect_equal(length(ls(.gmw_server)), 0L)
+})
+
+test_that("the session-end finalizer registers exactly once", {
+  skip_if_no_pkg_source()
+  skip_if(!file.exists(fixture), "B12_1_clean.ply fixture missing")
+
+  s1 <- serve_tmp()
+  on.exit(teardown_server(s1), add = TRUE)
+  s2 <- serve_tmp()
+  on.exit(teardown_server(s2), add = TRUE)
+
+  # The lazy finalizer flag lives in .gmw_lifecycle, never in .gmw_server, so
+  # the registry stays purely token -> handle across repeated serves.
+  expect_true(isTRUE(.gmw_lifecycle$finalizer_registered))
+  expect_false("finalizer_registered" %in% ls(.gmw_server))
+})
+
+test_that("lifecycle work never touches the tkogl2 engine state", {
+  skip_if_no_pkg_source()
+
+  # transport.R must never write the CMP-01 oracle engine env.
+  tsrc <- readLines(file.path(pkg_root, "R", "transport.R"), warn = FALSE)
+  expect_false(any(grepl(".gmw_engine$", tsrc, fixed = TRUE)))
+  expect_false(any(grepl(".gmw_engine <-", tsrc, fixed = TRUE)))
+
+  # rtkogl.R still carries the native oracle load path (proving it was untouched).
+  rsrc <- readLines(file.path(pkg_root, "R", "rtkogl.R"), warn = FALSE)
+  expect_true(any(grepl(".onLoad", rsrc, fixed = TRUE)))
+  expect_true(any(grepl("Tkogl2", rsrc, fixed = TRUE)))
 })
 
 test_that("served PLY bytes are byte-identical to disk (raw, never JSON)", {
