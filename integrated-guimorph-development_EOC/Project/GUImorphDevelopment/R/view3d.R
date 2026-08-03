@@ -233,6 +233,20 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
   window.addEventListener("keydown", function(e){
     if (e.key === "r" || e.key === "R") reset();
   });
+
+  // Best-effort tab-close teardown (D-02): fire-and-forget POST to the token
+  // /close route when the page goes away, so closing the tab stops that
+  // token\'s server. "close" is relative -- it resolves against the page URL
+  // (loopback 127.0.0.1:PORT/<token>/) to .../<token>/close (same-origin, same
+  // token, no absolute URL, no external reference -- WEB-03). Use pagehide,
+  // not the deprecated/unreliable unload event, with a visibilitychange
+  // backstop. The finalizer and gmw_close() remain the guarantees, so a
+  // missed beacon never orphans past session end.
+  function gmwClose(){ try { navigator.sendBeacon("close"); } catch(e){} }
+  window.addEventListener("pagehide", gmwClose);
+  document.addEventListener("visibilitychange", function(){
+    if (document.visibilityState === "hidden") gmwClose();
+  });
   resize();
 
   (function loop(){
