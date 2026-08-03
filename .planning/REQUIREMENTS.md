@@ -28,8 +28,8 @@ vendored in `inst/htmlwidgets/`, no CDN, no runtime network.
 
 ### Transport and Display
 
-- [ ] **WEB-01**: An `httpuv` server started from R binds to loopback on an unprivileged port and serves the PLY as bytes over HTTP, never JSON-encoded, behind a per-session random path or token
-- [ ] **WEB-02**: three.js `PLYLoader` fetches and renders the served mesh with orbit, zoom, and reset view, on stock macOS and stock Windows, with no XQuartz, Homebrew, or Tcl/Tk in the render path
+- [x] **WEB-01**: An `httpuv` server started from R binds to loopback on an unprivileged port and serves the PLY as bytes over HTTP, never JSON-encoded, behind a per-session random path or token
+- [x] **WEB-02**: three.js `PLYLoader` fetches and renders the served mesh with orbit, zoom, and reset view, on stock macOS and stock Windows, with no XQuartz, Homebrew, or Tcl/Tk in the render path
 - [ ] **WEB-03**: a clean `install.packages()` on a fresh R opens a working viewport with the machine fully offline, on both Windows and macOS (the vendoring itself lands in Phase 1 as WEB-00)
 - [ ] **WEB-04**: Port selection, browser launch, and teardown (viewport close, session exit, R session end) are reliable on a managed machine: occupied ports fail with a clear R-level error rather than a hang, no orphaned listener survives, and a missing, misconfigured, or blocked default browser degrades legibly
 
@@ -58,7 +58,7 @@ vendored in `inst/htmlwidgets/`, no CDN, no runtime network.
 
 ### Recurring Gate
 
-- [ ] **CMP-01**: The retained native engine stays loadable and functional at every phase through Phase 5, so it remains usable as the PICK-03 parity oracle. Deliberately retired at Phase 6
+- [x] **CMP-01**: The retained native engine stays loadable and functional at every phase through Phase 5, so it remains usable as the PICK-03 parity oracle. Deliberately retired at Phase 6
 
 ---
 

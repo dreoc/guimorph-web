@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Browser Rendering
-status: ready_to_execute
+status: Ready to plan
 stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-07-31T18:20:00.000Z"
+last_updated: "2026-08-03T15:07:16.186Z"
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 2
-  percent: 0
+  completed_plans: 3
+  percent: 17
 current_phase: 2
 current_phase_name: Transport and Mesh Display
 ---
@@ -91,13 +91,16 @@ server-owns-state design are inherited from `research/REFERENCE-ARCHITECTURE.md`
 rather than re-derived. `httpuv` is now a locked Import.
 
 **Owed before the phase closes:**
+
 - Manual browser UAT (`02-VALIDATION.md`, Manual-Only): all 6 reference specimens
   load and orbit/zoom/`r`-reset shaded (not black) on stock macOS and stock
   Windows; the worst-case `B7_1_clean.ply` (363,283 verts, 30 MB ASCII) transfers
   and frames acceptably. Now unblocked by `.gmw_serve_mesh()`.
+
 - Re-run the CMP-01 `library(GUImorphWeb)` load gate on a host with a display —
   the headless sandbox could not (`tcltk2` GUI init blocks with no window server);
   the `httpuv`-specific half of CMP-01 (importable + Imports + locked) is verified.
+
 - Teardown/port-recovery/browser-degradation are deliberately Phase 3 / WEB-04.
 
 Phase 4 picking parity remains the gate for the whole milestone.

@@ -31,7 +31,7 @@ coordinates for the Phase 4 gate. It is deleted at Phase 6.
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Result Plots + rgl Demotion** - Vendor three.js, move the two 3D result plots to a widget, and make `rgl` optional so the package loads where rgl cannot
-- [ ] **Phase 2: Transport and Mesh Display** - `httpuv` serves the PLY over loopback; three.js renders and orbits it
+- [x] **Phase 2: Transport and Mesh Display** - `httpuv` serves the PLY over loopback; three.js renders and orbits it (completed 2026-08-03)
 - [ ] **Phase 3: Offline Packaging and Lifecycle** - Bundle the JS, select a port, launch the browser, tear down on session end
 - [ ] **Phase 4: Picking Parity** - BVH raycast returns hit coordinates matching the native `gluUnProject` result within tolerance
 - [ ] **Phase 5: Full Digitizing and Data Parity** - Curves, anchors, surfaces, undo, multi-specimen, GPA and export from the browser, with byte-identical `.dgt`
@@ -338,7 +338,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Result Plots + rgl Demotion | 0/TBD | Not started | - |
-| 2. Transport and Mesh Display | 2/2 | In Progress (UAT pending) |  |
+| 2. Transport and Mesh Display | 2/2 | Complete    | 2026-08-03 |
 | 3. Offline Packaging and Lifecycle | 0/TBD | Not started | - |
 | 4. Picking Parity | 0/TBD | Not started | - |
 | 5. Full Digitizing and Data Parity | 0/TBD | Not started | - |
