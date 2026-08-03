@@ -241,6 +241,64 @@ test_that(".gmw_serve_mesh opens the loopback token URL without a real browser",
   expect_identical(opened, s$url)
 })
 
+test_that("launch prints the URL first and tolerates a failed browser", {
+  skip_if(!file.exists(fixture), "B12_1_clean.ply fixture missing")
+
+  # A browser override that always errors simulates a blocked/misconfigured
+  # default browser. The failure must be swallowed (D-05): serving must not error,
+  # and the URL must still be surfaced via a message before the launch attempt.
+  old <- options(browser = function(url, ...) stop("no browser"))
+  on.exit(options(old), add = TRUE)
+
+  url <- NULL
+  expect_message(url <- .gmw_serve_mesh(fixture, open = TRUE), "Viewport: ")
+
+  # The failing browser was swallowed -> a real loopback URL still came back.
+  expect_false(is.null(url))
+  expect_match(url, "^http://127\\.0\\.0\\.1:[0-9]+/")
+  s <- list(token = gmw_url_token(url),
+            srv   = get(gmw_url_token(url), envir = .gmw_server))
+  on.exit(teardown_server(s), add = TRUE)
+})
+
+test_that("the firewall note fires at most once per session (D-06)", {
+  skip_if(!file.exists(fixture), "B12_1_clean.ply fixture missing")
+
+  # Capture every message emitted while evaluating expr.
+  capture_msgs <- function(expr) {
+    msgs <- character()
+    withCallingHandlers(
+      force(expr),
+      message = function(m) {
+        msgs <<- c(msgs, conditionMessage(m))
+        invokeRestart("muffleMessage")
+      }
+    )
+    msgs
+  }
+
+  # Simulate a fresh session for the flag; restore prior state on exit so sibling
+  # tests are unaffected regardless of run order.
+  had_flag <- exists("firewall_noted", envir = .gmw_lifecycle)
+  old_flag <- if (had_flag) .gmw_lifecycle$firewall_noted else NULL
+  if (had_flag) rm("firewall_noted", envir = .gmw_lifecycle)
+  on.exit({
+    if (had_flag) assign("firewall_noted", old_flag, envir = .gmw_lifecycle)
+    else if (exists("firewall_noted", envir = .gmw_lifecycle))
+      rm("firewall_noted", envir = .gmw_lifecycle)
+  }, add = TRUE)
+
+  s1 <- serve_tmp()
+  on.exit(teardown_server(s1), add = TRUE)
+  expect_true(isTRUE(.gmw_lifecycle$firewall_noted))   # first serve set the flag
+
+  # A second serve in the same session must NOT emit the firewall note again.
+  s2 <- NULL
+  msgs2 <- capture_msgs(s2 <- serve_tmp())
+  on.exit(teardown_server(s2), add = TRUE)
+  expect_false(any(grepl("firewall prompt", msgs2)))
+})
+
 test_that(".gmw_server retains the live server handle against gc()", {
   skip_if(!file.exists(fixture), "B12_1_clean.ply fixture missing")
   before <- length(ls(.gmw_server))

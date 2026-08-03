@@ -147,7 +147,11 @@ if (!exists("dbg", mode = "function")) {
 #' @param ply_path path to an existing \code{.ply} file.
 #' @param title window/page title.
 #' @param background page background colour.
-#' @param open when \code{TRUE}, open the URL with \code{utils::browseURL}.
+#' @param open when \code{TRUE}, attempt to open the URL with
+#'   \code{utils::browseURL}, which honours \code{getOption("browser")} /
+#'   \code{R_BROWSER} on hosts with no/blocked default browser (D-07). The URL is
+#'   always printed first (D-05), so a failed or blocked launch degrades to a
+#'   message rather than an error.
 #' @param port optional preferred loopback port (D-08). \code{NULL} (the default)
 #'   auto-picks a random free port via \code{httpuv::randomPort()}; an integer is
 #'   the "fixed port allowed through a lab firewall" case -- selection walks
@@ -211,8 +215,26 @@ if (!exists("dbg", mode = "function")) {
 
   url <- sprintf("http://127.0.0.1:%d/%s/", port, token)
   dbg(paste0("gmw serve: ", url))
-  message("Viewport: ", url)
-  if (isTRUE(open)) utils::browseURL(url)
+
+  # PRINT FIRST (D-05): this line cannot fail and is the guaranteed-correct path.
+  # browseURL returns 0 on many platforms even when nothing opened, so the URL is
+  # always surfaced -- with a paste fallback -- before any launch is attempted.
+  message("Viewport: ", url,
+          "\n  If it did not open, paste that URL into a browser.")
+  # One-time, start-of-session firewall note (D-06), gated by a flag in
+  # .gmw_lifecycle so repeated serves do not spam it. Loopback binds usually do
+  # NOT trigger the OS prompt, but managed security suites sometimes do; the
+  # note never attempts to suppress the OS prompt.
+  if (!isTRUE(.gmw_lifecycle$firewall_noted)) {
+    message("  (A firewall prompt may appear on first launch; allowing ",
+            "loopback-only access is safe.)")
+    .gmw_lifecycle$firewall_noted <- TRUE
+  }
+  # Attempt the open for convenience only: wrapped so it cannot error, and its
+  # return value IGNORED (D-05). browseURL already consults getOption("browser")
+  # / R_BROWSER (D-07), so a blocked/misconfigured browser degrades to the URL
+  # printed above rather than raising -- no new override machinery is added.
+  if (isTRUE(open)) try(utils::browseURL(url), silent = TRUE)
   invisible(url)
 }
 
