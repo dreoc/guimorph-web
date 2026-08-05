@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Result Plots + rgl Demotion** - Vendor three.js, move the two 3D result plots to a widget, and make `rgl` optional so the package loads where rgl cannot
 - [x] **Phase 2: Transport and Mesh Display** - `httpuv` serves the PLY over loopback; three.js renders and orbits it (completed 2026-08-03)
-- [ ] **Phase 3: Offline Packaging and Lifecycle** - Bundle the JS, select a port, launch the browser, tear down on session end
+- [x] **Phase 3: Offline Packaging and Lifecycle** - Bundle the JS, select a port, launch the browser, tear down on session end (completed 2026-08-03)
 - [ ] **Phase 4: Picking Parity** - BVH raycast returns hit coordinates matching the native `gluUnProject` result within tolerance
 - [ ] **Phase 5: Full Digitizing and Data Parity** - Curves, anchors, surfaces, undo, multi-specimen, GPA and export from the browser, with byte-identical `.dgt`
 - [ ] **Phase 6: Shell and Native Retirement** - Replace the Tk chrome, then delete `tkogl2` and drop `rgl`
@@ -199,7 +199,20 @@ teardown reliable on a locked-down machine.
 
   6. Native oracle still loads (CMP-01).
 
-**Plans**: TBD
+**Plans**: 4/4 plans complete
+
+**Wave 1** *(parallel — no file overlap)*
+
+- [x] 03-01-PLAN.md — Teardown lifecycle in `transport.R`: `.gmw_stop_token`/exported `gmw_close`, `.onUnload`, lazy `reg.finalizer(onexit=TRUE)`, re-scoped `PATH_INFO` guard + teardown/CMP-01 tests (WEB-04, CMP-01)
+- [x] 03-03-PLAN.md — Page-side tab-close beacon in `view3d.R` (`sendBeacon` on `pagehide`/`visibilitychange`) + source-scan gate (WEB-04)
+
+**Wave 2** *(depends on 03-01)*
+
+- [x] 03-02-PLAN.md — Mixed httpuv app: `/<token>/close` route, user `port` arg + D-09 exhaustion error, browser-launch degradation + `/close`/port/launch tests (WEB-04)
+
+**Wave 3** *(depends on 03-02, 03-03)*
+
+- [x] 03-04-PLAN.md — WEB-03 offline install smoke test (ships+serves bundle, byte-identity, no external refs) + WEB-03/CMP-01 manual UAT records (WEB-03, CMP-01)
 
 **Note (deployment reality)**: Target users are archaeology and forensics labs,
 often on managed machines. A clean `install.packages()` is not the bar. Criteria 3
@@ -235,7 +248,19 @@ native engine's unproject result, and render placed landmarks as overlay geometr
   5. Native oracle still loads (CMP-01). This is the phase where that matters
      most.
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+**Wave 1** *(parallel — no file overlap)*
+
+- [ ] 04-01-PLAN.md — Token-guarded POST `/<token>/pick` route on the mixed httpuv app, server-owned `.gmw_picks` registry, R read accessor, route + CMP-01 tests (PICK-01, CMP-01)
+- [ ] 04-02-PLAN.md — Browser raycast in `view3d.R`: eager `computeBoundsTree`, pointer→pick handler, overlay landmark dot (depth-tested), record-replay entry point, template source-scan (PICK-01, PICK-02, PICK-03 browser half)
+- [ ] 04-03-PLAN.md — `R/parity.R` gate math (mean edge length, 95th-percentile distance), schema-true placeholder pose-record fixture, skip-safe harness test; PICK-03 recorded OPEN (PICK-03)
+
+**Note (PICK-03 stays OPEN — tracked, not dropped)**: Native fixture capture is
+Windows-only and no host is available (D-06). All three plans build the full
+parity harness against a schema-true placeholder fixture; the real Windows
+capture drops in with zero code change to close the gate (D-07). PICK-01 and
+PICK-02 ship value regardless.
 
 **Note (this is the decision point)**: If criterion 3 cannot be met, stop here.
 Phases 1 through 3 remain shipped and valuable, GUImorph remains the digitizing
@@ -339,8 +364,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Result Plots + rgl Demotion | 0/TBD | Not started | - |
 | 2. Transport and Mesh Display | 2/2 | Complete    | 2026-08-03 |
-| 3. Offline Packaging and Lifecycle | 0/TBD | Not started | - |
-| 4. Picking Parity | 0/TBD | Not started | - |
+| 3. Offline Packaging and Lifecycle | 4/4 | Complete    | 2026-08-03 |
+| 4. Picking Parity | 0/3 | Planned | - |
 | 5. Full Digitizing and Data Parity | 0/TBD | Not started | - |
 | 6. Shell and Native Retirement | 0/TBD | Not started | - |
 
