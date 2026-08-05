@@ -158,6 +158,14 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
   // callback (mesh-URL path).
   var dist = 1;
 
+  // Picking state (PICK-01 browser half). pickMesh is populated once the PLY
+  // load callback runs; the pointer handler must no-op until then. The
+  // raycaster + reusable NDC vector are hoisted so no allocation happens per
+  // click. RESEARCH Pattern 1.
+  var pickMesh = null;
+  var raycaster = new THREE.Raycaster();
+  var ndc = new THREE.Vector2();
+
   function reset(){
     camera.position.set(0, 0, dist);
     camera.near = dist / 100; camera.far = dist * 100;
@@ -203,9 +211,16 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
     // off). Framing is deferred to here: the geometry is absent at first paint.
     new PLYLoader().load(MESH_URL, function(geometry){
       geometry.computeVertexNormals();
-      group.add(new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({
+      // Eager BVH build: engages the bundle\'s patched accelerated raycast and
+      // folds the build cost into load, not the first click (RESEARCH Pitfall 5).
+      geometry.computeBoundsTree();
+      // Retain the mesh so the pointer handler can raycast it. Kept in the
+      // recentred `group` for interactive framing; the replay path (GMW_REPLAY)
+      // builds its own identity mesh from this geometry instead.
+      pickMesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({
         color: "#cccccc", side: THREE.DoubleSide
-      })));
+      }));
+      group.add(pickMesh);
       frameScene();
     }, function(e){
       // onProgress: e.loaded / e.total (the 30 MB worst case streams here).
@@ -232,6 +247,30 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
   window.addEventListener("resize", resize);
   window.addEventListener("keydown", function(e){
     if (e.key === "r" || e.key === "R") reset();
+  });
+
+  // Interactive pick (PICK-01 browser half). On pointerdown, cast a
+  // BVH-accelerated ray through the clicked pixel and, on a hit, report the
+  // mesh-LOCAL (raw PLY-vertex) coordinate to R. NDC uses the canvas rect with
+  // a SINGLE Y-flip (RESEARCH Pitfall 1). intersectObject(pickMesh, false) is
+  // non-recursive so placed overlay dots are never re-hit (T-4-07). worldToLocal
+  // is preceded by an explicit updateWorldMatrix so a mid-rotation click never
+  // reads a stale matrix (RESEARCH anti-pattern). The report mirrors the /close
+  // beacon: navigator.sendBeacon("pick", ...) is a RELATIVE target that resolves
+  // same-origin to /<token>/pick -- no absolute URL, no external ref (WEB-03).
+  canvas.addEventListener("pointerdown", function(ev){
+    if (!pickMesh) return;
+    var r = canvas.getBoundingClientRect();
+    ndc.x = ((ev.clientX - r.left) / r.width) * 2 - 1;
+    ndc.y = -((ev.clientY - r.top) / r.height) * 2 + 1;
+    raycaster.setFromCamera(ndc, camera);
+    var hits = raycaster.intersectObject(pickMesh, false);
+    if (hits.length) {
+      var p = hits[0].point.clone();
+      pickMesh.updateWorldMatrix(true, false);
+      pickMesh.worldToLocal(p);
+      try { navigator.sendBeacon("pick", p.x + "," + p.y + "," + p.z); } catch(e){}
+    }
   });
 
   // Best-effort tab-close teardown (D-02): fire-and-forget POST to the token
