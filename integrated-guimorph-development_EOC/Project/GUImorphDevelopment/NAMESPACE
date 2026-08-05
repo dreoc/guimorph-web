@@ -2,6 +2,7 @@
 
 export(GUImorphWeb)
 export(gmw_close)
+export(gmw_picks)
 export(loadDgt)
 import(Rvcg)
 import(geomorph)

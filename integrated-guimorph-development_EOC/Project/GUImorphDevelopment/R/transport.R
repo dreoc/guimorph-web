@@ -48,6 +48,15 @@ if (!exists("dbg", mode = "function")) {
 # Question 1). Currently holds `finalizer_registered`; plan 02 adds more.
 .gmw_lifecycle <- new.env(parent = emptyenv())
 
+# Package-level, server-owned landmark store: keyed by token -> an n x 3 numeric
+# matrix of placed pick coordinates (PICK-01). Kept SEPARATE from .gmw_server
+# (same reasoning as .gmw_lifecycle) so ls(.gmw_server) stays purely
+# token -> handle and .gmw_stop_token() never mistakes a landmark matrix for a
+# live server handle. This is the SINGLE authoritative copy of the landmarks:
+# the browser only reports clicks over POST /<token>/pick; R owns the array
+# (server-owns-state, research/REFERENCE-ARCHITECTURE.md).
+.gmw_picks <- new.env(parent = emptyenv())
+
 #' A URL-safe, >=128-bit random path segment for the per-session guard
 #'
 #' Returns \code{n} characters drawn uniformly from a 62-symbol URL-safe
@@ -136,6 +145,57 @@ if (!exists("dbg", mode = "function")) {
   }
 }
 
+#' Build the mixed /pick + /close request handler for one viewport server
+#'
+#' Returns the per-server \code{call} closure that SUBSUMES
+#' \code{.gmw_close_handler}: it is the single \code{call} handler per server and
+#' answers both dynamic subpaths. Each server closes over exactly its own
+#' \code{token} and, on a pick, writes ONLY \code{.gmw_picks[[token]]} -- never
+#' another token's store (cross-token-write guard, T-4-04).
+#'
+#' On the \code{/pick} branch the raw request body (a bare \code{"x,y,z"} string,
+#' NOT JSON -- the project stays JSON-dependency-free, see \code{view3d.R} header)
+#' is read with \code{rawToChar(req$rook.input$read())} and parsed with base-R
+#' \code{strsplit}/\code{as.numeric}. A row is appended to the server-owned
+#' landmark matrix ONLY when the body is exactly three finite numbers
+#' (\code{length == 3L && all(is.finite())}); any other body (wrong arity,
+#' non-numeric, empty) is silently DROPPED and the array is left unchanged
+#' (bounded 3-float payload, no \code{eval}, T-4-02). Both dynamic branches
+#' return \code{204}; every other path is a plain \code{404}.
+#'
+#' Like \code{.gmw_close_handler}, this ONLY pattern-matches the trailing
+#' \code{/pick}/\code{/close} on \code{req$PATH_INFO} with \code{grepl}; it NEVER
+#' joins the request path to the filesystem via
+#' \code{file.path}/\code{normalizePath}/\code{readBin} (path-traversal safety,
+#' T-2-02/T-4-01, inherited from Phase 2/3).
+#' @param token the per-server token this handler closes over.
+#' @return a \code{function(req)} httpuv \code{call} handler.
+#' @keywords internal
+#' @noRd
+.gmw_pick_handler <- function(token) {
+  force(token)
+  function(req) {
+    path <- req$PATH_INFO
+    if (grepl("/pick$", path)) {
+      # Bare "x,y,z" text body, base-R parse only (no JSON dep). The path is
+      # only ever matched with grepl above; it is NEVER joined to the filesystem.
+      body <- tryCatch(rawToChar(req$rook.input$read()), error = function(e) "")
+      xyz  <- suppressWarnings(as.numeric(strsplit(body, ",", fixed = TRUE)[[1]]))
+      if (length(xyz) == 3L && all(is.finite(xyz))) {
+        cur <- if (exists(token, envir = .gmw_picks)) get(token, envir = .gmw_picks) else NULL
+        assign(token, rbind(cur, matrix(xyz, nrow = 1L)), envir = .gmw_picks)
+        dbg(paste0("gmw pick: ", token, " <- ", body))
+      }
+      return(list(status = 204L, headers = list(), body = ""))
+    }
+    if (grepl("/close$", path)) {
+      later::later(function() .gmw_stop_token(token), 0.5)
+      return(list(status = 204L, headers = list(), body = ""))
+    }
+    list(status = 404L, headers = list("Content-Type" = "text/plain"), body = "")
+  }
+}
+
 #' Serve one specimen PLY over a loopback, token-guarded httpuv static path
 #'
 #' The Phase 2 entry point. Copies the vendored bundle, the specimen (as the
@@ -182,21 +242,24 @@ if (!exists("dbg", mode = "function")) {
   # through the existing selector -- no new selection logic (D-08).
   port  <- .gmw_pick_port(prefer = port)
   token <- .gmw_token()
-  # Mixed static + one dynamic route (RESEARCH Pattern 2, D-02). The static
+  # Mixed static + two dynamic routes (RESEARCH Pattern 2/3, D-02). The static
   # byte mount stays byte-for-byte as Phase 2 shipped it (its options are
-  # unchanged, T-2-02); alongside it, excludeStaticPath() routes exactly the one
-  # /<token>/close subpath to R instead of the C++ static thread, and the `call`
-  # handler answers it. excludeStaticPath() is preferred over
-  # staticPathOptions(fallthrough = TRUE) -- it scopes exactly one subpath to R
-  # rather than routing every missing file there (RESEARCH Alternatives).
+  # unchanged, T-2-02); alongside it, excludeStaticPath() routes exactly the
+  # /<token>/close AND /<token>/pick subpaths to R instead of the C++ static
+  # thread, and the single `call` handler (.gmw_pick_handler, which subsumes the
+  # /close branch) answers both. excludeStaticPath() is preferred over
+  # staticPathOptions(fallthrough = TRUE) -- it scopes exactly those subpaths to
+  # R rather than routing every missing file there (RESEARCH Alternatives).
   server <- httpuv::startServer(
     host = "127.0.0.1", port = port,
     app = list(
       staticPaths = stats::setNames(
-        list(httpuv::staticPath(dir), httpuv::excludeStaticPath()),
-        c(paste0("/", token), paste0("/", token, "/close"))
+        list(httpuv::staticPath(dir), httpuv::excludeStaticPath(),
+             httpuv::excludeStaticPath()),
+        c(paste0("/", token), paste0("/", token, "/close"),
+          paste0("/", token, "/pick"))
       ),
-      call = .gmw_close_handler(token)
+      call = .gmw_pick_handler(token)
     )
   )
   # Retain the handle for the session so gc() does not stop the listener.
@@ -294,6 +357,46 @@ if (!exists("dbg", mode = "function")) {
 #' }
 #' @export
 gmw_close <- function(token = NULL) .gmw_stop_token(token)
+
+#' Read the server-owned landmark matrix for one token
+#'
+#' Internal accessor over the \code{.gmw_picks} store. Returns the current
+#' \code{n x 3} landmark matrix for \code{token}, or \code{NULL} when that token
+#' has no placed picks yet. R owns this array; the browser never holds the
+#' authoritative coordinates (server-owns-state).
+#' @param token the per-viewport token whose landmarks to read.
+#' @return an \code{n x 3} numeric matrix, or \code{NULL}.
+#' @keywords internal
+#' @noRd
+.gmw_picks_get <- function(token) {
+  if (exists(token, envir = .gmw_picks)) get(token, envir = .gmw_picks) else NULL
+}
+
+#' Placed landmarks for a GUImorphWeb viewport
+#'
+#' Returns the landmark coordinates the browser has reported for a viewport, as
+#' an \code{n x 3} numeric matrix (one row per placed pick, in placement order).
+#' The coordinates are owned by R -- the browser only reports each click over the
+#' loopback \code{/<token>/pick} route, and this reads back the authoritative
+#' server-side copy. Called with a \code{token} it returns that one viewport's
+#' matrix (or \code{NULL} if nothing has been placed yet); called with no
+#' argument it returns a named list of every viewport's matrix, keyed by token.
+#' @param token optional token identifying a single viewport -- the segment in
+#'   its \code{http://127.0.0.1:<port>/<token>/} URL. \code{NULL} (the default)
+#'   returns a named list over all viewports with placed landmarks.
+#' @return an \code{n x 3} numeric matrix (or \code{NULL}) for a single token; a
+#'   named list of such matrices when \code{token} is \code{NULL}.
+#' @examples
+#' \dontrun{
+#' gmw_picks(token)   # the landmarks placed in this viewport
+#' gmw_picks()        # every viewport's landmarks, keyed by token
+#' }
+#' @export
+gmw_picks <- function(token = NULL) {
+  if (!is.null(token)) return(.gmw_picks_get(token))
+  toks <- ls(.gmw_picks)
+  stats::setNames(lapply(toks, .gmw_picks_get), toks)
+}
 
 #' Package unload hook: stop every live viewport listener
 #'
