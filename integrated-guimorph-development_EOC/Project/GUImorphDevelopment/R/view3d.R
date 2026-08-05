@@ -78,8 +78,22 @@
     if (is.null(mesh$color)) "#cccccc" else mesh$color,
     if (isTRUE(mesh$wireframe)) "true" else "false")
 
-  sprintf(GMW_VIEW3D_TEMPLATE, title, background, background,
-          cloud_js, mesh_js, mesh_url)
+  # Render note: base-R sprintf caps a single `fmt` string at 8192 bytes. Every
+  # %s injection slot lives in the parameterised HEAD (up to and including the
+  # `MESH_URL = "%s";` globals line); everything after it is a parameter-free JS
+  # BODY whose only format token is the doubled `%%`. Splitting there keeps the
+  # sprintf'd fmt tiny (well under the cap even as the JS body grows with the
+  # picking wiring) while the byte-for-byte output is identical to a single
+  # sprintf over the whole template.
+  marker <- 'MESH_URL = "%s";'
+  at <- regexpr(marker, GMW_VIEW3D_TEMPLATE, fixed = TRUE)
+  cut <- at + attr(at, "match.length")
+  head_fmt <- substr(GMW_VIEW3D_TEMPLATE, 1L, cut - 1L)
+  body_raw <- substr(GMW_VIEW3D_TEMPLATE, cut, nchar(GMW_VIEW3D_TEMPLATE))
+  paste0(
+    sprintf(head_fmt, title, background, background, cloud_js, mesh_js, mesh_url),
+    gsub("%%", "%", body_raw, fixed = TRUE)
+  )
 }
 
 #' Render point clouds and an optional mesh in a browser viewport
@@ -165,6 +179,25 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
   var pickMesh = null;
   var raycaster = new THREE.Raycaster();
   var ndc = new THREE.Vector2();
+
+  // Overlay for placed landmarks (PICK-02). A dedicated group, sibling to the
+  // mesh `group`, so its dots are NEVER part of intersectObject(pickMesh, false)
+  // and can never be re-picked or shift a subsequent hit (T-4-07).
+  var overlay = new THREE.Group();
+  scene.add(overlay);
+
+  // Draw a placed landmark at the WORLD-space hit so it sits on the visible
+  // surface. depthTest:true means a dot on the far side is occluded by the mesh
+  // under rotation (PICK-02 criterion 2). Radius is scaled from the framed size
+  // (`dist`) so it reads consistently across specimens.
+  function addOverlayDot(worldPoint){
+    var dot = new THREE.Mesh(
+      new THREE.SphereGeometry(dist * 0.01, 16, 12),
+      new THREE.MeshBasicMaterial({ color: 0xff2222, depthTest: true })
+    );
+    dot.position.copy(worldPoint);
+    overlay.add(dot);
+  }
 
   function reset(){
     camera.position.set(0, 0, dist);
@@ -266,6 +299,9 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
     raycaster.setFromCamera(ndc, camera);
     var hits = raycaster.intersectObject(pickMesh, false);
     if (hits.length) {
+      // Draw the dot at the world hit (visible surface) before worldToLocal
+      // mutates the reported clone. A miss draws nothing -- silent no-op.
+      addOverlayDot(hits[0].point);
       var p = hits[0].point.clone();
       pickMesh.updateWorldMatrix(true, false);
       pickMesh.worldToLocal(p);
