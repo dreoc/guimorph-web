@@ -309,6 +309,42 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
     }
   });
 
+  // Record-and-replay entry point (PICK-03 browser half). A manual parity
+  // harness calls window.GMW_REPLAY(pose) with a recorded native camera:
+  //   pose = { mv:[16], proj:[16], vp:[x,y,w,h], px, py }.
+  // The recorded OpenGL modelview + projection are copied VERBATIM onto a
+  // throwaway camera -- no transpose, no handedness flip: glGetDoublev and
+  // Matrix4.fromArray are both column-major (RESEARCH Pitfall 3). The recorded
+  // pixel is turned into NDC by dividing by the recorded backing viewport, so
+  // the ratio is scale-free (Pitfall 2), with a single Y-flip. The ray is cast
+  // against a mesh at IDENTITY built from the loaded geometry -- NOT the
+  // frameScene()-recentred `group`, or every hit is offset by sphere.center
+  // (anti-pattern). The returned {x,y,z} is therefore already in the raw
+  // PLY-vertex frame, directly comparable to the native gluUnProject object
+  // coordinate. Kept completely separate from the interactive framing.
+  window.GMW_REPLAY = function(pose){
+    if (!pickMesh) return null;
+    var cam = new THREE.PerspectiveCamera();
+    cam.matrixAutoUpdate = false;
+    cam.projectionMatrix.fromArray(pose.proj);
+    cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
+    var view = new THREE.Matrix4().fromArray(pose.mv);
+    cam.matrixWorldInverse.copy(view);
+    cam.matrixWorld.copy(view).invert();
+    var rndc = new THREE.Vector2();
+    rndc.x = (pose.px / pose.vp[2]) * 2 - 1;
+    rndc.y = -((pose.py / pose.vp[3]) * 2 - 1);
+    var idMesh = new THREE.Mesh(pickMesh.geometry);
+    idMesh.position.set(0, 0, 0);
+    idMesh.updateMatrixWorld(true);
+    var rc = new THREE.Raycaster();
+    rc.setFromCamera(rndc, cam);
+    var hits = rc.intersectObject(idMesh, false);
+    return hits.length
+      ? { x: hits[0].point.x, y: hits[0].point.y, z: hits[0].point.z }
+      : null;
+  };
+
   // Best-effort tab-close teardown (D-02): fire-and-forget POST to the token
   // /close route when the page goes away, so closing the tab stops that
   // token\'s server. "close" is relative -- it resolves against the page URL
