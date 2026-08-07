@@ -1975,21 +1975,14 @@ saveToDgt <- function(e)
   dbg(paste("Writing digitized data to file :",fileName))
 
 
-  ################### write curve #####################
+  ################### collect per-specimen records #####################
   curves <- e$activeDataList[[1]][[4]]
   dbg(paste("Writing curve data", curves))
-  .dgt_write_matrix_block(fileName, "Curve=", curves)
-  .dgt_writeln(fileName, "")
-
-  ################### write template ####################
-  .dgt_writeln(fileName, "TemplateNumber=NULL")
-  .dgt_writeln(fileName, "")
-
   dbg(paste("Writing data for : ", nSpecimen, "specimens"))
 
+  specimens_out <- list()
   for (i in 1:nSpecimen)
   {
-    ################### write landmark #####################
     #specimenId <- e$activeDataList[[i]][[1]] # FOR LATER EOC: NEED a BUTTON that
     # writes file with specific path, with if statement
 
@@ -2017,27 +2010,115 @@ saveToDgt <- function(e)
       next()
     }
 
-    .dgt_write_matrix_block(fileName, "LM3=", landmarks)
-    .dgt_write_matrix_block(fileName, "AC3=", anchors)
-    .dgt_writeln(fileName, paste0("ID=", specimenId))
-
-    if(1)
-    {
-      dbg(paste("writing surface data"))
-      ################### write surface #####################
-      tempt <- e$activeDataList[[i]][[5]]
-      surface <- e$activeDataList[[i]][[8]]
-      if (!is.null(tempt)) {
-        .dgt_writeln(fileName, paste0("Template=", tempt))
-      }
-      .dgt_write_matrix_block(fileName, "Surface=", surface)
-    }
-
-    .dgt_writeln(fileName, "")
-
+    specimens_out[[length(specimens_out) + 1L]] <- list(
+      id        = specimenId,
+      landmarks = landmarks,
+      anchors   = anchors,
+      template  = e$activeDataList[[i]][[5]],
+      surface   = e$activeDataList[[i]][[8]]
+    )
   }
 
+  # Emit through the ONE shared serializer so the native and browser save paths
+  # cannot diverge byte-for-byte (DAT-01, threat T-5-15).
+  .dgt_emit_session_blocks(fileName, curves, specimens_out)
+}
 
+#' @noRd
+# The SINGLE .dgt block-emission routine, shared by BOTH the native `saveToDgt`
+# path and the browser `.gmw_save_session_dgt` path. Because there is exactly one
+# serializer, the two entry points cannot diverge byte-for-byte (DAT-01, threat
+# T-5-15). Emits the canonical block sequence through the deterministic
+# `.dgt_write_matrix_block` / `.dgt_writeln` helpers from 05-01: `Curve=`, then
+# `TemplateNumber=NULL`, then per specimen `LM3=`/`AC3=`/`ID=`/`Template=`(only
+# when non-NULL)/`Surface=`. `specimens` is a list of records, each carrying
+# `$landmarks`, `$anchors`, `$id`, `$template`, `$surface`.
+.dgt_emit_session_blocks <- function(file_name, curves, specimens)
+{
+  .dgt_write_matrix_block(file_name, "Curve=", curves)
+  .dgt_writeln(file_name, "")
+
+  .dgt_writeln(file_name, "TemplateNumber=NULL")
+  .dgt_writeln(file_name, "")
+
+  for (sp in specimens)
+  {
+    .dgt_write_matrix_block(file_name, "LM3=", sp$landmarks)
+    .dgt_write_matrix_block(file_name, "AC3=", sp$anchors)
+    .dgt_writeln(file_name, paste0("ID=", sp$id))
+
+    if (!is.null(sp$template)) {
+      .dgt_writeln(file_name, paste0("Template=", sp$template))
+    }
+    .dgt_write_matrix_block(file_name, "Surface=", sp$surface)
+
+    .dgt_writeln(file_name, "")
+  }
+
+  invisible(TRUE)
+}
+
+#' Serialize a browser digitizing session to a .dgt through the canonical writer
+#'
+#' The browser "Save" seam forward-called by the `/save` route (05-02). Reads the
+#' server-owned session record for \code{token} (\code{.gmw_session}, 05-02) and
+#' emits the \code{.dgt} through the EXACT same block sequence and helpers as
+#' \code{saveToDgt} via the one shared \code{.dgt_emit_session_blocks} routine --
+#' there is no second serializer, so for identical in-memory arrays the bytes are
+#' identical to the native path (DAT-01, T-5-15). The save target carries no
+#' request path (T-5-16): when \code{file} is \code{NULL} the destination is
+#' chosen R-side. This path never reads or assigns the native oracle engine env
+#' (CMP-01, T-5-17).
+#' @param token the per-viewport session token whose session to serialize.
+#' @param file destination \code{.dgt} path; \code{NULL} chooses the path R-side.
+#' @return invisibly \code{TRUE} on write, \code{FALSE} if no path was chosen.
+#' @keywords internal
+#' @noRd
+.gmw_save_session_dgt <- function(token, file = NULL)
+{
+  s <- .gmw_session_get(token)
+  if (is.null(s)) {
+    stop("no digitizing session for this token", call. = FALSE)
+  }
+
+  # /save carries no path (T-5-16): the destination is chosen R-side, never from
+  # the request body. An explicit `file` (e.g. the byte-parity test) skips the
+  # dialog.
+  if (is.null(file) || !nzchar(file)) {
+    file <- tclvalue(tkgetSaveFile(filetypes = "{{DGT file} {.dgt}} {{All files} *}"))
+    if (!nzchar(file)) {
+      return(invisible(FALSE))
+    }
+    if (!nzchar(.normalizePathExt(file))) {
+      file <- paste(file, ".dgt", sep = "")
+    } else {
+      .warnUnexpectedExtension(file, "dgt", "Save session")
+    }
+  }
+
+  file.create(file, showWarnings = TRUE)
+  dbg(paste("Writing browser session to .dgt :", file))
+
+  specimens_out <- list()
+  for (i in seq_along(s$specimens))
+  {
+    rec <- s$specimens[[i]]
+    landmarks <- rec$land
+    if (is.null(landmarks) || nrow(landmarks) == 0L) {
+      next()
+    }
+    specimens_out[[length(specimens_out) + 1L]] <- list(
+      id        = rec$id,
+      landmarks = landmarks,
+      anchors   = rec$anchor,
+      template  = rec$template,
+      surface   = rec$surfaces
+    )
+  }
+
+  # Same ONE serializer the native saveToDgt uses (DAT-01 byte identity).
+  .dgt_emit_session_blocks(file, s$curves, specimens_out)
+  invisible(TRUE)
 }
 
 
