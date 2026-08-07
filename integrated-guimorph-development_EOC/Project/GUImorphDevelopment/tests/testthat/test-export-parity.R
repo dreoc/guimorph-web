@@ -45,3 +45,19 @@ test_that("rds payload signature is stable", {
   sig <- .rds_payload_signature(payload)
   expect_match(sig, "^[a-f0-9]{32}$")
 })
+
+# The /export trigger seam must reuse the existing exporters verbatim -- no
+# second serializer -- and its only request-borne argument is a format token
+# validated against the allow-list c("csv","rds"); the export path is chosen
+# R-side by save()/exportGeomorph(), never taken from the request (T-5-13).
+test_that(".gmw_export_session dispatches only to save/exportGeomorph with an allow-listed fmt", {
+  geomorph_file <- file.path(pkg_root, "R", "3dDigitize.geomorph.r")
+  src <- readLines(geomorph_file, warn = FALSE)
+
+  expect_true(any(grepl("\\.gmw_export_session <- function", src)))
+  # Dispatches to the existing exporters (no new serializer introduced).
+  expect_true(any(grepl("save(e)", src, fixed = TRUE)))
+  expect_true(any(grepl("exportGeomorph(e)", src, fixed = TRUE)))
+  # Format token validated against the allow-list (tolerate optional spacing).
+  expect_true(any(grepl('c\\("csv",\\s*"rds"\\)', src)))
+})

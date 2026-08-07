@@ -28,3 +28,57 @@ test_that("aligned coordinate accessor supports geomorph 4.x and legacy layouts"
   expect_identical(.gm_aligned_coords(list(coords = coords_new)), coords_new)
   expect_identical(.gm_aligned_coords(list(coord = coords_old)), coords_old)
 })
+
+# The browser path reads landmarks/curves/surfaces from the server-owned session
+# and populates the SAME activeDataList slots the native path fills, so
+# .build_geomorph_data runs with zero edits to its forwarding. This block pins
+# that equality: an env built by .gmw_session_to_geomorph_env() from a synthetic
+# session must yield the identical geomorph data as an env whose
+# activeDataList[[i]][[10]] / [[1]][[4]] slots are hand-populated with the same
+# arrays. tclvalue()/itob() need the Tcl interpreter; skip cleanly if absent.
+test_that("session read path yields the same .build_geomorph_data as populated activeDataList", {
+  have_tcltk <- tryCatch({
+    suppressWarnings(suppressMessages(library(tcltk)))
+    TRUE
+  }, error = function(err) FALSE)
+  skip_if_not(isTRUE(have_tcltk), "tcltk (Tcl interpreter) not available")
+
+  # Session model helpers (.gmw_session store + .gmw_session_get) live in
+  # transport.R; the env builder + .build_geomorph_data + itob live in the
+  # geomorph source. Source both into this local scope.
+  source(file.path(pkg_root, "R", "transport.R"), local = TRUE)
+  source(file.path(pkg_root, "R", "3dDigitize.geomorph.r"), local = TRUE)
+
+  # Headless: the native C landmark query is unavailable. Returning NULL forces
+  # .landmarks_for_specimen() onto its activeDataList[[i]][[10]] fallback -- the
+  # exact slot the browser path populates.
+  getLandmark <- function(i) NULL
+
+  land   <- matrix(as.numeric(1:15), nrow = 5, ncol = 3)
+  curves <- matrix(c(1L, 2L, 3L, 2L, 3L, 4L), nrow = 2, ncol = 3, byrow = TRUE)
+
+  token <- "gpaparitytoken"
+  s <- .gmw_session_init(token)
+  s$specimens[[1]]$land <- land
+  s$curves <- curves
+  storage.mode(s$curves) <- "integer"
+  assign(token, s, envir = .gmw_session)
+
+  opts <- list(curves = 1, surfaces = 0)
+  e_session <- .gmw_session_to_geomorph_env(token, opts)
+
+  # Hand-populate the same slots the builder targets, from the same arrays.
+  e_active <- new.env()
+  slot <- vector("list", 10L)
+  slot[[10]] <- land
+  slot[[4]]  <- curves
+  e_active$activeDataList <- list(slot)
+  e_active$landmarkNum <- 5
+  e_active$anchorNum   <- 0
+  e_active$sliderNum   <- 0
+  e_active$curves        <- tclVar(1)
+  e_active$surfaces      <- tclVar(0)
+  e_active$anchorsSurface <- tclVar(0)
+
+  expect_identical(.build_geomorph_data(e_session), .build_geomorph_data(e_active))
+})
