@@ -214,6 +214,167 @@ if (!exists("dbg", mode = "function")) {
   }
 }
 
+#' Build the digitizing route handler for one viewport server
+#'
+#' Returns the per-server \code{call} closure that is the FULL Phase-5 route
+#' surface. Each server closes over exactly its own \code{token} and writes ONLY
+#' \code{.gmw_session[[token]]} -- never another token's record (cross-token-write
+#' guard, T-5-06). Like \code{.gmw_pick_handler} it ONLY pattern-matches the
+#' trailing suffix on \code{req$PATH_INFO} with \code{grepl}; NO branch ever joins
+#' the request path to the filesystem via \code{file.path}/\code{normalizePath}/
+#' \code{readBin} (path-traversal safety, T-5-03, inherited T-2-02). Every body is
+#' a bare CSV string parsed with base R to a bounded, arity- and finiteness-checked
+#' vector (no JSON dependency, no \code{eval}); a non-conforming body is silently
+#' DROPPED with \code{204}, never errored (T-5-04).
+#'
+#' Routes (all POST, all \code{204} on the happy path):
+#' \itemize{
+#'   \item \code{/anchor} "x,y,z" -> append a coordinate row to the current
+#'     specimen's anchor array and push a one-deep \code{place} undo.
+#'   \item \code{/curve} "i,j,k" -> three DISTINCT finite integer indices ->
+#'     append one integer row to the session curves and push a \code{curve_place}
+#'     undo; malformed/duplicate bodies dropped.
+#'   \item \code{/delete} "kind,idx" (kind in landmark|anchor|surface) -> remove
+#'     that row from the current specimen and push a \code{delete} undo carrying
+#'     the removed coord+kind+idx so \code{/undo} can reinsert it.
+#'   \item \code{/undo} "" -> invert the one-deep entry.
+#'   \item \code{/specimen} "n" -> set the current specimen index (growing the
+#'     specimen list with empty records as needed) and clear undo (D-A4 re-serve).
+#'   \item \code{/downsample}, \code{/gpa}, \code{/export} "fmt", \code{/save} ->
+#'     thin branches that parse/validate only and forward-call the seam functions
+#'     implemented in 05-04/05/06 (\code{.gmw_downsample_session},
+#'     \code{.gmw_gpa_session}/\code{.gmw_export_session},
+#'     \code{.gmw_save_session_dgt}); the format token is validated against the
+#'     allow-list \code{c("csv","rds","dgt")} and NEVER treated as a filename
+#'     (T-5-05, RESEARCH Security V5).
+#' }
+#' Any \code{/pick} or \code{/close} request is delegated unchanged to
+#' \code{.gmw_pick_handler(token)}; any other suffix is a plain \code{404}.
+#' @param token the per-server token this handler closes over.
+#' @return a \code{function(req)} httpuv \code{call} handler.
+#' @keywords internal
+#' @noRd
+.gmw_digitize_handler <- function(token) {
+  force(token)
+  ok204 <- list(status = 204L, headers = list(), body = "")
+  function(req) {
+    path <- req$PATH_INFO
+
+    # Phase-4 routes are answered by the untouched pick handler.
+    if (grepl("/pick$", path) || grepl("/close$", path)) {
+      return(.gmw_pick_handler(token)(req))
+    }
+
+    # Bare CSV text body; base-R parse only (no JSON dep). `path` is only ever
+    # matched with grepl below; it is NEVER joined to the filesystem.
+    read_body <- function() {
+      tryCatch(rawToChar(req$rook.input$read()), error = function(e) "")
+    }
+
+    if (grepl("/anchor$", path)) {
+      xyz <- suppressWarnings(as.numeric(strsplit(read_body(), ",", fixed = TRUE)[[1]]))
+      if (length(xyz) == 3L && all(is.finite(xyz))) {
+        s   <- .gmw_session_ensure(token)
+        cur <- s$current
+        rec <- s$specimens[[cur]]
+        rec$anchor <- rbind(rec$anchor, matrix(xyz, nrow = 1L))
+        s$specimens[[cur]] <- rec
+        s$undo <- list(action = "place", kind = "anchor",
+                       specimen = cur, idx = nrow(rec$anchor))
+        assign(token, s, envir = .gmw_session)
+        dbg(paste0("gmw anchor: ", token))
+      }
+      return(ok204)
+    }
+
+    if (grepl("/curve$", path)) {
+      idx <- suppressWarnings(as.integer(strsplit(read_body(), ",", fixed = TRUE)[[1]]))
+      # Three DISTINCT finite integer indices; anything else is dropped.
+      if (length(idx) == 3L && !anyNA(idx) && all(is.finite(idx)) &&
+          length(unique(idx)) == 3L) {
+        s <- .gmw_session_ensure(token)
+        s$curves <- rbind(s$curves, matrix(as.integer(idx), nrow = 1L))
+        storage.mode(s$curves) <- "integer"
+        s$undo <- list(action = "curve_place")
+        assign(token, s, envir = .gmw_session)
+        dbg(paste0("gmw curve: ", token))
+      }
+      return(ok204)
+    }
+
+    if (grepl("/delete$", path)) {
+      parts <- strsplit(read_body(), ",", fixed = TRUE)[[1]]
+      if (length(parts) == 2L) {
+        kind <- parts[1]
+        i    <- suppressWarnings(as.integer(parts[2]))
+        slot <- .gmw_session_slot(kind)
+        if (!is.na(slot) && !is.na(i) && is.finite(i)) {
+          s   <- .gmw_session_ensure(token)
+          cur <- s$current
+          rec <- s$specimens[[cur]]
+          m   <- rec[[slot]]
+          if (is.matrix(m) && i >= 1L && i <= nrow(m)) {
+            coord <- as.numeric(m[i, ])
+            rec[[slot]] <- m[-i, , drop = FALSE]
+            s$specimens[[cur]] <- rec
+            s$undo <- list(action = "delete", kind = kind,
+                           specimen = cur, idx = i, coord = coord)
+            assign(token, s, envir = .gmw_session)
+            dbg(paste0("gmw delete: ", token))
+          }
+        }
+      }
+      return(ok204)
+    }
+
+    if (grepl("/undo$", path)) {
+      .gmw_session_undo(token)
+      return(ok204)
+    }
+
+    if (grepl("/specimen$", path)) {
+      n <- suppressWarnings(as.integer(strsplit(read_body(), ",", fixed = TRUE)[[1]][1]))
+      if (length(n) == 1L && !is.na(n) && is.finite(n) && n >= 1L) {
+        s <- .gmw_session_ensure(token)
+        while (length(s$specimens) < n) {
+          s$specimens[[length(s$specimens) + 1L]] <- .gmw_session_empty_record()
+        }
+        s$current <- as.integer(n)
+        s$undo    <- NULL
+        assign(token, s, envir = .gmw_session)
+        dbg(paste0("gmw specimen: ", token, " -> ", n))
+      }
+      return(ok204)
+    }
+
+    # Thin forward-call branches: parse/validate only. The seam functions land in
+    # 05-04/05/06 and are resolved at call time, so a forward reference is fine;
+    # wrapping in try() keeps an as-yet-unimplemented seam a harmless 204 no-op.
+    if (grepl("/downsample$", path)) {
+      try(.gmw_downsample_session(token), silent = TRUE)
+      return(ok204)
+    }
+    if (grepl("/gpa$", path)) {
+      try(.gmw_gpa_session(token), silent = TRUE)
+      return(ok204)
+    }
+    if (grepl("/export$", path)) {
+      fmt <- strsplit(read_body(), ",", fixed = TRUE)[[1]][1]
+      # Allow-list only; the format token is NEVER treated as or joined to a path.
+      if (!is.na(fmt) && fmt %in% c("csv", "rds", "dgt")) {
+        try(.gmw_export_session(token, fmt), silent = TRUE)
+      }
+      return(ok204)
+    }
+    if (grepl("/save$", path)) {
+      try(.gmw_save_session_dgt(token, NULL), silent = TRUE)
+      return(ok204)
+    }
+
+    list(status = 404L, headers = list("Content-Type" = "text/plain"), body = "")
+  }
+}
+
 #' Serve one specimen PLY over a loopback, token-guarded httpuv static path
 #'
 #' The Phase 2 entry point. Copies the vendored bundle, the specimen (as the
@@ -260,24 +421,32 @@ if (!exists("dbg", mode = "function")) {
   # through the existing selector -- no new selection logic (D-08).
   port  <- .gmw_pick_port(prefer = port)
   token <- .gmw_token()
-  # Mixed static + two dynamic routes (RESEARCH Pattern 2/3, D-02). The static
-  # byte mount stays byte-for-byte as Phase 2 shipped it (its options are
-  # unchanged, T-2-02); alongside it, excludeStaticPath() routes exactly the
-  # /<token>/close AND /<token>/pick subpaths to R instead of the C++ static
-  # thread, and the single `call` handler (.gmw_pick_handler, which subsumes the
-  # /close branch) answers both. excludeStaticPath() is preferred over
-  # staticPathOptions(fallthrough = TRUE) -- it scopes exactly those subpaths to
-  # R rather than routing every missing file there (RESEARCH Alternatives).
+  # Mixed static + dynamic routes (RESEARCH Pattern 2/3, D-02). The static byte
+  # mount stays byte-for-byte as Phase 2 shipped it (its options are unchanged,
+  # T-2-02); alongside it, one excludeStaticPath() entry per dynamic subpath
+  # routes exactly those subpaths to R instead of the C++ static thread, and the
+  # single `call` handler (.gmw_digitize_handler, which subsumes /pick and /close
+  # by delegating to .gmw_pick_handler) answers them all. excludeStaticPath() is
+  # preferred over staticPathOptions(fallthrough = TRUE) -- it scopes exactly
+  # those subpaths to R rather than routing every missing file there (RESEARCH
+  # Alternatives). Phase-5 adds the digitizing edit routes (/anchor, /curve,
+  # /delete, /undo, /specimen) and the analytical seams (/downsample, /gpa,
+  # /export, /save) beside the inherited /pick and /close.
+  dyn_suffixes <- c("close", "pick", "anchor", "curve", "delete", "undo",
+                    "specimen", "downsample", "gpa", "export", "save")
+  static_map <- c(
+    list(httpuv::staticPath(dir)),
+    lapply(dyn_suffixes, function(x) httpuv::excludeStaticPath())
+  )
   server <- httpuv::startServer(
     host = "127.0.0.1", port = port,
     app = list(
       staticPaths = stats::setNames(
-        list(httpuv::staticPath(dir), httpuv::excludeStaticPath(),
-             httpuv::excludeStaticPath()),
-        c(paste0("/", token), paste0("/", token, "/close"),
-          paste0("/", token, "/pick"))
+        static_map,
+        c(paste0("/", token),
+          paste0("/", token, "/", dyn_suffixes))
       ),
-      call = .gmw_pick_handler(token)
+      call = .gmw_digitize_handler(token)
     )
   )
   # Retain the handle for the session so gc() does not stop the listener.
