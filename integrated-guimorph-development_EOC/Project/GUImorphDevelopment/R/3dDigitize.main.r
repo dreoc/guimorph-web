@@ -201,15 +201,30 @@ write.vertex.3D <- function(content, key, fileName)
 }
 
 .dgt_format_num <- function(x) {
-  formatC(as.numeric(x), format = "f", digits = 6)
+  # Round in R (round-half-to-even) BEFORE formatting so R — not the platform
+  # C library inside formatC — decides the sixth decimal. This is what makes
+  # the sixth-decimal tie deterministic across Windows and macOS (DAT-01).
+  formatC(round(as.numeric(x), 6), format = "f", digits = 6)
+}
+
+#' @noRd
+# Internal binary-append line writer with an explicit, pinned CRLF terminator.
+# Opening in binary mode ("ab") disables the platform newline translation that
+# a bare write()/cat() would apply, so every line the .dgt writer emits ends in
+# exactly "\r\n" regardless of host OS. Mirrors the mergeDgt wb pin below.
+.dgt_writeln <- function(file_name, text) {
+  con <- file(file_name, open = "ab")
+  on.exit(close(con), add = TRUE)
+  writeLines(text, con, sep = "\r\n")
+  invisible(TRUE)
 }
 
 .dgt_write_matrix_block <- function(file_name, header_key, mat) {
   rows <- if (is.null(dim(mat))) 0L else as.integer(nrow(mat))
-  write(paste0(header_key, rows), file_name, append = TRUE)
+  .dgt_writeln(file_name, paste0(header_key, rows))
   if (rows > 0L) {
     lines <- apply(mat, 1L, function(row) paste(.dgt_format_num(row), collapse = " "))
-    write(lines, file_name, append = TRUE)
+    .dgt_writeln(file_name, lines)
   }
   invisible(TRUE)
 }
@@ -1964,11 +1979,11 @@ saveToDgt <- function(e)
   curves <- e$activeDataList[[1]][[4]]
   dbg(paste("Writing curve data", curves))
   .dgt_write_matrix_block(fileName, "Curve=", curves)
-  write("", fileName, append = TRUE)
+  .dgt_writeln(fileName, "")
 
   ################### write template ####################
-  write("TemplateNumber=NULL", fileName, append = TRUE)
-  write("", fileName, append = TRUE)
+  .dgt_writeln(fileName, "TemplateNumber=NULL")
+  .dgt_writeln(fileName, "")
 
   dbg(paste("Writing data for : ", nSpecimen, "specimens"))
 
@@ -2004,7 +2019,7 @@ saveToDgt <- function(e)
 
     .dgt_write_matrix_block(fileName, "LM3=", landmarks)
     .dgt_write_matrix_block(fileName, "AC3=", anchors)
-    write(paste0("ID=", specimenId), fileName, append = TRUE)
+    .dgt_writeln(fileName, paste0("ID=", specimenId))
 
     if(1)
     {
@@ -2013,12 +2028,12 @@ saveToDgt <- function(e)
       tempt <- e$activeDataList[[i]][[5]]
       surface <- e$activeDataList[[i]][[8]]
       if (!is.null(tempt)) {
-        write(paste0("Template=", tempt), fileName, append = TRUE)
+        .dgt_writeln(fileName, paste0("Template=", tempt))
       }
       .dgt_write_matrix_block(fileName, "Surface=", surface)
     }
 
-    write("", fileName, append = TRUE)
+    .dgt_writeln(fileName, "")
 
   }
 
