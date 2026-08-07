@@ -567,6 +567,100 @@ downSample <- function(e)
 }
 
 
+#' Headless surface-semilandmark builder for the browser /downsample route
+#'
+#' The browser does not compute geometry -- it only triggers this over the
+#' 05-02 \code{/downsample} loopback route (\code{.gmw_digitize_handler}
+#' forward-calls \code{.gmw_downsample_session(token)}). This runs the SAME TPS
+#' template warp + nearest-neighbour pass that \code{downSample} (above) uses,
+#' but headlessly: no Tk status bar, no message boxes, and -- critically -- no
+#' \code{add("downsample", ...)} into the native \code{tkogl2} C engine (that
+#' re-couples acquisition to the engine Phase 6 removes). Landmarks, anchors,
+#' template and the specimen point cloud are read from the server-owned session
+#' record (\code{.gmw_session[[token]]}), never from \code{activeDataList} /
+#' \code{getLandmark}. The resulting s x 3 \code{sliders} array is stored in the
+#' record's \code{surfaces} slot, and the browser display cloud is returned as
+#' the row-major flatten via \code{.gmw_flat} -- which applies the mandatory
+#' \code{as.vector(t(.))} transpose (PROJECT lessons; pinned by
+#' \code{test-surface-flatten.R}). The numerical pipeline and its \code{gm_utils}
+#' calls (\code{csize}/\code{rotate.mat}/\code{tps2d3d}) are unchanged from
+#' \code{downSample}; only \code{PB = FALSE} drops the interactive progress bar.
+#'
+#' @param token the per-viewport session token whose current specimen to warp.
+#' @return the row-major \code{.gmw_flat} surface cloud string, invisibly stored
+#'   as \code{surfaces} in the session record for the current specimen.
+#' @keywords internal
+#' @noRd
+.gmw_downsample_session <- function(token) {
+  s <- .gmw_session_get(token)
+  if (is.null(s)) {
+    stop("gmw downsample: no digitizing session for this token.", call. = FALSE)
+  }
+  cur <- s$current
+  rec <- s$specimens[[cur]]
+
+  lmk      <- rec$land
+  anc      <- rec$anchor
+  template <- rec$template
+  specimen <- rec$specimen
+
+  # Same preconditions downSample() enforces, minus the Tk status-bar path.
+  if (is.null(lmk) || nrow(lmk) < 4L) {
+    stop("gmw downsample: the current specimen needs at least 4 landmarks.",
+         call. = FALSE)
+  }
+  if (is.null(template)) {
+    stop("gmw downsample: no template in the session record; build one first.",
+         call. = FALSE)
+  }
+  if (is.null(specimen) || !is.matrix(specimen) || ncol(specimen) != 3L) {
+    stop("gmw downsample: the current specimen point cloud is missing from the session.",
+         call. = FALSE)
+  }
+
+  lmk      <- as.matrix(lmk)
+  template <- as.matrix(template)
+  specimen <- as.matrix(specimen)
+
+  # Anchors are forced into the fixed set exactly as downSample()'s use-anchor
+  # branch does (they guarantee topographically significant features).
+  fixed <- as.integer(nrow(lmk))
+  if (!is.null(anc) && nrow(anc) > 0L) {
+    lmk   <- rbind(lmk, as.matrix(anc))
+    fixed <- as.integer(nrow(lmk))
+  }
+
+  dbg("gmw downsample: warping template (headless)")
+
+  # ---- TPS warp pipeline, verbatim from downSample() (3dDigitize.surface.r) --
+  template <- template * (csize(lmk) / csize(template[(1:fixed), , drop = FALSE]))
+  template <- template %*% rotate.mat(lmk, template[(1:fixed), , drop = FALSE])
+  template.tps <- tps2d3d(template[-(1:fixed), , drop = FALSE],
+                          template[(1:fixed), , drop = FALSE], lmk, PB = FALSE)
+
+  spec.surfs <- specimen
+  n <- nrow(template.tps)
+  sliders <- matrix(NA_real_, nrow = n, ncol = 3L)
+  # Nearest-neighbour of each warped semilandmark onto the specimen, removing
+  # the matched vertex each pass so no specimen point is claimed twice.
+  for (i in seq_len(n)) {
+    nn <- which.min(sqrt((template.tps[i, 1] - spec.surfs[, 1])^2 +
+                         (template.tps[i, 2] - spec.surfs[, 2])^2 +
+                         (template.tps[i, 3] - spec.surfs[, 3])^2))[1]
+    sliders[i, ] <- spec.surfs[nn, ]
+    spec.surfs   <- spec.surfs[-nn, , drop = FALSE]
+  }
+  # --------------------------------------------------------------------------
+
+  # R owns the result: store the s x 3 array in the session record. No
+  # activeDataList / Tk / C add() mutation from the browser path.
+  s$specimens[[cur]]$surfaces <- sliders
+  assign(token, s, envir = .gmw_session)
+
+  # Row-major cloud for the browser (the transpose is mandatory).
+  .gmw_flat(sliders)
+}
+
 
 
 
