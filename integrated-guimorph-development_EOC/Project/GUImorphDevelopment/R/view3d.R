@@ -222,6 +222,35 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
     anchors.add(dot);
   }
 
+  // Surface semilandmark cloud (05-03, DGT-02). R computes the surfaces
+  // (downSample TPS warp, 05-04) and delivers them PRE-FLATTENED row-major via
+  // .gmw_flat; the browser only DISPLAYS them as a THREE.Points layer in its own
+  // group and never recomputes them. Kept sibling to overlay/anchors and out of
+  // intersectObject so a surface point is never a mesh-raycast target.
+  var surfaces = new THREE.Group();
+  scene.add(surfaces);
+  var surfacePts = null;
+
+  function addSurfaceCloud(flat){
+    var g = new THREE.BufferGeometry();
+    g.setAttribute("position",
+      new THREE.BufferAttribute(new Float32Array(flat), 3));
+    surfacePts = new THREE.Points(g, new THREE.PointsMaterial({
+      color: 0xff8800, size: 3, sizeAttenuation: false
+    }));
+    surfaces.add(surfacePts);
+  }
+
+  // Replace the surface cloud from a bare-CSV "x1,y1,z1,x2,..." R response
+  // (JSON-free, the same .gmw_flat wire shape R already emits for clouds).
+  function redrawSurfaces(csv){
+    surfaces.clear();
+    surfacePts = null;
+    var nums = (csv || "").split(",").map(Number)
+                 .filter(function(x){ return isFinite(x); });
+    if (nums.length >= 3) addSurfaceCloud(nums);
+  }
+
   function reset(){
     camera.position.set(0, 0, dist);
     camera.near = dist / 100; camera.far = dist * 100;
@@ -392,12 +421,101 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
     }
   });
 
-  // Mode keys: (a)nchor, (c)urve, (l)andmark. Sibling to the r-key reset above.
+  // Mode keys: (a)nchor, (c)urve, (l)andmark, (d)elete; (u)ndo fires at once.
+  // Sibling to the r-key reset above.
   window.addEventListener("keydown", function(e){
     if (e.key === "a" || e.key === "A") mode = "anchor";
     else if (e.key === "c" || e.key === "C") mode = "curve";
     else if (e.key === "l" || e.key === "L") mode = "landmark";
+    else if (e.key === "d" || e.key === "D") mode = "delete";
+    else if (e.key === "u" || e.key === "U") doUndo();
   });
+
+  // Delete + undo + specimen switch (05-03, DGT-02). R owns all state; the
+  // browser reports edits over the relative loopback routes and re-reads the
+  // re-served overlays. Screen-space distance of a WORLD position to the click.
+  function screenDist2(ev, worldPos){
+    var r = canvas.getBoundingClientRect();
+    var v = worldPos.clone().project(camera);
+    var sx = (v.x * 0.5 + 0.5) * r.width, sy = (-v.y * 0.5 + 0.5) * r.height;
+    var dx = sx - (ev.clientX - r.left), dy = sy - (ev.clientY - r.top);
+    return dx * dx + dy * dy;
+  }
+
+  // Delete mode: click resolves the nearest editable marker across the landmark,
+  // anchor, and surface layers to its kind + INDEX and reports it to /delete; R
+  // removes that row (one-deep undo) and the layer is re-served/redrawn.
+  canvas.addEventListener("pointerdown", function(ev){
+    if (mode !== "delete") return;
+    var best = { kind: null, idx: -1, d2: 24 * 24 };
+    var i, p = new THREE.Vector3();
+    for (i = 0; i < overlay.children.length; i++){
+      var dL = screenDist2(ev, overlay.children[i].position);
+      if (dL < best.d2) best = { kind: "landmark", idx: i, d2: dL };
+    }
+    for (i = 0; i < anchors.children.length; i++){
+      var dA = screenDist2(ev, anchors.children[i].position);
+      if (dA < best.d2) best = { kind: "anchor", idx: i, d2: dA };
+    }
+    if (surfacePts){
+      var pos = surfacePts.geometry.getAttribute("position");
+      for (i = 0; i < pos.count; i++){
+        p.set(pos.getX(i), pos.getY(i), pos.getZ(i));
+        surfacePts.localToWorld(p);
+        var dS = screenDist2(ev, p);
+        if (dS < best.d2) best = { kind: "surface", idx: i, d2: dS };
+      }
+    }
+    if (best.idx >= 0){
+      try { navigator.sendBeacon("delete", best.kind + "," + best.idx); } catch(e){}
+      redraw();
+    }
+  });
+
+  // Re-read the re-served overlays for this specimen (bare CSV, JSON-free) after
+  // an edit. Same-origin relative target; the R re-serve seam answers it (05-04).
+  // A missing seam 404s harmlessly and leaves the current layers untouched.
+  function redraw(){
+    fetch("redraw", { method: "GET" }).then(function(r){ return r.text(); })
+      .then(function(txt){ redrawSurfaces(txt); }).catch(function(){});
+  }
+
+  function doUndo(){
+    try { navigator.sendBeacon("undo", ""); } catch(e){}
+    redraw();
+  }
+
+  // Load a re-served specimen mesh and rebuild the BVH on the NEW pickMesh; the
+  // old mesh/BVH is discarded so a switch never raycasts a stale tree (Pitfall
+  // 4). Overlays are cleared and re-placed for the incoming specimen.
+  function loadSpecimen(url){
+    if (pickMesh){ group.remove(pickMesh); pickMesh = null; }
+    overlay.clear(); anchors.clear(); surfaces.clear(); surfacePts = null;
+    new PLYLoader().load(url, function(geometry){
+      geometry.computeVertexNormals();
+      geometry.computeBoundsTree();
+      pickMesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({
+        color: "#cccccc", side: THREE.DoubleSide
+      }));
+      group.add(pickMesh);
+      frameScene();
+    });
+  }
+
+  // Specimen switch (RE-SERVE, A4): report the target index to /specimen, then
+  // load the returned mesh URL (first CSV line of the re-serve response) and
+  // redraw the overlays for the incoming specimen.
+  function switchSpecimen(n){
+    try { navigator.sendBeacon("specimen", String(n)); } catch(e){}
+    fetch("specimen", { method: "POST", body: String(n) })
+      .then(function(r){ return r.text(); })
+      .then(function(txt){
+        var url = (txt || "").split("\n")[0];
+        if (url) loadSpecimen(url);
+        redraw();
+      }).catch(function(){});
+  }
+  window.GMW_SWITCH_SPECIMEN = switchSpecimen;
 
   // Record-and-replay entry point (PICK-03 browser half). A manual parity
   // harness calls window.GMW_REPLAY(pose) with a recorded native camera:
