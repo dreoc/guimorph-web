@@ -57,6 +57,24 @@ if (!exists("dbg", mode = "function")) {
 # (server-owns-state, research/REFERENCE-ARCHITECTURE.md).
 .gmw_picks <- new.env(parent = emptyenv())
 
+# Package-level, server-owned DIGITIZING record: keyed by token -> a list
+#   list(specimens = list(<record>, ...), current = <int>,
+#        curves = <c x 3 integer matrix>, undo = <entry|NULL>)
+# where each per-specimen <record> is
+#   list(land = <p x 3 numeric>, anchor = <a x 3 numeric>,
+#        surfaces = <s x 3 numeric>, template = <character scalar|NULL>).
+# Kept SEPARATE from .gmw_server (same reasoning as .gmw_picks/.gmw_lifecycle)
+# so ls(.gmw_server) stays purely token -> handle and .gmw_stop_token() never
+# mistakes a session record for a live server handle. This is the SINGLE
+# authoritative copy of the whole digitizing state (landmarks, anchors, curves,
+# surfaces, template, undo): the browser only reports edits over the loopback
+# routes; R owns the record independently of the C engine (tkogl2), which
+# Phase 6 deletes (RESEARCH A3). Curves are three landmark INDICES per row, not
+# coordinates (RESEARCH Pitfall 5), and are session-scoped -- shared across
+# specimens (activeDataList[[1]][[4]], Assumption A7) -- so they live beside
+# `current`/`undo` rather than inside a per-specimen record.
+.gmw_session <- new.env(parent = emptyenv())
+
 #' A URL-safe, >=128-bit random path segment for the per-session guard
 #'
 #' Returns \code{n} characters drawn uniformly from a 62-symbol URL-safe
@@ -396,6 +414,219 @@ gmw_picks <- function(token = NULL) {
   if (!is.null(token)) return(.gmw_picks_get(token))
   toks <- ls(.gmw_picks)
   stats::setNames(lapply(toks, .gmw_picks_get), toks)
+}
+
+# ---------------------------------------------------------------------------
+#  Digitizing session model (.gmw_session) -- accessor + one-deep undo grammar
+#
+#  R holds the single authoritative per-specimen digitizing record. The helpers
+#  below own the shape of that record and the inverse of every mutating action.
+#  The route handler (.gmw_digitize_handler) is the ONLY writer; these helpers
+#  never touch the request path or the filesystem, so the no-path-join invariant
+#  (T-2-02) is a property of the handler alone.
+# ---------------------------------------------------------------------------
+
+#' An empty single-specimen digitizing record
+#'
+#' land/anchor/surfaces start as 0x3 numeric matrices (so \code{rbind} of a
+#' single 1x3 row yields a well-typed matrix), template is \code{NULL}.
+#' @return a per-specimen record list.
+#' @keywords internal
+#' @noRd
+.gmw_session_empty_record <- function() {
+  list(
+    land     = matrix(numeric(0), nrow = 0L, ncol = 3L),
+    anchor   = matrix(numeric(0), nrow = 0L, ncol = 3L),
+    surfaces = matrix(numeric(0), nrow = 0L, ncol = 3L),
+    template = NULL
+  )
+}
+
+#' Read the server-owned digitizing session for one token
+#'
+#' Internal accessor over the \code{.gmw_session} store. Returns the token's
+#' session list, or \code{NULL} when that token has no session yet.
+#' @param token the per-viewport token whose session to read.
+#' @return the session list, or \code{NULL}.
+#' @keywords internal
+#' @noRd
+.gmw_session_get <- function(token) {
+  if (exists(token, envir = .gmw_session)) get(token, envir = .gmw_session) else NULL
+}
+
+#' Lazily create an empty single-specimen session for an unknown token
+#'
+#' curves is a 0x3 INTEGER matrix (curves are landmark indices, RESEARCH Pitfall
+#' 5); undo is one-deep and starts \code{NULL}. Session-level curves and undo sit
+#' beside the specimen list because curves are shared across specimens (A7).
+#' @param token the per-viewport token to initialise.
+#' @return the freshly created session list (also stored in \code{.gmw_session}).
+#' @keywords internal
+#' @noRd
+.gmw_session_init <- function(token) {
+  s <- list(
+    specimens = list(.gmw_session_empty_record()),
+    current   = 1L,
+    curves    = matrix(integer(0), nrow = 0L, ncol = 3L),
+    undo      = NULL
+  )
+  assign(token, s, envir = .gmw_session)
+  s
+}
+
+#' Return the token's session, creating an empty one on first use
+#' @param token the per-viewport token.
+#' @return the session list.
+#' @keywords internal
+#' @noRd
+.gmw_session_ensure <- function(token) {
+  s <- .gmw_session_get(token)
+  if (is.null(s)) s <- .gmw_session_init(token)
+  s
+}
+
+#' Map a route kind ("landmark"/"anchor"/"surface") to its record slot name
+#' @param kind one of "landmark", "anchor", "surface".
+#' @return the slot name ("land"/"anchor"/"surfaces"), or \code{NA} if unknown.
+#' @keywords internal
+#' @noRd
+.gmw_session_slot <- function(kind) {
+  switch(kind, landmark = "land", anchor = "anchor", surface = "surfaces",
+         NA_character_)
+}
+
+#' Overwrite the one-deep undo entry for a token (mirrors pushUndo)
+#'
+#' One-deep by design (matches the Tk \code{pushUndo}/\code{doUndo} grammar in
+#' 3dDigitize.digitize.r): a new mutating action always replaces the previous
+#' undo entry, so only the most recent action is reversible.
+#' @param token the per-viewport token.
+#' @param entry an undo entry list (action + fields the inverse needs).
+#' @return \code{invisible(TRUE)}.
+#' @keywords internal
+#' @noRd
+.gmw_session_push_undo <- function(token, entry) {
+  s <- .gmw_session_ensure(token)
+  s$undo <- entry
+  assign(token, s, envir = .gmw_session)
+  invisible(TRUE)
+}
+
+#' Clear the one-deep undo entry for a token (mirrors clearUndo)
+#' @param token the per-viewport token.
+#' @return \code{invisible(TRUE)}.
+#' @keywords internal
+#' @noRd
+.gmw_session_clear_undo <- function(token) {
+  s <- .gmw_session_get(token)
+  if (is.null(s)) return(invisible(TRUE))
+  s$undo <- NULL
+  assign(token, s, envir = .gmw_session)
+  invisible(TRUE)
+}
+
+#' Invert the one-deep undo entry for a token (mirrors doUndo)
+#'
+#' Reverses the last recorded action and returns whether anything was undone.
+#' Supported actions mirror the Tk grammar: \code{place} (drop the appended
+#' row), \code{delete} (reinsert the removed coord at its original index),
+#' \code{move} (restore the pre-move coord), and \code{curve_place} (drop the
+#' last session curve row). On success the undo entry is cleared (one-deep).
+#' @param token the per-viewport token.
+#' @return \code{TRUE} if an action was inverted, else \code{FALSE}.
+#' @keywords internal
+#' @noRd
+.gmw_session_undo <- function(token) {
+  s <- .gmw_session_get(token)
+  if (is.null(s) || is.null(s$undo)) return(FALSE)
+  entry <- s$undo
+  ok <- FALSE
+
+  if (identical(entry$action, "place")) {
+    slot <- .gmw_session_slot(entry$kind)
+    spx  <- entry$specimen
+    if (!is.na(slot) && !is.null(spx) && spx >= 1L && spx <= length(s$specimens)) {
+      m <- s$specimens[[spx]][[slot]]
+      if (is.matrix(m) && nrow(m) >= 1L) {
+        idx <- if (!is.null(entry$idx)) entry$idx else nrow(m)
+        s$specimens[[spx]][[slot]] <- m[-idx, , drop = FALSE]
+        ok <- TRUE
+      }
+    }
+  } else if (identical(entry$action, "delete")) {
+    slot <- .gmw_session_slot(entry$kind)
+    spx  <- entry$specimen
+    if (!is.na(slot) && !is.null(spx) && spx >= 1L && spx <= length(s$specimens)) {
+      m <- s$specimens[[spx]][[slot]]
+      if (!is.matrix(m)) m <- matrix(numeric(0), nrow = 0L, ncol = 3L)
+      coord <- matrix(as.numeric(entry$coord), nrow = 1L, ncol = 3L)
+      n   <- nrow(m)
+      idx <- entry$idx
+      if (is.null(idx) || idx > n) {
+        m2 <- rbind(m, coord)
+      } else {
+        upper <- if (idx > 1L) m[seq_len(idx - 1L), , drop = FALSE] else m[0, , drop = FALSE]
+        lower <- if (idx <= n) m[idx:n, , drop = FALSE]           else m[0, , drop = FALSE]
+        m2 <- rbind(upper, coord, lower)
+      }
+      s$specimens[[spx]][[slot]] <- m2
+      ok <- TRUE
+    }
+  } else if (identical(entry$action, "move")) {
+    slot <- .gmw_session_slot(entry$kind)
+    spx  <- entry$specimen
+    if (!is.na(slot) && !is.null(spx) && spx >= 1L && spx <= length(s$specimens)) {
+      m   <- s$specimens[[spx]][[slot]]
+      idx <- entry$idx
+      if (is.matrix(m) && !is.null(idx) && idx >= 1L && idx <= nrow(m)) {
+        m[idx, ] <- as.numeric(entry$before)
+        s$specimens[[spx]][[slot]] <- m
+        ok <- TRUE
+      }
+    }
+  } else if (identical(entry$action, "curve_place")) {
+    cm <- s$curves
+    if (is.matrix(cm) && nrow(cm) >= 1L) {
+      s$curves <- cm[-nrow(cm), , drop = FALSE]
+      ok <- TRUE
+    }
+  }
+
+  if (ok) {
+    s$undo <- NULL
+    assign(token, s, envir = .gmw_session)
+  }
+  ok
+}
+
+#' Digitizing session for a GUImorphWeb viewport
+#'
+#' Returns the server-owned digitizing record for a viewport: a list with the
+#' per-specimen \code{specimens} (each holding \code{land}/\code{anchor}/
+#' \code{surfaces}/\code{template}), the \code{current} specimen index, the
+#' session-level \code{curves} (an integer matrix of landmark-index triples,
+#' shared across specimens), and the one-deep \code{undo} entry. R owns this
+#' record -- the browser only reports edits over the loopback
+#' \code{/<token>/anchor}, \code{/curve}, \code{/delete}, \code{/undo}, and
+#' \code{/specimen} routes, and this reads back the authoritative server-side
+#' copy. Called with a \code{token} it returns that one viewport's session (or
+#' \code{NULL} if nothing has been edited yet); called with no argument it
+#' returns a named list of every viewport's session, keyed by token.
+#' @param token optional token identifying a single viewport -- the segment in
+#'   its \code{http://127.0.0.1:<port>/<token>/} URL. \code{NULL} (the default)
+#'   returns a named list over all viewports with a session.
+#' @return the session list (or \code{NULL}) for a single token; a named list of
+#'   such lists when \code{token} is \code{NULL}.
+#' @examples
+#' \dontrun{
+#' gmw_session(token)   # this viewport's digitizing record
+#' gmw_session()        # every viewport's record, keyed by token
+#' }
+#' @export
+gmw_session <- function(token = NULL) {
+  if (!is.null(token)) return(.gmw_session_get(token))
+  toks <- ls(.gmw_session)
+  stats::setNames(lapply(toks, .gmw_session_get), toks)
 }
 
 #' Package unload hook: stop every live viewport listener

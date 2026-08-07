@@ -3,6 +3,7 @@
 export(GUImorphWeb)
 export(gmw_close)
 export(gmw_picks)
+export(gmw_session)
 export(loadDgt)
 import(Rvcg)
 import(geomorph)
