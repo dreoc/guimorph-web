@@ -452,6 +452,147 @@ plotPCA <- function(e) {
   .plot_show(draw)
 }
 
+# ---------------------------------------------------------------------------
+#  Browser GPA / export trigger seams (DGT-03)
+#
+#  The /gpa and /export routes (05-02) forward-call the three functions below.
+#  "Identical to native" holds by CONSTRUCTION: compute()/save()/exportGeomorph()
+#  and their .build_geomorph_data() assembly are reused VERBATIM; the only new
+#  code is where the arrays come from. .gmw_session_to_geomorph_env() reads the
+#  server-owned digitizing record (.gmw_session[[token]]) and populates the SAME
+#  activeDataList slots the native path fills -- landmarks into [[i]][[10]] (the
+#  fallback .landmarks_for_specimen already reads when the C getLandmark is
+#  absent/wrong-size), session-scoped curves into [[1]][[4]], surfaces into
+#  [[i]][[8]] -- plus landmarkNum/anchorNum/sliderNum and the gpagen option
+#  fields as tclVars, so .build_geomorph_data()/compute() run with ZERO edits to
+#  their forwarding. The gpagen option forwarding in compute() is left untouched
+#  (pinned by the test-gpa-parity.R source-scan). Curves stay session-scoped
+#  three-index rows (RESEARCH Pitfall 5 / A7).
+# ---------------------------------------------------------------------------
+
+#' Build a geomorph analysis env from a server-owned digitizing session
+#'
+#' Materialises a plain environment \code{e} that \code{.build_geomorph_data(e)}
+#' and \code{compute(e)} accept unchanged: the per-specimen landmarks are placed
+#' in \code{activeDataList[[i]][[10]]}, the session-scoped curve index rows in
+#' \code{activeDataList[[1]][[4]]}, per-specimen surfaces in
+#' \code{activeDataList[[i]][[8]]}, and \code{landmarkNum}/\code{anchorNum}/
+#' \code{sliderNum} are derived from the record. The gpagen option fields
+#' (\code{maxiter}, \code{curves}, \code{surfaces}, \code{anchorsSurface},
+#' \code{PrinAxes}, \code{ProcD}, \code{Proj}, \code{printP}, \code{approxBE},
+#' \code{parallel}) are set as \code{tclVar}s carrying the values from
+#' \code{opts}, in the exact form \code{tclvalue()} in \code{compute}/
+#' \code{.build_geomorph_data} reads them -- so no forwarding line is edited.
+#' No \code{activeDataList}/Tk/C-engine mutation happens; the env is disposable.
+#' @param token the per-viewport session token to read.
+#' @param opts named list of gpagen options; missing keys take native defaults.
+#' @return a fresh environment ready for \code{.build_geomorph_data}/\code{compute}.
+#' @keywords internal
+#' @noRd
+.gmw_session_to_geomorph_env <- function(token, opts = list()) {
+  s <- .gmw_session_get(token)
+  if (is.null(s)) {
+    stop("gmw gpa/export: no digitizing session for this token.", call. = FALSE)
+  }
+  specs <- s$specimens
+  nSpec <- length(specs)
+  if (nSpec < 1L) {
+    stop("gmw gpa/export: the session has no specimens.", call. = FALSE)
+  }
+
+  e <- new.env()
+
+  # Populate the existing activeDataList slots from the session record. Each
+  # specimen entry is a 10-slot list so the [[4]]/[[8]]/[[10]] indices the
+  # analytical code reads resolve; unused slots stay NULL.
+  adl <- vector("list", nSpec)
+  for (i in seq_len(nSpec)) {
+    slot <- vector("list", 10L)
+    land_i <- specs[[i]]$land
+    if (!is.null(land_i)) slot[[10]] <- as.matrix(land_i)
+    surf_i <- specs[[i]]$surfaces
+    if (!is.null(surf_i) && nrow(as.matrix(surf_i)) > 0L) slot[[8]] <- as.matrix(surf_i)
+    adl[[i]] <- slot
+  }
+  # Curves are session-scoped (shared across specimens) -> activeDataList[[1]][[4]].
+  if (!is.null(s$curves) && nrow(as.matrix(s$curves)) > 0L) {
+    adl[[1]][[4]] <- s$curves
+  }
+  e$activeDataList <- adl
+
+  e$landmarkNum <- if (!is.null(specs[[1]]$land)) nrow(as.matrix(specs[[1]]$land)) else 0L
+  e$anchorNum   <- if (!is.null(specs[[1]]$anchor)) nrow(as.matrix(specs[[1]]$anchor)) else 0L
+  e$sliderNum   <- if (!is.null(specs[[1]]$surfaces)) nrow(as.matrix(specs[[1]]$surfaces)) else 0L
+
+  # gpagen option fields as tclVars, exactly as compute()/.build_geomorph_data()
+  # read them via tclvalue(). Defaults mirror the native ui.geomorph tclVar seeds.
+  optv <- function(key, default) {
+    v <- if (!is.null(opts[[key]])) opts[[key]] else default
+    tcltk::tclVar(v)
+  }
+  e$maxiter        <- optv("maxiter", 2)
+  e$curves         <- optv("curves", 0)
+  e$surfaces       <- optv("surfaces", 0)
+  e$anchorsSurface <- optv("anchorsSurface", 0)
+  e$anchorsCurve   <- optv("anchorsCurve", 0)
+  e$PrinAxes       <- optv("PrinAxes", 1)
+  e$ProcD          <- optv("ProcD", 1)
+  e$Proj           <- optv("Proj", 1)
+  e$printP         <- optv("printP", 0)
+  e$approxBE       <- optv("approxBE", 0)
+  e$parallel       <- optv("parallel", 0)
+  e$statusLabel    <- NULL
+
+  e
+}
+
+#' Run GPA from the browser through the session read path
+#'
+#' Trigger seam for the \code{/gpa} route (05-02). Builds the analysis env from
+#' the session and calls the existing \code{compute(e)} VERBATIM, which forwards
+#' every parity-critical gpagen option and stores the result in
+#' \code{e$gm.results} and the workspace \code{gm.results} (so the result-plot
+#' seams -- \code{plotspecs}/\code{plotPCA}/\code{plotMeanShape}, all routing
+#' through \code{.gmw_view3d} -- keep working unchanged). Output is identical to
+#' the native path by construction.
+#' @param token the per-viewport session token.
+#' @param opts named list of gpagen options forwarded to the env builder.
+#' @return the \code{gm.results} object, invisibly.
+#' @keywords internal
+#' @noRd
+.gmw_gpa_session <- function(token, opts = list()) {
+  e <- .gmw_session_to_geomorph_env(token, opts)
+  dbg(paste0("gmw gpa: ", token))
+  compute(e)
+  invisible(e$gm.results)
+}
+
+#' Export the session GPA/coordinate data from the browser
+#'
+#' Trigger seam for the \code{/export} route (05-02). \code{fmt} is validated
+#' against the allow-list \code{c("csv","rds")} and is NEVER treated as a path;
+#' the export target is chosen R-side by the existing exporters. \code{"csv"}
+#' dispatches to \code{save(e)} (aligned-coordinate CSV of the last GPA result)
+#' and \code{"rds"} to \code{exportGeomorph(e)} (geomorph-native list). No second
+#' serializer is introduced -- both exporters are reused verbatim (T-5-13/T-5-14).
+#' @param token the per-viewport session token.
+#' @param fmt one of \code{"csv"} or \code{"rds"}; anything else is rejected.
+#' @return the value of the dispatched exporter, invisibly.
+#' @keywords internal
+#' @noRd
+.gmw_export_session <- function(token, fmt) {
+  if (!(length(fmt) == 1L && !is.na(fmt) && fmt %in% c("csv", "rds"))) {
+    stop("gmw export: format must be one of c(\"csv\", \"rds\").", call. = FALSE)
+  }
+  e <- .gmw_session_to_geomorph_env(token, list())
+  dbg(paste0("gmw export: ", token, " fmt=", fmt))
+  if (identical(fmt, "csv")) {
+    invisible(save(e))
+  } else {
+    invisible(exportGeomorph(e))
+  }
+}
+
 plotMeanShape <- function(e) {
   gm.res <- .gm_results_or_warn(e)
   if (is.null(gm.res)) return()
