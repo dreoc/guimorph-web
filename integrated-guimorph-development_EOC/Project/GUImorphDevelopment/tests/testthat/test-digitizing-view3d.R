@@ -1,0 +1,97 @@
+# Source-scan gate for the digitizing wiring baked into GMW_VIEW3D_TEMPLATE
+# (DGT-01 anchors + curve-by-index, DGT-02 surface cloud + delete/undo/specimen;
+# plan 05-03).
+#
+# Pure source inspection -- no server, no browser, no sourcing of view3d.R. It
+# mirrors the readLines + grepl style of test-picking-view3d.R and lives in its
+# own file so it never overlaps the transport plans' test edits. See
+# helper-pkg-source.R for the skip-if-source-absent idiom.
+
+test_that("anchor placement wires a green non-raycast overlay group (DGT-01)", {
+  skip_if_no_pkg_source()
+  src <- readLines(file.path(pkg_source_root(), "R", "view3d.R"), warn = FALSE)
+
+  # Green anchor dot (native anchor colour 0x00ff00) drawn by a dedicated helper
+  # mirroring addOverlayDot.
+  expect_true(any(grepl("addAnchorDot", src, fixed = TRUE)))
+  expect_true(any(grepl("0x00ff00", src, fixed = TRUE)))
+  # A SECOND overlay group, sibling to `overlay`, added to the scene and NEVER
+  # passed to intersectObject so anchor dots are never a raycast target (T-4-07).
+  expect_true(any(grepl("scene.add(anchors)", src, fixed = TRUE)))
+  expect_false(any(grepl("intersectObject(anchors", src, fixed = TRUE)))
+  # Anchor hit reported over the same-origin relative /anchor route.
+  expect_true(any(grepl('sendBeacon("anchor"', src, fixed = TRUE)))
+})
+
+test_that("curve mode resolves clicks to landmark indices with cyan/blue recolor (DGT-01)", {
+  skip_if_no_pkg_source()
+  src <- readLines(file.path(pkg_source_root(), "R", "view3d.R"), warn = FALSE)
+
+  # A curve segment is three landmark INDICES; the click resolves the NEAREST
+  # existing overlay dot rather than raycasting the mesh.
+  expect_true(any(grepl("nearestOverlayIndex", src, fixed = TRUE)))
+  # First selected dot cyan rgb(1/255,164/255,191/255); second dot blue (0,0,1)
+  # (the slider), matching the native onSelectCurve recolor sequence.
+  expect_true(any(grepl("164/255", src, fixed = TRUE)))
+  expect_true(any(grepl("191/255", src, fixed = TRUE)))
+  expect_true(any(grepl("THREE.Color(0,0,1)", src, fixed = TRUE)))
+  # Three distinct indices reported over the relative /curve route.
+  expect_true(any(grepl('sendBeacon("curve"', src, fixed = TRUE)))
+})
+
+test_that("surface semilandmarks render as a THREE.Points cloud layer (DGT-02)", {
+  skip_if_no_pkg_source()
+  src <- readLines(file.path(pkg_source_root(), "R", "view3d.R"), warn = FALSE)
+
+  # R-flattened surface points DISPLAYED (never recomputed in the browser) as a
+  # Points layer in their own group.
+  expect_true(any(grepl("addSurfaceCloud", src, fixed = TRUE)))
+  expect_true(any(grepl("scene.add(surfaces)", src, fixed = TRUE)))
+  expect_true(any(grepl("THREE.Points", src, fixed = TRUE)))
+})
+
+test_that("delete/undo/specimen controls post to their routes and rebuild the BVH (DGT-02)", {
+  skip_if_no_pkg_source()
+  src <- readLines(file.path(pkg_source_root(), "R", "view3d.R"), warn = FALSE)
+
+  expect_true(any(grepl('sendBeacon("delete"', src, fixed = TRUE)))
+  expect_true(any(grepl('sendBeacon("undo"', src, fixed = TRUE)))
+  expect_true(any(grepl('sendBeacon("specimen"', src, fixed = TRUE)))
+  # Specimen switch loads the re-served mesh and rebuilds the BVH on the NEW
+  # mesh (never a stale tree, Pitfall 4). computeBoundsTree is reachable from
+  # loadSpecimen.
+  expect_true(any(grepl("loadSpecimen", src, fixed = TRUE)))
+  expect_true(any(grepl("computeBoundsTree", src, fixed = TRUE)))
+  # No beacon is ever an absolute URL (offline invariant, WEB-03).
+  expect_false(any(grepl('sendBeacon("http', src, fixed = TRUE)))
+})
+
+test_that("all digitizing JS stays in the parameter-free BODY (HEAD under the 8192-byte sprintf cap)", {
+  skip_if_no_pkg_source()
+  txt <- paste(
+    readLines(file.path(pkg_source_root(), "R", "view3d.R"), warn = FALSE),
+    collapse = "\n"
+  )
+
+  # Reconstruct the sprintf HEAD exactly as .gmw_view3d_html splits it: the
+  # template literal up to and including the `MESH_URL = "%s";` marker. Every new
+  # digitizing token must live AFTER the marker so the parameterised HEAD stays
+  # under base-R sprintf's 8192-byte fmt cap. The HEAD region carries no
+  # backslash escapes, so its source bytes equal the R string bytes.
+  open_marker <- "GMW_VIEW3D_TEMPLATE <- '"
+  at_open <- regexpr(open_marker, txt, fixed = TRUE)
+  expect_gt(at_open, 0)
+  tmpl_from <- at_open + attr(at_open, "match.length")
+  tail_txt <- substring(txt, tmpl_from)
+
+  head_marker <- 'MESH_URL = "%s";'
+  at_marker <- regexpr(head_marker, tail_txt, fixed = TRUE)
+  expect_gt(at_marker, 0)
+  head_fmt <- substring(tail_txt, 1L, at_marker + attr(at_marker, "match.length") - 1L)
+  expect_lt(nchar(head_fmt, type = "bytes"), 8192L)
+
+  # The digitizing wiring lives in the BODY (after the marker): a couple of its
+  # tokens must NOT appear in the parameterised HEAD.
+  expect_false(grepl("addAnchorDot", head_fmt, fixed = TRUE))
+  expect_false(grepl('sendBeacon("specimen"', head_fmt, fixed = TRUE))
+})
