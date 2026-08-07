@@ -199,6 +199,29 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
     overlay.add(dot);
   }
 
+  // Digitizing mode (05-03, DGT-01/02). Default "landmark" keeps the Phase-4
+  // pick untouched; keys switch to anchor/curve/delete and back. R owns every
+  // edit; the browser only reports over the same relative loopback routes the
+  // pick already uses.
+  var mode = "landmark";
+
+  // Anchor overlay (DGT-01). A SECOND group, sibling to `overlay`, added to the
+  // scene and NEVER passed to intersectObject(pickMesh, false) -- a green anchor
+  // dot is never a raycast target and can never shift a landmark hit (T-4-07).
+  var anchors = new THREE.Group();
+  scene.add(anchors);
+
+  // Green anchor dot (native anchor colour 0x00ff00), same depth-tested sphere
+  // as addOverlayDot so it occludes correctly under rotation.
+  function addAnchorDot(worldPoint){
+    var dot = new THREE.Mesh(
+      new THREE.SphereGeometry(dist * 0.01, 16, 12),
+      new THREE.MeshBasicMaterial({ color: 0x00ff00, depthTest: true })
+    );
+    dot.position.copy(worldPoint);
+    anchors.add(dot);
+  }
+
   function reset(){
     camera.position.set(0, 0, dist);
     camera.near = dist / 100; camera.far = dist * 100;
@@ -292,7 +315,7 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
   // beacon: navigator.sendBeacon("pick", ...) is a RELATIVE target that resolves
   // same-origin to /<token>/pick -- no absolute URL, no external ref (WEB-03).
   canvas.addEventListener("pointerdown", function(ev){
-    if (!pickMesh) return;
+    if (!pickMesh || mode !== "landmark") return;
     var r = canvas.getBoundingClientRect();
     ndc.x = ((ev.clientX - r.left) / r.width) * 2 - 1;
     ndc.y = -((ev.clientY - r.top) / r.height) * 2 + 1;
@@ -307,6 +330,73 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
       pickMesh.worldToLocal(p);
       try { navigator.sendBeacon("pick", p.x + "," + p.y + "," + p.z); } catch(e){}
     }
+  });
+
+  // Anchor placement + curve-by-index selection (05-03, DGT-01). Active only in
+  // the anchor / curve modes; the landmark path above owns "landmark". Anchor
+  // mode is the pick pipeline VERBATIM (single Y-flip NDC, intersectObject(
+  // pickMesh, false), updateWorldMatrix before worldToLocal to recover the raw
+  // PLY-vertex frame) reporting to /anchor instead of /pick. Curve mode never
+  // raycasts the mesh: it resolves the click to the NEAREST existing landmark
+  // overlay dot INDEX (placement order == overlay.children order), recolours the
+  // first pick cyan and the second blue (the slider), and on the third distinct
+  // index reports i,j,k to /curve and resets (RESEARCH Pattern 2).
+  var CURVE_CYAN = new THREE.Color(1/255,164/255,191/255);
+  var CURVE_BLUE = new THREE.Color(0,0,1);            // 2nd point == slider
+  var curveSel = [];
+
+  function nearestOverlayIndex(ev){
+    var r = canvas.getBoundingClientRect();
+    var v = new THREE.Vector3();
+    var best = -1, bestD2 = 24 * 24;                  // ~24px screen threshold
+    for (var i = 0; i < overlay.children.length; i++){
+      v.copy(overlay.children[i].position).project(camera);
+      var sx = (v.x * 0.5 + 0.5) * r.width;
+      var sy = (-v.y * 0.5 + 0.5) * r.height;
+      var dx = sx - (ev.clientX - r.left), dy = sy - (ev.clientY - r.top);
+      var d2 = dx * dx + dy * dy;
+      if (d2 < bestD2){ bestD2 = d2; best = i; }
+    }
+    return best;
+  }
+
+  canvas.addEventListener("pointerdown", function(ev){
+    if (mode === "anchor"){
+      if (!pickMesh) return;
+      var r = canvas.getBoundingClientRect();
+      ndc.x = ((ev.clientX - r.left) / r.width) * 2 - 1;
+      ndc.y = -((ev.clientY - r.top) / r.height) * 2 + 1;
+      raycaster.setFromCamera(ndc, camera);
+      var hits = raycaster.intersectObject(pickMesh, false);
+      if (hits.length){
+        addAnchorDot(hits[0].point);
+        var p = hits[0].point.clone();
+        pickMesh.updateWorldMatrix(true, false);
+        pickMesh.worldToLocal(p);
+        try { navigator.sendBeacon("anchor", p.x + "," + p.y + "," + p.z); } catch(e){}
+      }
+      return;
+    }
+    if (mode === "curve"){
+      var idx = nearestOverlayIndex(ev);
+      if (idx < 0 || curveSel.indexOf(idx) !== -1) return;
+      curveSel.push(idx);
+      var dot = overlay.children[idx];
+      if (curveSel.length === 1) dot.material.color.copy(CURVE_CYAN);
+      else if (curveSel.length === 2) dot.material.color.copy(CURVE_BLUE);
+      if (curveSel.length === 3){
+        var ijk = curveSel[0] + "," + curveSel[1] + "," + curveSel[2];
+        try { navigator.sendBeacon("curve", ijk); } catch(e){}
+        curveSel = [];
+      }
+    }
+  });
+
+  // Mode keys: (a)nchor, (c)urve, (l)andmark. Sibling to the r-key reset above.
+  window.addEventListener("keydown", function(e){
+    if (e.key === "a" || e.key === "A") mode = "anchor";
+    else if (e.key === "c" || e.key === "C") mode = "curve";
+    else if (e.key === "l" || e.key === "L") mode = "landmark";
   });
 
   // Record-and-replay entry point (PICK-03 browser half). A manual parity
