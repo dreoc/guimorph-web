@@ -133,7 +133,9 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
   kbd{background:#eee;border:1px solid #ccc;border-radius:3px;padding:0 4px}
 </style></head><body>
 <canvas id="c"></canvas>
-<div id="h">drag rotate &middot; scroll zoom &middot; <kbd>r</kbd> reset view</div>
+<div id="h">drag rotate &middot; scroll zoom &middot; <kbd>r</kbd> reset &middot;
+  <kbd>l</kbd> landmark &middot; <kbd>a</kbd> anchor &middot; <kbd>c</kbd> curve (click 3 landmarks) &middot;
+  <kbd>d</kbd> delete &middot; <kbd>u</kbd> undo &middot; mode: <b id="m">landmark</b></div>
 <script src="guimorphweb-three.js"></script>
 <script>
 (function(){
@@ -425,10 +427,11 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
   // Sibling to the r-key reset above.
   window.addEventListener("keydown", function(e){
     if (e.key === "a" || e.key === "A") mode = "anchor";
-    else if (e.key === "c" || e.key === "C") mode = "curve";
+    else if (e.key === "c" || e.key === "C") { mode = "curve"; curveSel = []; }
     else if (e.key === "l" || e.key === "L") mode = "landmark";
     else if (e.key === "d" || e.key === "D") mode = "delete";
     else if (e.key === "u" || e.key === "U") doUndo();
+    var mi = document.getElementById("m"); if (mi) mi.textContent = mode;
   });
 
   // Delete + undo + specimen switch (05-03, DGT-02). R owns all state; the
