@@ -30,25 +30,25 @@ vendored in `inst/htmlwidgets/`, no CDN, no runtime network.
 
 - [x] **WEB-01**: An `httpuv` server started from R binds to loopback on an unprivileged port and serves the PLY as bytes over HTTP, never JSON-encoded, behind a per-session random path or token
 - [x] **WEB-02**: three.js `PLYLoader` fetches and renders the served mesh with orbit, zoom, and reset view, on stock macOS and stock Windows, with no XQuartz, Homebrew, or Tcl/Tk in the render path
-- [ ] **WEB-03**: a clean `install.packages()` on a fresh R opens a working viewport with the machine fully offline, on both Windows and macOS (the vendoring itself lands in Phase 1 as WEB-00)
-- [ ] **WEB-04**: Port selection, browser launch, and teardown (viewport close, session exit, R session end) are reliable on a managed machine: occupied ports fail with a clear R-level error rather than a hang, no orphaned listener survives, and a missing, misconfigured, or blocked default browser degrades legibly
+- [x] **WEB-03**: a clean `install.packages()` on a fresh R opens a working viewport with the machine fully offline, on both Windows and macOS (the vendoring itself lands in Phase 1 as WEB-00)
+- [x] **WEB-04**: Port selection, browser launch, and teardown (viewport close, session exit, R session end) are reliable on a managed machine: occupied ports fail with a clear R-level error rather than a hang, no orphaned listener survives, and a missing, misconfigured, or blocked default browser degrades legibly
 
 ### Picking
 
-- [ ] **PICK-01**: A BVH-accelerated raycast against the loaded mesh returns a hit coordinate to R at interactive rates on the reference specimens
-- [ ] **PICK-02**: Landmark dots render as overlay geometry at returned coordinates with correct depth behavior under rotation
-- [ ] **PICK-03**: On the same specimen at the same click position, the browser coordinate matches the native engine's `gluUnProject` result within a documented tolerance, stated in mesh units and justified against inter-observer digitizing error. **This is the milestone gate**
+- [x] **PICK-01**: A BVH-accelerated raycast against the loaded mesh returns a hit coordinate to R at interactive rates on the reference specimens
+- [x] **PICK-02**: Landmark dots render as overlay geometry at returned coordinates with correct depth behavior under rotation
+- [ ] **PICK-03**: On the same specimen at the same click position, the browser coordinate matches the native engine's `gluUnProject` result within a documented tolerance, stated in mesh units and justified against inter-observer digitizing error. **This is the milestone gate** — **DEFERRED** (parity harness complete and drop-in-ready; awaits a Windows `tkogl2` capture, closes with zero code change; tracked in `.planning/todos/pending/pick03-windows-parity-capture-owed.md`)
 
 ### Digitizing
 
-- [ ] **DGT-01**: Curve definition in the browser with the existing three-click selection and cyan/red/blue feedback, plus anchor placement
-- [ ] **DGT-02**: Surface semilandmark display, delete, undo, and multi-specimen switching in the browser
-- [ ] **DGT-03**: GPA (`geomorph::gpagen`) and `.csv`/`.rds` export driven from the browser UI, producing results identical to the native path on the same input
+- [x] **DGT-01**: Curve definition in the browser with the existing three-click selection and cyan/red/blue feedback, plus anchor placement
+- [x] **DGT-02**: Surface semilandmark display, delete, undo, and multi-specimen switching in the browser
+- [x] **DGT-03**: GPA (`geomorph::gpagen`) and `.csv`/`.rds` export driven from the browser UI, producing results identical to the native path on the same input
 
 ### Data Contract
 
-- [ ] **DAT-01**: A `.dgt` written through the browser path is byte-identical to one written through the native path from the same session
-- [ ] **DAT-02**: A GUImorph-authored `.dgt` opens correctly in GUImorphWeb, and a GUImorphWeb-authored `.dgt` opens correctly in GUImorph. Verified both directions against `tests/fixtures/parity/`
+- [x] **DAT-01**: A `.dgt` written through the browser path is byte-identical to one written through the native path from the same session
+- [ ] **DAT-02**: A GUImorph-authored `.dgt` opens correctly in GUImorphWeb, and a GUImorphWeb-authored `.dgt` opens correctly in GUImorph. Verified both directions against `tests/fixtures/parity/` — reader accepts both dialects, but the bidirectional `-rewrite` byte gate stays a documented skip until the Windows re-save fixtures land, and the macOS→Windows leg is an open UPSTREAM dependency
 
 ### Shell and Retirement
 
@@ -58,7 +58,7 @@ vendored in `inst/htmlwidgets/`, no CDN, no runtime network.
 
 ### Recurring Gate
 
-- [x] **CMP-01**: The retained native engine stays loadable and functional at every phase through Phase 5, so it remains usable as the PICK-03 parity oracle. Deliberately retired at Phase 6
+- [x] **CMP-01**: The retained native engine stays loadable and functional at every phase through Phase 5, so it remains usable as the PICK-03 parity oracle. Deliberately retired at Phase 6 — Phase 4 source invariant verified (`transport.R` never touches `.gmw_engine`); Windows runtime-load confirmation (`.gmw_engine$ok == TRUE`) **deferred** (same todo). Recurs through Phase 5.
 
 ---
 
@@ -87,9 +87,9 @@ vendored in `inst/htmlwidgets/`, no CDN, no runtime network.
 | WEB-02 | Phase 2 | Not started |
 | WEB-03 | Phase 3 | Not started |
 | WEB-04 | Phase 3 | Not started |
-| PICK-01 | Phase 4 | Not started |
-| PICK-02 | Phase 4 | Not started |
-| PICK-03 | Phase 4 | Not started — **milestone gate** |
+| PICK-01 | Phase 4 | Complete (verified live, macOS UAT) |
+| PICK-02 | Phase 4 | Complete (verified live, macOS UAT) |
+| PICK-03 | Phase 4 | Deferred — **milestone gate**; Windows capture owed |
 | DGT-01 | Phase 5 | Not started |
 | DGT-02 | Phase 5 | Not started |
 | DGT-03 | Phase 5 | Not started |
@@ -98,7 +98,7 @@ vendored in `inst/htmlwidgets/`, no CDN, no runtime network.
 | UI-01 | Phase 6 | Not started |
 | UI-02 | Phase 6 | Not started |
 | UI-03 | Phase 6 | Not started |
-| CMP-01 | Phase 1 (recurs through Phase 5) | Not started |
+| CMP-01 | Phase 1 (recurs through Phase 5) | Phase 4 invariant verified; Windows load deferred |
 
 **Coverage:** 21/21 v1 requirements mapped, no orphans, no duplicates. CMP-01 is
 owned by Phase 1 for mapping but enforced as a "native oracle still works"

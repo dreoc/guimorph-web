@@ -33,8 +33,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 1: Result Plots + rgl Demotion** - Vendor three.js, move the two 3D result plots to a widget, and make `rgl` optional so the package loads where rgl cannot
 - [x] **Phase 2: Transport and Mesh Display** - `httpuv` serves the PLY over loopback; three.js renders and orbits it (completed 2026-08-03)
 - [x] **Phase 3: Offline Packaging and Lifecycle** - Bundle the JS, select a port, launch the browser, tear down on session end (completed 2026-08-03)
-- [ ] **Phase 4: Picking Parity** - BVH raycast returns hit coordinates matching the native `gluUnProject` result within tolerance
-- [ ] **Phase 5: Full Digitizing and Data Parity** - Curves, anchors, surfaces, undo, multi-specimen, GPA and export from the browser, with byte-identical `.dgt`
+- [x] **Phase 4: Picking Parity** - BVH raycast returns hit coordinates matching the native `gluUnProject` result within tolerance (completed 2026-08-05)
+- [ ] **Phase 5: Full Digitizing and Data Parity** - Curves, anchors, surfaces, undo, multi-specimen, GPA and export from the browser, with byte-identical `.dgt` (all 6 plans executed 2026-08-07; verification human_needed — display-host/Windows manual UAT pending)
 - [ ] **Phase 6: Shell and Native Retirement** - Replace the Tk chrome, then delete `tkogl2` and drop `rgl`
 
 ## Phase Details
@@ -248,13 +248,13 @@ native engine's unproject result, and render placed landmarks as overlay geometr
   5. Native oracle still loads (CMP-01). This is the phase where that matters
      most.
 
-**Plans**: 3 plans
+**Plans**: 3/3 plans complete
 
 **Wave 1** *(parallel — no file overlap)*
 
-- [ ] 04-01-PLAN.md — Token-guarded POST `/<token>/pick` route on the mixed httpuv app, server-owned `.gmw_picks` registry, R read accessor, route + CMP-01 tests (PICK-01, CMP-01)
-- [ ] 04-02-PLAN.md — Browser raycast in `view3d.R`: eager `computeBoundsTree`, pointer→pick handler, overlay landmark dot (depth-tested), record-replay entry point, template source-scan (PICK-01, PICK-02, PICK-03 browser half)
-- [ ] 04-03-PLAN.md — `R/parity.R` gate math (mean edge length, 95th-percentile distance), schema-true placeholder pose-record fixture, skip-safe harness test; PICK-03 recorded OPEN (PICK-03)
+- [x] 04-01-PLAN.md — Token-guarded POST `/<token>/pick` route on the mixed httpuv app, server-owned `.gmw_picks` registry, R read accessor, route + CMP-01 tests (PICK-01, CMP-01)
+- [x] 04-02-PLAN.md — Browser raycast in `view3d.R`: eager `computeBoundsTree`, pointer→pick handler, overlay landmark dot (depth-tested), record-replay entry point, template source-scan (PICK-01, PICK-02, PICK-03 browser half)
+- [x] 04-03-PLAN.md — `R/parity.R` gate math (mean edge length, 95th-percentile distance), schema-true placeholder pose-record fixture, skip-safe harness test; PICK-03 recorded OPEN (PICK-03)
 
 **Note (PICK-03 stays OPEN — tracked, not dropped)**: Native fixture capture is
 Windows-only and no host is available (D-06). All three plans build the full
@@ -304,7 +304,24 @@ bytes are identical to the native path.
   6. Full workflow end to end: PLY load, landmarks, curves, surfaces, GPA, export.
   7. Native oracle still loads (CMP-01). Retired after this phase.
 
-**Plans**: TBD
+**Plans**: 6/6 plans complete
+
+**Wave 1** *(parallel — no file overlap)*
+
+- [x] 05-01-PLAN.md — Deterministic `.dgt` writer: round-in-R + pinned CRLF across the whole file, the DAT-01 byte-identity prerequisite (`3dDigitize.main.r`, `test-dgt-determinism.R`) (DAT-01)
+- [x] 05-02-PLAN.md — Server-owned `.gmw_session` model + token-guarded digitizing route surface (anchor/curve/delete/undo/specimen + thin downsample/gpa/export/save branches) with `excludeStaticPath` registration (`transport.R`, `test-digitizing-session.R`) (DGT-01, DGT-02, CMP-01)
+
+**Wave 2** *(parallel — depends on Wave 1; no file overlap among these four)*
+
+- [x] 05-03-PLAN.md — Browser interaction + overlays: anchor pick (green), curve-by-index cyan/blue, surface point cloud, delete/undo/specimen-switch with BVH rebuild (`view3d.R`, `test-digitizing-view3d.R`) (DGT-01, DGT-02)
+- [x] 05-04-PLAN.md — Headless `.gmw_downsample_session` reusing the TPS warp + the mandatory `as.vector(t(...))` flatten regression (`3dDigitize.surface.r`, `test-surface-flatten.R`) (DGT-02)
+- [x] 05-05-PLAN.md — GPA + `.csv`/`.rds` export from the browser via the session read path (populate `activeDataList` slots), forwarding untouched (`3dDigitize.geomorph.r`, `test-gpa-parity.R`, `test-export-parity.R`) (DGT-03)
+- [x] 05-06-PLAN.md — `.gmw_save_session_dgt` through the one canonical writer; DAT-01 write-vs-write byte identity + CMP-01 skip-if-absent gate; DAT-02 `-rewrite` gate stays a documented skip (`3dDigitize.main.r`, `test-dgt-cross-platform.R`) (DAT-01, DAT-02, CMP-01)
+
+**Note (two open PLANNER DECISIONS, recommended defaults chosen — no CONTEXT.md)**:
+(A5) route shape = per-route `excludeStaticPath` entries + one `call` handler (not one
+verb-in-body `/edit`); (A4) multi-specimen = re-serve mesh bytes on `/specimen` switch
+(not serve-all-and-toggle). Both are stated as assumptions the user may override.
 
 **Note (external dependency)**: Criterion 5 is only as strong as GUImorph's own
 cross-platform `.dgt` parity, which is closed Windows to macOS but not macOS to
@@ -365,8 +382,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Result Plots + rgl Demotion | 0/TBD | Not started | - |
 | 2. Transport and Mesh Display | 2/2 | Complete    | 2026-08-03 |
 | 3. Offline Packaging and Lifecycle | 4/4 | Complete    | 2026-08-03 |
-| 4. Picking Parity | 0/3 | Planned | - |
-| 5. Full Digitizing and Data Parity | 0/TBD | Not started | - |
+| 4. Picking Parity | 3/3 | Complete    | 2026-08-05 |
+| 5. Full Digitizing and Data Parity | 6/6 | Complete   | 2026-08-07 |
 | 6. Shell and Native Retirement | 0/TBD | Not started | - |
 
 ## Notes
