@@ -510,7 +510,7 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
     fetch("specimen", { method: "POST", body: String(n) })
       .then(function(r){ return r.text(); })
       .then(function(txt){
-        var url = (txt || "").split("\n")[0];
+        var url = (txt || "").split("\\n")[0];
         if (url) loadSpecimen(url);
         redraw();
       }).catch(function(){});
