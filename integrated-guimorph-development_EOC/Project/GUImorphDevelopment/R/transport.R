@@ -347,6 +347,28 @@ if (!exists("dbg", mode = "function")) {
       return(ok204)
     }
 
+    # Overlay re-serve (DGT-02). GET returns the ACTIVE specimen's current
+    # landmark/anchor/surface coordinates so the browser can rebuild every
+    # overlay layer after a server-side edit (delete/undo) or a specimen switch.
+    # Bare, JSON-free text: "L=<flat>;A=<flat>;S=<flat>" where each <flat> is a
+    # row-major comma list of the slot matrix (empty slot -> empty after "=").
+    # Coordinates are mesh-LOCAL exactly as stored; the client localToWorld's
+    # them against the loaded mesh, mirroring the worldToLocal on placement.
+    if (grepl("/overlays$", path)) {
+      s   <- .gmw_session_ensure(token)
+      rec <- s$specimens[[s$current]]
+      flat <- function(m) {
+        if (is.matrix(m) && nrow(m) > 0L)
+          paste(as.vector(t(m)), collapse = ",") else ""
+      }
+      body <- paste0("L=", flat(rec$land),
+                     ";A=", flat(rec$anchor),
+                     ";S=", flat(rec$surfaces))
+      return(list(status = 200L,
+                  headers = list("Content-Type" = "text/plain"),
+                  body = body))
+    }
+
     # Thin forward-call branches: parse/validate only. The seam functions land in
     # 05-04/05/06 and are resolved at call time, so a forward reference is fine;
     # wrapping in try() keeps an as-yet-unimplemented seam a harmless 204 no-op.
@@ -433,7 +455,7 @@ if (!exists("dbg", mode = "function")) {
   # /delete, /undo, /specimen) and the analytical seams (/downsample, /gpa,
   # /export, /save) beside the inherited /pick and /close.
   dyn_suffixes <- c("close", "pick", "anchor", "curve", "delete", "undo",
-                    "specimen", "downsample", "gpa", "export", "save")
+                    "specimen", "overlays", "downsample", "gpa", "export", "save")
   static_map <- c(
     list(httpuv::staticPath(dir)),
     lapply(dyn_suffixes, function(x) httpuv::excludeStaticPath())

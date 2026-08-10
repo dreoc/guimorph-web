@@ -197,6 +197,69 @@ test_that("exported gmw_session() reads back the server-owned record", {
   expect_true(token %in% names(all_sessions))
 })
 
+# Parse the bare "L=..;A=..;S=.." overlays payload into a named list of flat
+# numeric vectors, so a test can assert exactly what the browser would rebuild.
+parse_overlays <- function(body) {
+  fields <- strsplit(body, ";", fixed = TRUE)[[1]]
+  out <- list(L = numeric(0), A = numeric(0), S = numeric(0))
+  for (f in fields) {
+    eq  <- regexpr("=", f, fixed = TRUE)
+    tag <- substr(f, 1L, eq - 1L)
+    val <- substr(f, eq + 1L, nchar(f))
+    nums <- suppressWarnings(as.numeric(strsplit(val, ",", fixed = TRUE)[[1]]))
+    out[[tag]] <- nums[is.finite(nums)]
+  }
+  out
+}
+
+test_that("/overlays re-serves the active specimen's landmark/anchor/surface coords", {
+  token <- "TESTTOKEN_overlays"
+  reset_session(token)
+  on.exit(reset_session(token), add = TRUE)
+  handler <- .gmw_digitize_handler(token)
+
+  # A fresh session re-serves 200 with three empty layers.
+  resp0 <- handler(make_req(paste0("/", token, "/overlays")))
+  expect_equal(resp0$status, 200L)
+  ov0 <- parse_overlays(resp0$body)
+  expect_length(ov0$L, 0L)
+  expect_length(ov0$A, 0L)
+  expect_length(ov0$S, 0L)
+
+  # Seed one landmark and one surface row directly; place two anchors via route.
+  s <- .gmw_session_get(token)
+  s$specimens[[1]]$land     <- rbind(s$specimens[[1]]$land, c(0.1, 0.2, 0.3))
+  s$specimens[[1]]$surfaces <- rbind(s$specimens[[1]]$surfaces, c(7, 8, 9))
+  assign(token, s, envir = .gmw_session)
+  expect_equal(handler(make_req(paste0("/", token, "/anchor"), "1,2,3"))$status, 204L)
+  expect_equal(handler(make_req(paste0("/", token, "/anchor"), "4,5,6"))$status, 204L)
+
+  ov <- parse_overlays(handler(make_req(paste0("/", token, "/overlays")))$body)
+  expect_equal(ov$L, c(0.1, 0.2, 0.3))            # row-major landmark coords
+  expect_equal(ov$A, c(1, 2, 3, 4, 5, 6))         # two anchors, placement order
+  expect_equal(ov$S, c(7, 8, 9))                  # surface point cloud
+})
+
+test_that("delete then undo round-trips through /overlays (the DGT-02 visual gap)", {
+  token <- "TESTTOKEN_overlays_roundtrip"
+  reset_session(token)
+  on.exit(reset_session(token), add = TRUE)
+  handler <- .gmw_digitize_handler(token)
+
+  expect_equal(handler(make_req(paste0("/", token, "/anchor"), "1,2,3"))$status, 204L)
+  expect_equal(handler(make_req(paste0("/", token, "/anchor"), "4,5,6"))$status, 204L)
+
+  # Delete the first anchor: /overlays now re-serves only the survivor.
+  expect_equal(handler(make_req(paste0("/", token, "/delete"), "anchor,1"))$status, 204L)
+  ov_del <- parse_overlays(handler(make_req(paste0("/", token, "/overlays")))$body)
+  expect_equal(ov_del$A, c(4, 5, 6))
+
+  # Undo restores the deleted row: /overlays re-serves both again, in order.
+  expect_equal(handler(make_req(paste0("/", token, "/undo")))$status, 204L)
+  ov_undo <- parse_overlays(handler(make_req(paste0("/", token, "/overlays")))$body)
+  expect_equal(ov_undo$A, c(1, 2, 3, 4, 5, 6))
+})
+
 test_that("the digitizing routes never join the request path to the filesystem (T-2-02)", {
   skip_if_no_pkg_source()
   src <- readLines(file.path(pkg_root, "R", "transport.R"), warn = FALSE)

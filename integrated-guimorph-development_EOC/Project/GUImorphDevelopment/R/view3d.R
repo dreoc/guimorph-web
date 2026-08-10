@@ -131,8 +131,26 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
   #h{position:fixed;left:12px;bottom:12px;color:#555;
      background:rgba(255,255,255,.85);padding:6px 9px;border-radius:4px}
   kbd{background:#eee;border:1px solid #ccc;border-radius:3px;padding:0 4px}
+  #t{position:fixed;left:12px;top:12px;display:flex;gap:6px;flex-wrap:wrap}
+  #t button{font:12px system-ui,sans-serif;padding:3px 8px;border:1px solid #bbb;
+     border-radius:4px;background:rgba(255,255,255,.9);cursor:pointer}
+  #t button:hover{background:#eef}
+  #t .sep{width:1px;background:#ccc;margin:0 2px}
 </style></head><body>
 <canvas id="c"></canvas>
+<div id="t">
+  <button id="btn-l" type="button">Landmark</button>
+  <button id="btn-a" type="button">Anchor</button>
+  <button id="btn-c" type="button">Curve</button>
+  <button id="btn-d" type="button">Delete</button>
+  <button id="btn-u" type="button">Undo</button>
+  <span class="sep"></span>
+  <button id="btn-ds" type="button">Downsample</button>
+  <button id="btn-gpa" type="button">GPA</button>
+  <button id="btn-csv" type="button">Export CSV</button>
+  <button id="btn-rds" type="button">Export RDS</button>
+  <button id="btn-save" type="button">Save .dgt</button>
+</div>
 <div id="h">drag rotate &middot; scroll zoom &middot; <kbd>r</kbd> reset &middot;
   <kbd>l</kbd> landmark &middot; <kbd>a</kbd> anchor &middot; <kbd>c</kbd> curve (click 3 landmarks) &middot;
   <kbd>d</kbd> delete &middot; <kbd>u</kbd> undo &middot; mode: <b id="m">landmark</b></div>
@@ -423,15 +441,23 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
     }
   });
 
+  // Single mode setter shared by the keyboard shortcuts and the toolbar buttons.
+  // Entering curve mode clears any half-finished 3-click selection; the live
+  // "mode:" readout in the HUD is kept in sync so the active mode is discoverable.
+  function setMode(m){
+    mode = m;
+    if (m === "curve") curveSel = [];
+    var mi = document.getElementById("m"); if (mi) mi.textContent = mode;
+  }
+
   // Mode keys: (a)nchor, (c)urve, (l)andmark, (d)elete; (u)ndo fires at once.
   // Sibling to the r-key reset above.
   window.addEventListener("keydown", function(e){
-    if (e.key === "a" || e.key === "A") mode = "anchor";
-    else if (e.key === "c" || e.key === "C") { mode = "curve"; curveSel = []; }
-    else if (e.key === "l" || e.key === "L") mode = "landmark";
-    else if (e.key === "d" || e.key === "D") mode = "delete";
+    if (e.key === "a" || e.key === "A") setMode("anchor");
+    else if (e.key === "c" || e.key === "C") setMode("curve");
+    else if (e.key === "l" || e.key === "L") setMode("landmark");
+    else if (e.key === "d" || e.key === "D") setMode("delete");
     else if (e.key === "u" || e.key === "U") doUndo();
-    var mi = document.getElementById("m"); if (mi) mi.textContent = mode;
   });
 
   // Delete + undo + specimen switch (05-03, DGT-02). R owns all state; the
@@ -475,12 +501,62 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
     }
   });
 
-  // Re-read the re-served overlays for this specimen (bare CSV, JSON-free) after
-  // an edit. Same-origin relative target; the R re-serve seam answers it (05-04).
-  // A missing seam 404s harmlessly and leaves the current layers untouched.
+  // Pull one "tag=flat" field out of the "L=..;A=..;S=.." overlays payload.
+  function fieldOf(txt, tag){
+    var parts = (txt || "").split(";");
+    for (var i = 0; i < parts.length; i++){
+      var eq = parts[i].indexOf("=");
+      if (eq > 0 && parts[i].substring(0, eq) === tag)
+        return parts[i].substring(eq + 1);
+    }
+    return "";
+  }
+  function parseFlat(s){
+    return (s || "").split(",").map(Number)
+             .filter(function(x){ return isFinite(x); });
+  }
+
+  // Rebuild ONE dot layer (landmark or anchor) from a row-major list of
+  // mesh-LOCAL coords. Convert to world through the loaded pickMesh so a
+  // re-served dot lands exactly where placement put it (placement reports
+  // worldToLocal of the pick, so localToWorld is its exact inverse).
+  function rebuildDotLayer(grp, nums, colorHex){
+    grp.clear();
+    if (pickMesh) pickMesh.updateWorldMatrix(true, false);
+    var n = nums.length - (nums.length % 3);
+    for (var k = 0; k < n; k += 3){
+      var v = new THREE.Vector3(nums[k], nums[k + 1], nums[k + 2]);
+      if (pickMesh) pickMesh.localToWorld(v);
+      var dot = new THREE.Mesh(
+        new THREE.SphereGeometry(dist * 0.01, 16, 12),
+        new THREE.MeshBasicMaterial({ color: colorHex, depthTest: true }));
+      dot.position.copy(v);
+      grp.add(dot);
+    }
+  }
+
+  // Re-read the ACTIVE specimen\'s overlays ("L=..;A=..;S=..", JSON-free) from
+  // the /overlays re-serve route and rebuild EVERY layer, so server-side edits
+  // (delete/undo) and specimen switches are reflected in the viewport. A missing
+  // route or transport error leaves the current layers untouched.
   function redraw(){
-    fetch("redraw", { method: "GET" }).then(function(r){ return r.text(); })
-      .then(function(txt){ redrawSurfaces(txt); }).catch(function(){});
+    fetch("overlays", { method: "GET" }).then(function(r){ return r.text(); })
+      .then(function(txt){
+        rebuildDotLayer(overlay, parseFlat(fieldOf(txt, "L")), 0xff2222);
+        rebuildDotLayer(anchors, parseFlat(fieldOf(txt, "A")), 0x00ff00);
+        surfaces.clear(); surfacePts = null;
+        var sf = parseFlat(fieldOf(txt, "S"));
+        if (sf.length >= 3){
+          if (pickMesh) pickMesh.updateWorldMatrix(true, false);
+          var world = [];
+          for (var k = 0; k + 2 < sf.length; k += 3){
+            var v = new THREE.Vector3(sf[k], sf[k + 1], sf[k + 2]);
+            if (pickMesh) pickMesh.localToWorld(v);
+            world.push(v.x, v.y, v.z);
+          }
+          addSurfaceCloud(world);
+        }
+      }).catch(function(){});
   }
 
   function doUndo(){
@@ -519,6 +595,28 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
       }).catch(function(){});
   }
   window.GMW_SWITCH_SPECIMEN = switchSpecimen;
+
+  // Toolbar wiring (DGT-02/DGT-03). The mode buttons mirror the keyboard
+  // shortcuts; the analytical buttons POST to the same loopback routes R already
+  // owns (/downsample, /gpa, /export, /save) and then redraw() re-reads the
+  // re-served overlays so a computed surface cloud appears without a reload.
+  function on(id, fn){
+    var el = document.getElementById(id); if (el) el.addEventListener("click", fn);
+  }
+  function post(route, body){
+    return fetch(route, { method: "POST", body: (body == null ? "" : String(body)) })
+             .catch(function(){});
+  }
+  on("btn-l",  function(){ setMode("landmark"); });
+  on("btn-a",  function(){ setMode("anchor"); });
+  on("btn-c",  function(){ setMode("curve"); });
+  on("btn-d",  function(){ setMode("delete"); });
+  on("btn-u",  function(){ doUndo(); });
+  on("btn-ds", function(){ post("downsample").then(redraw); });
+  on("btn-gpa", function(){ post("gpa").then(redraw); });
+  on("btn-csv", function(){ post("export", "csv"); });
+  on("btn-rds", function(){ post("export", "rds"); });
+  on("btn-save", function(){ post("save"); });
 
   // Record-and-replay entry point (PICK-03 browser half). A manual parity
   // harness calls window.GMW_REPLAY(pose) with a recorded native camera:

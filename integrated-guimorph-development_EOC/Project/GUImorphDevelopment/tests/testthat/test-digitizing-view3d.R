@@ -66,6 +66,40 @@ test_that("delete/undo/specimen controls post to their routes and rebuild the BV
   expect_false(any(grepl('sendBeacon("http', src, fixed = TRUE)))
 })
 
+test_that("delete/undo re-read /overlays and rebuild EVERY layer (DGT-02)", {
+  skip_if_no_pkg_source()
+  src <- readLines(file.path(pkg_source_root(), "R", "view3d.R"), warn = FALSE)
+
+  # redraw() pulls the active specimen's re-served overlays from /overlays ...
+  expect_true(any(grepl('fetch("overlays"', src, fixed = TRUE)))
+  # ... and rebuilds BOTH dot layers (not just the surface cloud), so a
+  # server-side delete/undo is reflected in the viewport.
+  expect_true(any(grepl("rebuildDotLayer(overlay", src, fixed = TRUE)))
+  expect_true(any(grepl("rebuildDotLayer(anchors", src, fixed = TRUE)))
+  # The old stub target (an unregistered /redraw route that always 404'd) is gone.
+  expect_false(any(grepl('fetch("redraw"', src, fixed = TRUE)))
+})
+
+test_that("toolbar drives mode + compute/export/save routes from the browser (DGT-02/DGT-03)", {
+  skip_if_no_pkg_source()
+  src <- readLines(file.path(pkg_source_root(), "R", "view3d.R"), warn = FALSE)
+
+  # Mode buttons share the single setMode() setter with the keyboard shortcuts.
+  expect_true(any(grepl("setMode(", src, fixed = TRUE)))
+  expect_true(any(grepl('id="btn-c"', src, fixed = TRUE)))
+  # Analytical buttons exist AND POST to the loopback routes R owns.
+  expect_true(any(grepl('id="btn-ds"', src, fixed = TRUE)))
+  expect_true(any(grepl('id="btn-gpa"', src, fixed = TRUE)))
+  expect_true(any(grepl('id="btn-csv"', src, fixed = TRUE)))
+  expect_true(any(grepl('id="btn-save"', src, fixed = TRUE)))
+  expect_true(any(grepl('post("downsample")', src, fixed = TRUE)))
+  expect_true(any(grepl('post("gpa")', src, fixed = TRUE)))
+  expect_true(any(grepl('post("export", "csv")', src, fixed = TRUE)))
+  expect_true(any(grepl('post("save")', src, fixed = TRUE)))
+  # Offline invariant (WEB-03): no toolbar POST is ever an absolute URL.
+  expect_false(any(grepl('post("http', src, fixed = TRUE)))
+})
+
 test_that("all digitizing JS stays in the parameter-free BODY (HEAD under the 8192-byte sprintf cap)", {
   skip_if_no_pkg_source()
   txt <- paste(
