@@ -260,6 +260,39 @@ test_that("delete then undo round-trips through /overlays (the DGT-02 visual gap
   expect_equal(ov_undo$A, c(1, 2, 3, 4, 5, 6))
 })
 
+test_that("a browser landmark /pick lands in the session land slot and undo drops just it", {
+  token <- "TESTTOKEN_pick_land"
+  reset_session(token)
+  if (exists(token, envir = .gmw_picks)) rm(list = token, envir = .gmw_picks)
+  on.exit({
+    reset_session(token)
+    if (exists(token, envir = .gmw_picks)) rm(list = token, envir = .gmw_picks)
+  }, add = TRUE)
+  handler <- .gmw_digitize_handler(token)
+
+  # Two picks populate the per-specimen `land` slot in placement order -- this is
+  # the store /overlays, delete/undo, and every analytical seam read (the fix for
+  # picks vanishing on redraw / "undo does everything").
+  expect_equal(handler(make_req(paste0("/", token, "/pick"), "0.1,0.2,0.3"))$status, 204L)
+  expect_equal(handler(make_req(paste0("/", token, "/pick"), "0.4,0.5,0.6"))$status, 204L)
+  land <- .gmw_session_get(token)$specimens[[1]]$land
+  expect_equal(dim(land), c(2L, 3L))
+  expect_equal(as.numeric(land[2, ]), c(0.4, 0.5, 0.6))
+
+  # Mirrored into the Phase-4 .gmw_picks store so the replay parity harness is
+  # unchanged.
+  expect_equal(dim(.gmw_picks_get(token)), c(2L, 3L))
+
+  # /overlays re-serves BOTH landmarks, row-major, in the L layer.
+  ov <- parse_overlays(handler(make_req(paste0("/", token, "/overlays")))$body)
+  expect_equal(ov$L, c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6))
+
+  # One-deep undo drops ONLY the last pick, not the whole layer.
+  expect_equal(handler(make_req(paste0("/", token, "/undo")))$status, 204L)
+  ov2 <- parse_overlays(handler(make_req(paste0("/", token, "/overlays")))$body)
+  expect_equal(ov2$L, c(0.1, 0.2, 0.3))
+})
+
 test_that("the digitizing routes never join the request path to the filesystem (T-2-02)", {
   skip_if_no_pkg_source()
   src <- readLines(file.path(pkg_root, "R", "transport.R"), warn = FALSE)

@@ -260,15 +260,42 @@ if (!exists("dbg", mode = "function")) {
   function(req) {
     path <- req$PATH_INFO
 
-    # Phase-4 routes are answered by the untouched pick handler.
-    if (grepl("/pick$", path) || grepl("/close$", path)) {
+    # Bare CSV text body; base-R parse only (no JSON dep). `path` is only ever
+    # matched with grepl below; it is NEVER joined to the filesystem. Read the
+    # body at most once (the rook input stream is single-shot).
+    read_body <- function() {
+      tryCatch(rawToChar(req$rook.input$read()), error = function(e) "")
+    }
+
+    # /close still defers to the untouched pick handler (schedules the stop).
+    if (grepl("/close$", path)) {
       return(.gmw_pick_handler(token)(req))
     }
 
-    # Bare CSV text body; base-R parse only (no JSON dep). `path` is only ever
-    # matched with grepl below; it is NEVER joined to the filesystem.
-    read_body <- function() {
-      tryCatch(rawToChar(req$rook.input$read()), error = function(e) "")
+    # Landmark placement (browser "landmark" mode). Phase 4 recorded a pick ONLY
+    # in .gmw_picks, but Phase 5's session model is the source of truth for every
+    # downstream operation -- delete/undo, the /overlays re-serve, and the
+    # analytical seams (.gmw_downsample_session/.gmw_gpa_session/
+    # .gmw_export_session/.gmw_save_session_dgt) all read the per-specimen `land`
+    # slot. So mirror each pick into BOTH stores: append to the active specimen's
+    # `land` with a one-deep "place" undo (exactly like /anchor), AND keep the
+    # .gmw_picks record so the record/replay parity harness is unchanged.
+    if (grepl("/pick$", path)) {
+      xyz <- suppressWarnings(as.numeric(strsplit(read_body(), ",", fixed = TRUE)[[1]]))
+      if (length(xyz) == 3L && all(is.finite(xyz))) {
+        s   <- .gmw_session_ensure(token)
+        cur <- s$current
+        rec <- s$specimens[[cur]]
+        rec$land <- rbind(rec$land, matrix(xyz, nrow = 1L))
+        s$specimens[[cur]] <- rec
+        s$undo <- list(action = "place", kind = "landmark",
+                       specimen = cur, idx = nrow(rec$land))
+        assign(token, s, envir = .gmw_session)
+        prev <- if (exists(token, envir = .gmw_picks)) get(token, envir = .gmw_picks) else NULL
+        assign(token, rbind(prev, matrix(xyz, nrow = 1L)), envir = .gmw_picks)
+        dbg(paste0("gmw pick: ", token))
+      }
+      return(ok204)
     }
 
     if (grepl("/anchor$", path)) {
