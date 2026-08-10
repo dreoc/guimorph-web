@@ -161,11 +161,21 @@ itob <- function(int) {
 # Prefer C when count matches; fall back to R-side activeDataList[[10]] from openDgt.
 .landmarks_for_specimen <- function(e, i) {
   expected <- as.numeric(e$landmarkNum)
+  stored   <- e$activeDataList[[i]][[10]]
+  # Browser/session path: there is NO native Tk canvas, so calling the C/Tk
+  # getLandmark() -> shows() -> tcl("show", ...) SEGFAULTS (an uncatchable
+  # C-level crash, so the /gpa try() cannot protect it). The session env already
+  # holds every landmark in activeDataList[[i]][[10]]; read it directly.
+  if (isTRUE(e$gmw_session_source)) {
+    if (!is.null(stored) && is.matrix(stored)) {
+      return(stored)
+    }
+    return(NULL)
+  }
   from_c <- getLandmark(i)
   if (!is.null(from_c) && nrow(from_c) == expected) {
     return(from_c)
   }
-  stored <- e$activeDataList[[i]][[10]]
   if (!is.null(stored) && is.matrix(stored) && nrow(stored) == expected) {
     return(stored)
   }
@@ -542,6 +552,11 @@ plotPCA <- function(e) {
   e$approxBE       <- optv("approxBE", 0)
   e$parallel       <- optv("parallel", 0)
   e$statusLabel    <- NULL
+
+  # Marks this env as the browser/session read path so .landmarks_for_specimen
+  # (and any other native-query fallback) NEVER calls into the Tk canvas, which
+  # would segfault headless. Landmarks live in activeDataList[[i]][[10]].
+  e$gmw_session_source <- TRUE
 
   e
 }

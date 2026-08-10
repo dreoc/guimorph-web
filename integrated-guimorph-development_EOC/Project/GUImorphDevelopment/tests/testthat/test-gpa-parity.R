@@ -82,3 +82,33 @@ test_that("session read path yields the same .build_geomorph_data as populated a
 
   expect_identical(.build_geomorph_data(e_session), .build_geomorph_data(e_active))
 })
+
+# Regression for the browser /gpa segfault: .landmarks_for_specimen() used to
+# call the native C/Tk getLandmark() FIRST, which crashes headless (tcl("show",
+# ...) -> invalid-permissions segfault, uncatchable by the /gpa try()). The
+# session env must read its stored landmarks and NEVER touch the native query.
+test_that("session read path never calls the native getLandmark (headless segfault guard)", {
+  have_tcltk <- tryCatch({
+    suppressWarnings(suppressMessages(library(tcltk)))
+    TRUE
+  }, error = function(err) FALSE)
+  skip_if_not(isTRUE(have_tcltk), "tcltk (Tcl interpreter) not available")
+
+  source(file.path(pkg_root, "R", "transport.R"), local = TRUE)
+  source(file.path(pkg_root, "R", "3dDigitize.geomorph.r"), local = TRUE)
+
+  # Stand in for the fatal native query: in production this segfaults; here it
+  # errors, so any call surfaces as a test failure rather than a silent crash.
+  getLandmark <- function(i) stop("native getLandmark must not run in session mode")
+
+  land  <- matrix(as.numeric(1:15), nrow = 5, ncol = 3)
+  token <- "gpanotktoken"
+  s <- .gmw_session_init(token)
+  s$specimens[[1]]$land <- land
+  assign(token, s, envir = .gmw_session)
+
+  e <- .gmw_session_to_geomorph_env(token, list())
+  expect_true(isTRUE(e$gmw_session_source))
+  # Returns the stored landmarks with no call into getLandmark (no error raised).
+  expect_identical(.landmarks_for_specimen(e, 1L), land)
+})
