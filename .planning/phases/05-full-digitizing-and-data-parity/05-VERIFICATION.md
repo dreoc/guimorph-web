@@ -1,10 +1,25 @@
 ---
 phase: 05-full-digitizing-and-data-parity
 verified: 2026-08-07T16:42:37Z
-status: human_needed
+status: human_verified_partial
 score: 5/7 must-haves verified
 behavior_unverified: 0
 overrides_applied: 0
+uat:
+  performed: 2026-08-10
+  host: macOS display host
+  approved_items: [1, 2, 3, 4]
+  blocked_items: [5, 6]
+  blocked_on: "Windows tkogl2 reviewer"
+  fixes_during_uat:
+    - "292bd3f fix(05-03): escape JS newline in switchSpecimen split"
+    - "1b06558 fix(05-03): surface digitizing mode keys in viewport HUD"
+    - "486f36c fix(05-03): re-serve overlays so delete/undo repaint + browser controls"
+    - "21c65e4 fix(05-03): mirror browser landmark picks into the session land slot"
+    - "89e2b3f fix(05-02): stop browser GPA from segfaulting via native getLandmark"
+  deferred:
+    - "Item 2 live surface COMPUTE: session specimen/template slots not wired (no crash, silent no-op). User-accepted; tracked in 05-UAT.md Gaps."
+  note: "Items 1-4 human-approved on macOS. Items 5-6 (DAT-02 -rewrite gate, CMP-01 runtime load) still require a Windows tkogl2 host — see human_verification entries below. PRIMARY automated proofs for DAT-01/DAT-02/CMP-01 already pass; 5-6 are corroborating/upstream."
 human_verification:
   - test: "Live browser digitizing interactions (DGT-01/DGT-02): on a display host, launch a viewport, place anchors (green dots), define a curve by clicking three placed landmark dots (first cyan, second blue slider, third completes), display + delete a surface semilandmark, undo, and switch specimens."
     expected: "Anchors render green in a non-raycast group; curve recolor is cyan then blue then commit; overlays follow the correct specimen after a switch and picks land on the newly loaded mesh (BVH rebuilt)."

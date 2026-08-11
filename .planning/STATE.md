@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Browser Rendering
-status: Phase 5 executed — human UAT pending
-stopped_at: "Phase 5 all 6 plans executed; verification = human_needed (5/7 must-haves, 0 hard blockers). 05-UAT.md persisted. Awaiting display-host/Windows manual UAT: live browser digitizing, live surface-compute (specimen-slot stub), DGT-03 GPA/export run, DAT-01 dual-path, DAT-02 -rewrite gate, CMP-01 runtime load."
-last_updated: "2026-08-07T16:45:00.000Z"
+status: Phase 5 UAT — items 1-4 approved (macOS); items 5-6 held for Windows reviewer
+stopped_at: "Phase 5 UAT on a macOS display host: items 1-4 APPROVED by the user. Five browser-workflow bugs found and fixed inline during UAT (commits 292bd3f JS newline escape, 1b06558 HUD mode discoverability, 486f36c overlay /overlays re-serve for delete/undo + browser toolbar, 21c65e4 pick->session-land mirror, 89e2b3f GPA getLandmark segfault). Item 2 (live surface COMPUTE) accepted as a known deferred stub (session specimen/template slots unwired — no crash, silent no-op). Items 5 (DAT-02 -rewrite) and 6 (CMP-01 runtime load) BLOCKED on a Windows tkogl2 reviewer. Next: either wire the item-2 downsample slots as a follow-up, or proceed to Phase 6 once the Windows review clears 5-6."
+last_updated: "2026-08-10T20:12:00.000Z"
 progress:
   total_phases: 6
   completed_phases: 3

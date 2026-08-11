@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Transport and Mesh Display** - `httpuv` serves the PLY over loopback; three.js renders and orbits it (completed 2026-08-03)
 - [x] **Phase 3: Offline Packaging and Lifecycle** - Bundle the JS, select a port, launch the browser, tear down on session end (completed 2026-08-03)
 - [x] **Phase 4: Picking Parity** - BVH raycast returns hit coordinates matching the native `gluUnProject` result within tolerance (completed 2026-08-05)
-- [ ] **Phase 5: Full Digitizing and Data Parity** - Curves, anchors, surfaces, undo, multi-specimen, GPA and export from the browser, with byte-identical `.dgt` (all 6 plans executed 2026-08-07; verification human_needed — display-host/Windows manual UAT pending)
+- [ ] **Phase 5: Full Digitizing and Data Parity** - Curves, anchors, surfaces, undo, multi-specimen, GPA and export from the browser, with byte-identical `.dgt` (all 6 plans executed 2026-08-07; macOS UAT items 1-4 APPROVED 2026-08-10 after 5 inline browser-workflow fixes; item 2 live surface COMPUTE deferred as a known stub; items 5-6 blocked on a Windows tkogl2 reviewer)
 - [ ] **Phase 6: Shell and Native Retirement** - Replace the Tk chrome, then delete `tkogl2` and drop `rgl`
 
 ## Phase Details
