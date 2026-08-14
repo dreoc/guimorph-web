@@ -35,17 +35,13 @@ test_that("aligned coordinate accessor supports geomorph 4.x and legacy layouts"
 # that equality: an env built by .gmw_session_to_geomorph_env() from a synthetic
 # session must yield the identical geomorph data as an env whose
 # activeDataList[[i]][[10]] / [[1]][[4]] slots are hand-populated with the same
-# arrays. tclvalue()/itob() need the Tcl interpreter; skip cleanly if absent.
+# arrays. tclvalue()/itob() resolve via the package's internal tclVar/tclvalue
+# compat shim (Phase 6, D-01: tcltk severed) -- no Tcl interpreter is needed.
 test_that("session read path yields the same .build_geomorph_data as populated activeDataList", {
-  have_tcltk <- tryCatch({
-    suppressWarnings(suppressMessages(library(tcltk)))
-    TRUE
-  }, error = function(err) FALSE)
-  skip_if_not(isTRUE(have_tcltk), "tcltk (Tcl interpreter) not available")
-
   # Session model helpers (.gmw_session store + .gmw_session_get) live in
-  # transport.R; the env builder + .build_geomorph_data + itob live in the
-  # geomorph source. Source both into this local scope.
+  # transport.R; the env builder + .build_geomorph_data + itob + the tclVar()/
+  # tclvalue() shim live in the geomorph source. Source both into this local
+  # scope so the option-flag shim resolves without tcltk.
   source(file.path(pkg_root, "R", "transport.R"), local = TRUE)
   source(file.path(pkg_root, "R", "3dDigitize.geomorph.r"), local = TRUE)
 
@@ -88,12 +84,8 @@ test_that("session read path yields the same .build_geomorph_data as populated a
 # ...) -> invalid-permissions segfault, uncatchable by the /gpa try()). The
 # session env must read its stored landmarks and NEVER touch the native query.
 test_that("session read path never calls the native getLandmark (headless segfault guard)", {
-  have_tcltk <- tryCatch({
-    suppressWarnings(suppressMessages(library(tcltk)))
-    TRUE
-  }, error = function(err) FALSE)
-  skip_if_not(isTRUE(have_tcltk), "tcltk (Tcl interpreter) not available")
-
+  # tclVar()/tclvalue() resolve via the internal shim in the geomorph source
+  # (tcltk severed in Phase 6); no Tcl interpreter is required.
   source(file.path(pkg_root, "R", "transport.R"), local = TRUE)
   source(file.path(pkg_root, "R", "3dDigitize.geomorph.r"), local = TRUE)
 

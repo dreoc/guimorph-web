@@ -3,6 +3,7 @@ pkg_root <- normalizePath(file.path(testthat::test_path(), "..", ".."))
 # These tests inspect package source text; skip when only an installed
 # package is available. See helper-pkg-source.R.
 skip_if_no_pkg_source()
+source(file.path(pkg_root, "R", "shell.R"), local = FALSE)  # dbg() lives here since Plan 06-03
 source(file.path(pkg_root, "R", "3dDigitize.curve.r"), local = FALSE)
 
 test_that("write.curve and read.curve round-trip a 3-column integer matrix", {

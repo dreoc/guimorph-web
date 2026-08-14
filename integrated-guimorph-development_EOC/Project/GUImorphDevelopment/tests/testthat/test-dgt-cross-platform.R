@@ -172,20 +172,17 @@ test_that("CMP-01: the .dgt save path never writes .gmw_engine; native oracle st
   expect_length(eng$ok, 1L)
 })
 
-test_that("DAT-03 bidirectional fixture gate is enforceable", {
-  parity_dir <- file.path(pkg_root, "tests", "fixtures", "parity")
-  windows_authored <- file.path(parity_dir, "windows-authored-roundtrip.dgt")
-  windows_rewritten <- file.path(parity_dir, "windows-authored-roundtrip-rewrite.dgt")
-  mac_authored <- file.path(parity_dir, "mac-authored-roundtrip.dgt")
-  mac_rewritten <- file.path(parity_dir, "mac-authored-roundtrip-rewrite.dgt")
-
-  if (!file.exists(windows_authored) ||
-      !file.exists(windows_rewritten) ||
-      !file.exists(mac_authored) ||
-      !file.exists(mac_rewritten)) {
-    skip("Bidirectional DAT-03 byte fixtures are required from Windows/macOS round-trip evidence.")
-  }
-
-  expect_identical(.byte_signature(windows_authored), .byte_signature(windows_rewritten))
-  expect_identical(.byte_signature(mac_authored), .byte_signature(mac_rewritten))
+# DAT-02 `-rewrite` byte gate -- CLOSED as won't-verify (D-04).
+#
+# This gate compared each authored `.dgt` against a Windows/macOS re-save of
+# itself (the `-rewrite` fixtures). Producing the re-saves required the native
+# tkogl2 engine on a Windows host to drive the GUI Save path; Phase 6 deleted
+# that engine (Plan 06-07) and no Windows host was ever available (D-04), so the
+# gate is formally closed as WON'T-VERIFY rather than left as an indefinite
+# fixture-absent skip. The one-writer `.dgt` determinism it would have exercised
+# is already covered structurally by the "dgt writer output matches parity
+# fixture" and "browser save is byte-identical to the canonical writer" tests
+# above -- R keeps the single serializer, so there is no second dialect to drift.
+test_that("DAT-02 -rewrite byte gate is closed as won't-verify (D-04)", {
+  skip("DAT-02 -rewrite gate won't-verify (D-04): needs a Windows tkogl2 capture (see 05-WINDOWS-REVIEW.md)")
 })

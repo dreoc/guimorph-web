@@ -26,11 +26,17 @@ test_that("Tk accelerator bindings are removed from main.r", {
   expect_false(any(grepl("bindPlatformAccelerator\\(", src)))
 })
 
-test_that("dialogs allow all files and warn on odd extensions", {
+test_that("save path warns on odd extensions (native file dialog retired)", {
+  # Plan 06-08 removed the last tkgetSaveFile picker (with its
+  # "{{All files} *}" filetypes) from .gmw_save_session_dgt: with tcltk severed
+  # (D-01) the browser owns the save-name over /savepath and R owns the path
+  # (D-03). The extension-warning guard survives and still runs on the derived
+  # path, so main.r must no longer contain a native Tk filetypes string but must
+  # still call .warnUnexpectedExtension().
   main_file <- file.path(pkg_root, "R", "3dDigitize.main.r")
   src <- readLines(main_file, warn = FALSE)
 
-  expect_true(any(grepl("\\{\\{All files\\} \\*\\}", src)))
+  expect_false(any(grepl("\\{\\{All files\\} \\*\\}", src)))
   expect_true(any(grepl("\\.warnUnexpectedExtension\\(", src)))
 })
 
@@ -44,16 +50,19 @@ test_that("tab gating function remains centralized", {
   expect_true(any(grepl("^refreshTabGating <- function\\(e\\)", src)))
 })
 
-test_that("curve and surface tabs consume shared shortcut and wheel helpers", {
+test_that("curve and surface tabs no longer host Tk shortcut/wheel builders", {
   # Plan 06-05 removed ui.curve (which held the shortcutLabel("[") description)
   # from curve.r; the "[" / "]" specimen shortcuts are browser accelerators now,
-  # so curve.r must no longer host a Tk shortcut builder. The surface tab still
-  # consumes the shared wheel helper until Plan 06-06 strips surface.r.
+  # so curve.r must no longer host a Tk shortcut builder. Plan 06-06 then stripped
+  # the surface Tk builder, deleting its zoom(e, normalizeWheelDelta(D)) wheel
+  # binding -- the browser (view3d.R) owns wheel-to-zoom now. This assertion is
+  # inverted to absence (mirroring the 06-06 strip); it was the stale red logged
+  # in deferred-items.md, closed here.
   curve_file <- file.path(pkg_root, "R", "3dDigitize.curve.r")
   curve_src <- readLines(curve_file, warn = FALSE)
   surface_file <- file.path(pkg_root, "R", "3dDigitize.surface.r")
   surface_src <- readLines(surface_file, warn = FALSE)
 
   expect_false(any(grepl("shortcutLabel", curve_src, fixed = TRUE)))
-  expect_true(any(grepl("zoom\\(e, normalizeWheelDelta\\(D\\)\\)", surface_src)))
+  expect_false(any(grepl("zoom\\(e, normalizeWheelDelta\\(D\\)\\)", surface_src)))
 })
