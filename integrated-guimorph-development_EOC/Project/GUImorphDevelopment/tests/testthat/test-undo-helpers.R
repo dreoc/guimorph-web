@@ -150,13 +150,17 @@ test_that("doUndo curve_place reports segment reversal message", {
 })
 
 
-test_that("onSelectCurve uses inline duplicate landmark warning", {
+test_that("curve.r no longer hosts the native curve-selection handler (moved to /curve)", {
   skip_if_no_pkg_source()
   curveFile <- normalizePath(
     file.path(testthat::test_path(), "..", "..", "R", "3dDigitize.curve.r"),
     mustWork = TRUE
   )
   curveSrc <- readLines(curveFile, warn = FALSE)
-  expect_true(any(grepl("Duplicate landmark in this curve segment", curveSrc, fixed = TRUE)))
+  code <- sub("#.*$", "", curveSrc)
+  # Plan 06-05: onSelectCurve (and its "Duplicate landmark" guard) moved
+  # server-side to the /curve route; tkmessageBox never existed here and must
+  # not reappear.
+  expect_false(any(grepl("onSelectCurve", code, fixed = TRUE)))
   expect_false(any(grepl("tkmessageBox", curveSrc, fixed = TRUE)))
 })
