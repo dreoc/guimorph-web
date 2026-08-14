@@ -394,29 +394,11 @@ del <- function(shape, arg1 = -1, arg2 = -1, arg3 = -1)
 
 
 
-#' Launch the GUImorphWeb digitizing interface
-#'
-#' Opens the GUImorphWeb window for 3D geometric morphometric digitizing:
-#' landmarks, curve and surface semilandmarks, GPA, and export in a
-#' geomorph-compatible format.
-#'
-#' @param debug Logical. If \code{TRUE}, print diagnostic output to the
-#'   console while the interface runs.
-#'
-#' @return Invisibly \code{NULL}; called for its side effect of opening the
-#'   interface.
-#' @export
-GUImorphWeb <- function(debug = FALSE) {
-  .gmw_require_engine()
-  options(guimorph.debug = isTRUE(debug))
-  e <- new.env()
-  class(e) <- "main"
-  ui(e)
-  invisible(init(e))
-}
-
-
-
+# NOTE: the exported GUImorphWeb() entry point was rewired and relocated to
+# R/shell.R in Plan 06-03. It now boots the browser shell via .gmw_serve_mesh()
+# and no longer calls .gmw_require_engine()/ui()/init() (UI-02). .gmw_require_engine
+# is defined below and is unused by the shell path; Plan 07 deletes it with the
+# rest of this file's engine surface.
 
 
 

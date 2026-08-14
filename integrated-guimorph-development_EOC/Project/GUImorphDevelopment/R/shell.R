@@ -7,6 +7,57 @@
 # package-level dbg() that transport.R depends on, .plot_show(), .onAttach(), and
 # their helpers alive across the demolition. Nothing here touches the engine.
 
+#' Launch the GUImorphWeb browser digitizing shell
+#'
+#' Boots the browser-based GUImorphWeb shell: starts a loopback \code{httpuv}
+#' listener serving the three.js viewport and digitizing chrome, seeds the
+#' server-owned browse directory that the in-page file picker lists and opens
+#' from, and prints (and, by default, opens) the viewport URL. Landmarks, curve
+#' and surface semilandmarks, GPA, and geomorph-compatible export all run in the
+#' browser with no native engine and no Tk window.
+#'
+#' @param dir Directory the in-page file picker lists \code{.dgt}/\code{.ply}
+#'   files from and opens selections within (UI-01/D-03). Defaults to
+#'   \code{getwd()}. R -- never the browser -- owns every path: the picker only
+#'   ever returns a basename R itself enumerated over this directory.
+#' @param open Logical. When \code{TRUE} (the default) the viewport URL is
+#'   opened with \code{utils::browseURL} as a convenience; it is always printed
+#'   first, so a blocked or headless launch degrades to the printed URL rather
+#'   than an error.
+#' @param debug Logical. When \code{TRUE}, gated diagnostic output
+#'   (\code{options(guimorph.debug = TRUE)}) is printed to the console while the
+#'   shell runs.
+#'
+#' @return The served \code{http://127.0.0.1:<port>/<token>/} URL, invisibly.
+#' @export
+GUImorphWeb <- function(dir = getwd(), open = TRUE, debug = FALSE) {
+  options(guimorph.debug = isTRUE(debug))
+  # The browser shell boots into an empty viewport (the retired Tk entry likewise
+  # started empty and used "Load PLY"); the user opens a specimen through the
+  # in-page file picker over the server-owned `dir`. .gmw_serve_mesh() requires a
+  # real PLY to mount, so seed the viewport with a tiny in-process placeholder
+  # mesh. This keeps every path R-owned, needs no bundled sample data, and needs
+  # no native engine (UI-02). NO .gmw_require_engine(), ui(e), or init(e).
+  boot_ply <- .gmw_boot_specimen()
+  .gmw_serve_mesh(ply_path = boot_ply, dir = dir, open = open)
+}
+
+# Write a minimal valid ASCII PLY (a unit tetrahedron) to a tempfile: the
+# placeholder mesh the browser shell mounts at boot, before the user opens a real
+# specimen through the file picker. Kept tiny and self-contained so GUImorphWeb()
+# boots with no bundled sample data and no native engine.
+.gmw_boot_specimen <- function() {
+  f <- tempfile(pattern = "guimorphweb-boot-", fileext = ".ply")
+  writeLines(c(
+    "ply", "format ascii 1.0", "element vertex 4",
+    "property float x", "property float y", "property float z",
+    "element face 4", "property list uchar int vertex_indices", "end_header",
+    "0 0 0", "1 0 0", "0 1 0", "0 0 1",
+    "3 0 1 2", "3 0 1 3", "3 0 2 3", "3 1 2 3"
+  ), f)
+  f
+}
+
 # gated debug printer: prints only when options(guimorph.debug=TRUE),
 # which GUImorphWeb(debug=TRUE) sets. Preserves every debugging note.
 dbg <- function(...) if (isTRUE(getOption("guimorph.debug", FALSE))) print(...)
