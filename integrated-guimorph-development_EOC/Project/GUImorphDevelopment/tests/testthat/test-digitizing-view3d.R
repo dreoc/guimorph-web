@@ -129,3 +129,110 @@ test_that("all digitizing JS stays in the parameter-free BODY (HEAD under the 81
   expect_false(grepl("addAnchorDot", head_fmt, fixed = TRUE))
   expect_false(grepl('sendBeacon("specimen"', head_fmt, fixed = TRUE))
 })
+
+# ---------------------------------------------------------------------------
+# Browser shell (06-02): tab strip, menu bar, status bar, reusable modal, and
+# the menu/tab/nav/dialog wiring onto the Plan-01 routes. Same source-scan idiom
+# as above -- the shell markup + wiring is baked into GMW_VIEW3D_TEMPLATE.
+# ---------------------------------------------------------------------------
+
+test_that("shell chrome renders a tab strip, menu bar, status bar, and modal layer (UI-01)", {
+  skip_if_no_pkg_source()
+  src <- readLines(file.path(pkg_source_root(), "R", "view3d.R"), warn = FALSE)
+
+  # The four shell containers are built and appended from the BODY.
+  expect_true(any(grepl('bar.id = "menubar"', src, fixed = TRUE)))
+  expect_true(any(grepl('tabs.id = "tabs"', src, fixed = TRUE)))
+  expect_true(any(grepl('status.id = "status"', src, fixed = TRUE)))
+  expect_true(any(grepl('modal.id = "modal"', src, fixed = TRUE)))
+
+  # Menu bar carries the File actions (Load/Add/Save/Export/Merge) and Help.
+  expect_true(any(grepl("mi-load-ply", src, fixed = TRUE)))
+  expect_true(any(grepl("mi-load-dgt", src, fixed = TRUE)))
+  expect_true(any(grepl("mi-add-ply", src, fixed = TRUE)))
+  expect_true(any(grepl("mi-save", src, fixed = TRUE)))
+  expect_true(any(grepl("mi-export-csv", src, fixed = TRUE)))
+  expect_true(any(grepl("mi-merge", src, fixed = TRUE)))
+  expect_true(any(grepl("mi-help", src, fixed = TRUE)))
+
+  # Tab strip carries data-tab attributes for the five Tk notebook tabs.
+  expect_true(any(grepl("data-tab=", src, fixed = TRUE)))
+  expect_true(any(grepl(">Digitize</button>", src, fixed = TRUE)))
+  expect_true(any(grepl(">Surface</button>", src, fixed = TRUE)))
+
+  # One reusable modal opener + closer hosts the picker, message box, color, save.
+  expect_true(any(grepl("function openModal", src, fixed = TRUE)))
+  expect_true(any(grepl("function closeModal", src, fixed = TRUE)))
+})
+
+test_that("all shell markup + wiring lives in the parameter-free BODY (HEAD under the 8192-byte cap)", {
+  skip_if_no_pkg_source()
+  txt <- paste(
+    readLines(file.path(pkg_source_root(), "R", "view3d.R"), warn = FALSE),
+    collapse = "\n"
+  )
+
+  open_marker <- "GMW_VIEW3D_TEMPLATE <- '"
+  at_open <- regexpr(open_marker, txt, fixed = TRUE)
+  expect_gt(at_open, 0)
+  tail_txt <- substring(txt, at_open + attr(at_open, "match.length"))
+
+  head_marker <- 'MESH_URL = "%s";'
+  at_marker <- regexpr(head_marker, tail_txt, fixed = TRUE)
+  expect_gt(at_marker, 0)
+  head_fmt <- substring(tail_txt, 1L, at_marker + attr(at_marker, "match.length") - 1L)
+
+  # The shell additions must not push the parameterised HEAD over the cap.
+  expect_lt(nchar(head_fmt, type = "bytes"), 8192L)
+
+  # No shell chrome or wiring token leaked into the HEAD fmt.
+  expect_false(grepl("menubar", head_fmt, fixed = TRUE))
+  expect_false(grepl("openModal", head_fmt, fixed = TRUE))
+  expect_false(grepl("openPicker", head_fmt, fixed = TRUE))
+  expect_false(grepl('fetch("status")', head_fmt, fixed = TRUE))
+
+  # The HEAD carries exactly the six known sprintf slots (title, bg, bg,
+  # clouds, mesh, mesh_url) -- no new %s slot was added for the shell chrome.
+  slots <- gregexpr("%s", head_fmt, fixed = TRUE)[[1]]
+  n_slots <- if (length(slots) == 1L && slots[1] == -1L) 0L else length(slots)
+  expect_equal(n_slots, 6L)
+})
+
+test_that("specimen nav reuses the RE-SERVE switchSpecimen path (A4 not regressed)", {
+  skip_if_no_pkg_source()
+  src <- paste(
+    readLines(file.path(pkg_source_root(), "R", "view3d.R"), warn = FALSE),
+    collapse = "\n"
+  )
+
+  # The RE-SERVE primitives are still present: switchSpecimen posts /specimen and
+  # loads the returned mesh URL via loadSpecimen(url).
+  expect_true(grepl("function switchSpecimen", src, fixed = TRUE))
+  expect_true(grepl("loadSpecimen(url)", src, fixed = TRUE))
+
+  # Prev/next and the <select> drive switchSpecimen (never an inline index set).
+  expect_true(grepl("switchSpecimen(curSpecimen - 1)", src, fixed = TRUE))
+  expect_true(grepl("switchSpecimen(curSpecimen + 1)", src, fixed = TRUE))
+  expect_true(grepl("switchSpecimen(Number(sel.value))", src, fixed = TRUE))
+})
+
+test_that("shell actions drive the Plan-01 routes over relative same-origin names (T-6-07)", {
+  skip_if_no_pkg_source()
+  src <- paste(
+    readLines(file.path(pkg_source_root(), "R", "view3d.R"), warn = FALSE),
+    collapse = "\n"
+  )
+
+  # Picker + dialogs + status all use the relative Plan-01 route names.
+  expect_true(grepl('fetch("files")', src, fixed = TRUE))
+  expect_true(grepl('post("open", name)', src, fixed = TRUE))
+  expect_true(grepl('post("savepath"', src, fixed = TRUE))
+  expect_true(grepl('post("msgack")', src, fixed = TRUE))
+  expect_true(grepl('post("color", ci.value)', src, fixed = TRUE))
+  expect_true(grepl('fetch("status")', src, fixed = TRUE))
+  expect_true(grepl('fetch("tabstate")', src, fixed = TRUE))
+
+  # Offline invariant (WEB-03/T-6-07): no shell fetch/post is an absolute URL.
+  expect_false(grepl('fetch("http', src, fixed = TRUE))
+  expect_false(grepl('post("http', src, fixed = TRUE))
+})
