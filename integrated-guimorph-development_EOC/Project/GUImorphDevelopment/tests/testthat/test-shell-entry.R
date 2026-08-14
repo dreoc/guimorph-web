@@ -11,9 +11,15 @@ skip_if_no_pkg_source()
 # deliberately NOT sourced. Every assertion below therefore runs with the engine
 # genuinely absent from the session -- if any boot or route needed an engine verb
 # it would error, so a green run is a real UI-02 engine-absent gate.
-source(file.path(pkg_root, "R", "view3d.R"),    local = FALSE)
-source(file.path(pkg_root, "R", "shell.R"),     local = FALSE)
-source(file.path(pkg_root, "R", "transport.R"), local = FALSE)
+#
+# local = TRUE sources into THIS file's environment (not the global env) so the
+# server-owned registries (.gmw_server/.gmw_session) stay isolated to this file
+# and never clobber the global-env state sibling suites (e.g. test-transport.R)
+# source with local = FALSE.
+local_env <- environment()
+source(file.path(pkg_root, "R", "view3d.R"),    local = local_env)
+source(file.path(pkg_root, "R", "shell.R"),     local = local_env)
+source(file.path(pkg_root, "R", "transport.R"), local = local_env)
 
 # .gmw_bundle_path() resolves the vendored JS via system.file(package = ...),
 # which returns "" when sourced standalone. Point it at the source-tree bundle so
