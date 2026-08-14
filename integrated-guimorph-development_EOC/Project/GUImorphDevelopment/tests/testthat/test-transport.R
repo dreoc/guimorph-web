@@ -311,3 +311,132 @@ test_that(".gmw_server retains the live server handle against gc()", {
   expect_false(is.null(s$srv))
   expect_true(is.function(s$srv$getPort))
 })
+
+# ---------------------------------------------------------------------------
+#  Phase-6 browser-shell routes (UI-01): /files, /open, /savepath, /status,
+#  /tabstate, /msgack, /color. These exercise the production `call` closure
+#  directly with a synthetic req (as the /close test above does) -- a same-
+#  process curl cannot reach an R-thread handler while R is blocked in the test.
+# ---------------------------------------------------------------------------
+
+# A synthetic httpuv req: a trailing PATH_INFO plus a single-shot rook.input
+# whose read() yields the raw body bytes (empty by default, for GET routes).
+gmw_shell_req <- function(path, body = NULL) {
+  list(
+    PATH_INFO  = path,
+    rook.input = list(read = function() {
+      if (is.null(body)) raw(0) else charToRaw(body)
+    })
+  )
+}
+
+# Seed a fresh, isolated token whose session browse_dir points at `dir`, and
+# hand back the token + production handler. rm the token on teardown so the
+# .gmw_session registry stays clean across the suite.
+gmw_seed_browse <- function(dir) {
+  token <- .gmw_token()
+  s <- .gmw_session_ensure(token)
+  s$browse_dir <- dir
+  assign(token, s, envir = .gmw_session)
+  list(token = token, handler = .gmw_digitize_handler(token))
+}
+
+gmw_drop_token <- function(token) {
+  if (exists(token, envir = .gmw_session)) rm(list = token, envir = .gmw_session)
+}
+
+test_that("GET /files lists only .dgt/.ply names from browse_dir, newline-joined", {
+  skip_if_no_pkg_source()
+
+  bdir <- file.path(tempfile("gmw-browse-"))
+  dir.create(bdir)
+  on.exit(unlink(bdir, recursive = TRUE), add = TRUE)
+  writeLines("ply",  file.path(bdir, "spec.ply"))
+  writeLines("dgt",  file.path(bdir, "session.dgt"))
+  writeLines("txt",  file.path(bdir, "notes.txt"))   # must be omitted
+
+  b <- gmw_seed_browse(bdir)
+  on.exit(gmw_drop_token(b$token), add = TRUE)
+
+  resp <- b$handler(gmw_shell_req(paste0("/", b$token, "/files")))
+  expect_equal(resp$status, 200L)
+  listed <- strsplit(resp$body, "\n", fixed = TRUE)[[1]]
+  expect_setequal(listed, c("spec.ply", "session.dgt"))
+  expect_false("notes.txt" %in% listed)
+})
+
+test_that("POST /open opens a listed basename but rejects traversal/non-members", {
+  skip_if_no_pkg_source()
+
+  bdir <- file.path(tempfile("gmw-browse-"))
+  dir.create(bdir)
+  on.exit(unlink(bdir, recursive = TRUE), add = TRUE)
+  writeLines("ply", file.path(bdir, "spec.ply"))
+
+  b <- gmw_seed_browse(bdir)
+  on.exit(gmw_drop_token(b$token), add = TRUE)
+
+  # A listed basename opens: the session records the validated absolute path.
+  b$handler(gmw_shell_req(paste0("/", b$token, "/open"), "spec.ply"))
+  opened <- .gmw_session_get(b$token)$opened
+  expect_identical(opened, file.path(bdir, "spec.ply"))
+
+  # Traversal, absolute path, and an unlisted name each leave the session's
+  # opened path UNCHANGED (this is the T-6-02 membership guard, not a tautology:
+  # deleting `sel %in% entries` in transport.R makes these three assertions fail).
+  b$handler(gmw_shell_req(paste0("/", b$token, "/open"), "../secret"))
+  expect_identical(.gmw_session_get(b$token)$opened, opened)
+  b$handler(gmw_shell_req(paste0("/", b$token, "/open"), "/etc/passwd"))
+  expect_identical(.gmw_session_get(b$token)$opened, opened)
+  b$handler(gmw_shell_req(paste0("/", b$token, "/open"), "not-listed.ply"))
+  expect_identical(.gmw_session_get(b$token)$opened, opened)
+})
+
+test_that("POST /open on a fresh token never opens a traversal selection", {
+  skip_if_no_pkg_source()
+
+  bdir <- file.path(tempfile("gmw-browse-"))
+  dir.create(bdir)
+  on.exit(unlink(bdir, recursive = TRUE), add = TRUE)
+  writeLines("ply", file.path(bdir, "spec.ply"))
+
+  b <- gmw_seed_browse(bdir)
+  on.exit(gmw_drop_token(b$token), add = TRUE)
+
+  # No prior open -> after only-invalid selections the slot stays NULL.
+  b$handler(gmw_shell_req(paste0("/", b$token, "/open"), "../spec.ply"))
+  b$handler(gmw_shell_req(paste0("/", b$token, "/open"),
+                          file.path(bdir, "spec.ply")))   # absolute, not a member
+  expect_null(.gmw_session_get(b$token)$opened)
+})
+
+test_that("POST /color stores a #rrggbb hex and drops a non-hex body", {
+  skip_if_no_pkg_source()
+
+  b <- gmw_seed_browse(getwd())
+  on.exit(gmw_drop_token(b$token), add = TRUE)
+
+  b$handler(gmw_shell_req(paste0("/", b$token, "/color"), "#0a0a0a"))
+  expect_identical(.gmw_session_get(b$token)$color, "#0a0a0a")
+
+  # Non-hex bodies are dropped: the stored colour does not change.
+  b$handler(gmw_shell_req(paste0("/", b$token, "/color"), "red)"))
+  expect_identical(.gmw_session_get(b$token)$color, "#0a0a0a")
+  b$handler(gmw_shell_req(paste0("/", b$token, "/color"), "../"))
+  expect_identical(.gmw_session_get(b$token)$color, "#0a0a0a")
+})
+
+test_that("GET /status returns a parseable bare CSV with a numeric specimen index", {
+  skip_if_no_pkg_source()
+
+  b <- gmw_seed_browse(getwd())
+  on.exit(gmw_drop_token(b$token), add = TRUE)
+
+  resp <- b$handler(gmw_shell_req(paste0("/", b$token, "/status")))
+  expect_equal(resp$status, 200L)
+  fields <- strsplit(resp$body, ",", fixed = TRUE)[[1]]
+  expect_gte(length(fields), 1L)
+  idx <- suppressWarnings(as.integer(fields[1]))
+  expect_false(is.na(idx))
+  expect_gte(idx, 1L)
+})
