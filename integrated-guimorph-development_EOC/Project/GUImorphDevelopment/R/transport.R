@@ -214,6 +214,39 @@ if (!exists("dbg", mode = "function")) {
   }
 }
 
+#' Parse the browser GPA-options CSV into a strict, bounded option list
+#'
+#' The browser GPA tab posts its option flags as a bare, fixed-order CSV (no
+#' JSON, no eval) over the \code{/gpa} route. Field order is
+#' \code{maxiter,curves,surfaces,anchorsSurface,anchorsCurve,PrinAxes,ProcD,Proj,printP,parallel,approxBE}:
+#' the first field is a positive integer (max GPA iterations) and the remaining
+#' ten are strict 0/1 booleans. Anything that is not exactly \code{"1"} becomes
+#' \code{0L}; a non-positive / NA maxiter is dropped so the native default holds.
+#' A body whose field count is not the fixed length returns \code{list()}, so an
+#' empty or malformed body leaves every gpagen option at its native default. The
+#' option set is fixed and bounded, parsed with base R only (no \code{eval}); the
+#' flags feed the existing gpagen option tclVars via
+#' \code{.gmw_session_to_geomorph_env()} ONLY, never a path or a new argument
+#' (T-6-17). \code{.build_geomorph_data}/\code{compute} forwarding is untouched.
+#' @param body the bare CSV request body.
+#' @return a named list of GPA options (a subset of the fixed keys), or \code{list()}.
+#' @keywords internal
+#' @noRd
+.gmw_parse_gpaopts <- function(body) {
+  keys  <- c("maxiter", "curves", "surfaces", "anchorsSurface", "anchorsCurve",
+             "PrinAxes", "ProcD", "Proj", "printP", "parallel", "approxBE")
+  parts <- strsplit(if (is.null(body)) "" else body, ",", fixed = TRUE)[[1]]
+  if (length(parts) != length(keys)) return(list())
+  opts <- list()
+  maxiter <- suppressWarnings(as.integer(parts[1]))
+  if (!is.na(maxiter) && maxiter >= 1L) opts$maxiter <- maxiter
+  bkeys <- keys[-1L]
+  for (j in seq_along(bkeys)) {
+    opts[[bkeys[j]]] <- if (identical(parts[j + 1L], "1")) 1L else 0L
+  }
+  opts
+}
+
 #' Build the digitizing route handler for one viewport server
 #'
 #' Returns the per-server \code{call} closure that is the FULL Phase-5 route
@@ -404,7 +437,13 @@ if (!exists("dbg", mode = "function")) {
       return(ok204)
     }
     if (grepl("/gpa$", path)) {
-      try(.gmw_gpa_session(token), silent = TRUE)
+      # GPA option flags travel as a bare, fixed-order CSV (no JSON, no eval).
+      # .gmw_parse_gpaopts() coerces them to a strict, bounded option set that
+      # .gmw_gpa_session() feeds into the gpagen option tclVars via
+      # .gmw_session_to_geomorph_env(); an empty/malformed body yields list() so
+      # the native defaults hold and compute() forwarding stays untouched (T-6-17).
+      opts <- .gmw_parse_gpaopts(read_body())
+      try(.gmw_gpa_session(token, opts), silent = TRUE)
       return(ok204)
     }
     if (grepl("/export$", path)) {

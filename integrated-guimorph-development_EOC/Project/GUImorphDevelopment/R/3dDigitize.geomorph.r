@@ -17,128 +17,14 @@ get_geomorph_date <- function()
 #dgtDataList[imgId][[7]]: zoom
 #dgtDataList[imgId][[8]]: surface file
 
-init.geomorph <- function(e) {
-
-}
-
-#configures gui and initializes values
-ui.geomorph <- function(e, parent) {
-  ## scrollable container: canvas + vertical scrollbar hosting the control frame
-  outer  <- ttkframe(parent)
-  canvas <- tkcanvas(outer, borderwidth = 0, highlightthickness = 0)
-  vsb    <- ttkscrollbar(outer, orient = "vertical", command = function(...) tkyview(canvas, ...))
-  tkconfigure(canvas, yscrollcommand = function(...) tkset(vsb, ...))
-  tkpack(vsb, side = "right", fill = "y")
-  tkpack(canvas, side = "left", fill = "both", expand = TRUE)
-
-  gpagenCtlFrame <- ttkframe(canvas)
-  .cbg <- tryCatch(as.character(tkcget(gpagenCtlFrame, "-background")), error = function(err) "")
-  if (length(.cbg) == 0 || !nzchar(.cbg[1])) .cbg <- "#f0f0f0"
-  tkconfigure(canvas, background = .cbg)
-  tkcreate(canvas, "window", 0, 0, anchor = "nw", window = gpagenCtlFrame)
-  tkbind(gpagenCtlFrame, "<Configure>", function() tkconfigure(canvas, scrollregion = tkbbox(canvas, "all")))
-  tkbind(canvas, "<MouseWheel>", function(D = 0) {
-    delta <- normalizeWheelDelta(D)
-    if (delta == 0) return(invisible())
-    tkyview(canvas, "scroll", as.integer(-sign(delta)), "units")
-  })
-
-  fitBtn <- ttkbutton(gpagenCtlFrame, text = "Fit", command = function() onFit(e))
-  tkgrid(fitBtn, row = 0, column = 0, pady = 2)
-  e$bt2 <- NULL
-
-  ## ---- GPA options ----
-  tkgrid(ttkseparator(gpagenCtlFrame, orient = "horizontal"), row = 1, column = 0, sticky = "ew", pady = 2)
-  tkgrid(tk2label(gpagenCtlFrame, text = "GPA options"), row = 2, column = 0, sticky = "w", padx = 4)
-
-  tkgrid(tk2label(gpagenCtlFrame, text = "Maximum GPA iterations"), row = 3, column = 0, sticky = "w", padx = 20)
-  e$maxiter <- tclVar(2)
-  tkgrid(tk2entry(gpagenCtlFrame, textvariable = e$maxiter, width = "8"), row = 4, column = 0, sticky = "w", padx = 20)
-
-  e$anchorsSurface <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Use anchors as surface semilandmarks", variable = e$anchorsSurface), row = 5, column = 0, sticky = "w")
-  e$anchorsCurve <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Use anchors as curve semilandmarks", variable = e$anchorsCurve), row = 6, column = 0, sticky = "w")
-  e$curves <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Slide semilandmarks on curves", variable = e$curves), row = 7, column = 0, sticky = "w")
-  e$surfaces <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Slide semilandmarks on surfaces", variable = e$surfaces), row = 8, column = 0, sticky = "w")
-  e$PrinAxes <- tclVar(1)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Align the shape data by principal axes", variable = e$PrinAxes), row = 9, column = 0, sticky = "w")
-  e$ProcD <- tclVar(1)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Sliding: Procrustes distance (off = bending energy / TPS)", variable = e$ProcD), row = 10, column = 0, sticky = "w")
-  e$Proj <- tclVar(1)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Project into tangent space", variable = e$Proj), row = 11, column = 0, sticky = "w")
-  e$printP <- tclVar(1)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Print progress bar", variable = e$printP), row = 12, column = 0, sticky = "w")
-  e$parallel <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Parallel processing (multi-core sliding)", variable = e$parallel), row = 13, column = 0, sticky = "w")
-  e$approxBE <- tclVar(0)
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Approximate TPS (faster bending-energy)", variable = e$approxBE), row = 14, column = 0, sticky = "w")
-
-  cmputBtn <- ttkbutton(gpagenCtlFrame, text = "Compute", command = function() compute(e))
-  assign("bt2", cmputBtn, envir = e)
-  tkgrid(cmputBtn, row = 15, column = 0, pady = 2)
-
-  ## ---- Results ----
-  tkgrid(ttkseparator(gpagenCtlFrame, orient = "horizontal"), row = 16, column = 0, sticky = "ew", pady = 2)
-  tkgrid(tk2label(gpagenCtlFrame, text = "Results"), row = 17, column = 0, sticky = "w", padx = 4)
-  saveBtn <- ttkbutton(gpagenCtlFrame, text = "Save Result", command = function() save(e))
-  tkgrid(saveBtn, row = 18, column = 0, pady = 2)
-  plotspecsBtn <- ttkbutton(gpagenCtlFrame, text = "Plot Aligned Specimens", command = function() plotspecs(e))
-  tkgrid(plotspecsBtn, row = 19, column = 0, pady = 2)
-  pcaBtn <- ttkbutton(gpagenCtlFrame, text = "PCA (morphospace)", command = function() plotPCA(e))
-  tkgrid(pcaBtn, row = 20, column = 0, pady = 2)
-
-  ## ---- Mean-shape plot ----
-  tkgrid(ttkseparator(gpagenCtlFrame, orient = "horizontal"), row = 21, column = 0, sticky = "ew", pady = 2)
-  tkgrid(tk2label(gpagenCtlFrame, text = "Mean-shape plot"), row = 22, column = 0, sticky = "w", padx = 4)
-
-  tkgrid(tk2label(gpagenCtlFrame, text = "Point size"), row = 23, column = 0, sticky = "w", padx = 20)
-  e$ptcex <- tclVar(.5)
-  tkgrid(tk2spinbox(gpagenCtlFrame, from = .1, to = 10, increment = .1, tip = "Point size", textvariable = e$ptcex, width = 5), row = 23, column = 0, sticky = "e")
-
-  tkgrid(tk2label(gpagenCtlFrame, text = "Mean Shape size"), row = 24, column = 0, sticky = "w", padx = 20)
-  e$meancex <- tclVar(2)
-  tkgrid(tk2spinbox(gpagenCtlFrame, from = .5, to = 10, increment = .1, tip = "Mean Shape size", textvariable = e$meancex, width = 5), row = 24, column = 0, sticky = "e")
-
-  tkgrid(tk2label(gpagenCtlFrame, text = "Radius factor (x spacing)"), row = 25, column = 0, sticky = "w", padx = 20)
-  e$bpFactor <- tclVar("2")
-  tkgrid(tk2spinbox(gpagenCtlFrame, from = 0.5, to = 10, increment = .1, tip = "Ball-pivot radius = factor x median point spacing. Up for holes, down if faces fuse.", textvariable = e$bpFactor, width = 6), row = 25, column = 0, sticky = "e")
-
-  e$meshWire <- tclVar("0")
-  tkgrid(tk2checkbutton(gpagenCtlFrame, text = "Wireframe (off = surface)", variable = e$meshWire), row = 26, column = 0, sticky = "w")
-  meanBtn <- ttkbutton(gpagenCtlFrame, text = "Plot Mean Shape", command = function() plotMeanShape(e))
-  tkgrid(meanBtn, row = 27, column = 0, pady = 2)
-
-  return(outer)
-}
-
-#configures user button actions
-bind.geomorph <-function(e) {
-  tkbind(e$canvasFrame, "<ButtonPress-1>", function(x, y) {
-    if(length(e$activeDataList) > 0) {
-      e$dragX <- as.integer(x)
-      e$dragY <- as.integer(y)
-    }
-  })
-
-  tkbind(e$canvasFrame, "<ButtonRelease-1>", function(x, y) {
-    if(length(e$activeDataList) > 0) {
-      e$dragX <- as.integer(-1)
-      e$dragY <- as.integer(-1)
-    }
-  })
-
-  #tkbind(e$canvasFrame, "<Motion>", function(x, y) {motion.surface(e, x, y)})
-
-  tkbind(e$canvasFrame, "<ButtonPress-3>", function(x, y) { })
-  tkbind(e$canvasFrame, "<Double-Button-1>", function(x, y) {    })
-}
-
-updateWidgets.geomorph <- function(e) {
-
-}
+# Phase 6 (UI-01/UI-02): the Tk GPA tab builder (ui.geomorph, all tk2* widgets),
+# the bind/init/updateWidgets S3 methods, the tkmessageBox dialogs and the
+# tkgetSaveFile pickers were removed. GPA option flags now travel from the
+# browser GPA tab as a bare CSV over the /gpa route into the gpagen option
+# tclVars via .gmw_session_to_geomorph_env(); the CSV/RDS export save-name comes
+# from the browser field over /savepath (R owns the directory). The GPA/PCA/
+# export compute logic below (compute / .build_geomorph_data forwarding) is
+# unchanged (DGT-03 parity preserved).
 
 #checks if given int value is not zero, returns boolean
 itob <- function(int) {
@@ -196,12 +82,8 @@ itob <- function(int) {
     gm.res <- get0("gm.results", envir = .GlobalEnv, ifnotfound = NULL)
   }
   if (is.null(gm.res)) {
-    tkmessageBox(
-      title = "Information",
-      message = "Run Compute first",
-      icon = "info",
-      type = "ok"
-    )
+    # Surfaced browser-side (modal / status), no Tk dialog.
+    message("GUImorphWeb: run Compute first.")
     return(NULL)
   }
   gm.res
@@ -223,7 +105,7 @@ itob <- function(int) {
   for(i in 1:nSpecimen){
     landmarks <- .landmarks_for_specimen(e, i)
     if(is.null(landmarks) || nrow(landmarks) != as.numeric(e$landmarkNum)) {
-      tkmessageBox(title = "Information", message = paste("Incorrect num of landmark for specimen", i), icon = "info", type = "ok")
+      message(paste("GUImorphWeb: incorrect num of landmark for specimen", i))
       return ()
     }
     coords.lmk[,,i] <- landmarks
@@ -251,7 +133,7 @@ itob <- function(int) {
           return()
         }
         if(nrow(anchors) != as.numeric(e$anchorNum)) {
-          tkmessageBox(title = "Information", message = paste("Incorrect num of anchor for specimen", i), icon = "info", type = "ok")
+          message(paste("GUImorphWeb: incorrect num of anchor for specimen", i))
           return()
         }
         coords.anc[,,i] <- anchors
@@ -300,7 +182,7 @@ itob <- function(int) {
 # geomorph-native export: a plethodon-style list saved as .rds
 exportGeomorph <- function(e) {
   if (is.null(e$activeDataList) || length(e$activeDataList) == 0) {
-    tkmessageBox(title = "Information", message = "No specimens to export.", icon = "info", type = "ok"); return(invisible())
+    message("GUImorphWeb: no specimens to export."); return(invisible())
   }
   gd <- .build_geomorph_data(e)
   if (is.null(gd)) return(invisible())
@@ -310,9 +192,15 @@ exportGeomorph <- function(e) {
   dimnames(gd$land) <- list(NULL, c("x", "y", "z"), nm)
   gmData <- list(land = gd$land, curves = gd$curves, surfaces = gd$surfaces, specimen.names = nm)
 
-  ## ask for the file first, so the workspace object can take the file's name
-  fileName <- tclvalue(tkgetSaveFile(filetypes = "{{geomorph RDS} {.rds}}",
-                                     title = "Save .rds (Cancel = keep in workspace as gmData)"))
+  ## Save-name comes from the browser save-name field over the Plan-01 /savepath
+  ## route; R owns the directory (the session browse dir), so the browser can
+  ## never steer the write location (T-6-18). An empty save-name keeps the
+  ## object in the workspace as gmData (the former Cancel behaviour).
+  fileName <- ""
+  if (!is.null(e$save_name) && nzchar(e$save_name)) {
+    fileName <- file.path(if (!is.null(e$save_dir)) e$save_dir else getwd(),
+                          basename(e$save_name))
+  }
   objName <- "gmData"
   if (nchar(fileName) > 0) {
     if (length(grep("\\.rds$", fileName, ignore.case = TRUE)) == 0) fileName <- paste0(fileName, ".rds")
@@ -365,7 +253,11 @@ compute <- function(e) {
 
 #saves data as .csv
 save <- function(e) {
-  filename <- tclvalue(tkgetSaveFile())
+  # Save-name from the browser field over /savepath; R owns the directory. An
+  # empty save-name is a no-op (the former Cancel path). (T-6-18)
+  filename <- if (!is.null(e$save_name) && nzchar(e$save_name))
+    file.path(if (!is.null(e$save_dir)) e$save_dir else getwd(),
+              basename(e$save_name)) else ""
   if (nchar(filename)) {
     gm.res <- .gm_results_or_warn(e)
     if (is.null(gm.res)) {
@@ -405,16 +297,14 @@ plotPCA <- function(e) {
   aligned <- .gm_aligned_coords(gm.res)
   n <- dim(aligned)[3]
   if (is.null(n) || is.na(n) || n < 2) {
-    tkmessageBox(title = "PCA", message = "PCA needs at least 2 specimens.", icon = "info", type = "ok")
+    message("GUImorphWeb PCA: needs at least 2 specimens.")
     return()
   }
 
   pca <- tryCatch(geomorph::gm.prcomp(aligned), error = function(err) err)
   if (inherits(pca, "error")) {
-    tkmessageBox(title = "PCA",
-      message = paste0("The ordination could not be computed.\n\ngm.prcomp reported: ",
-                       conditionMessage(pca)),
-      icon = "error", type = "ok")
+    message(paste0("GUImorphWeb PCA: the ordination could not be computed. ",
+                   "gm.prcomp reported: ", conditionMessage(pca)))
     return()
   }
 
@@ -426,9 +316,7 @@ plotPCA <- function(e) {
   # the m x 1 shape, so the branch works as originally intended.
   scores <- pca$x
   if (is.null(scores) || length(scores) == 0L) {
-    tkmessageBox(title = "PCA",
-      message = "The ordination returned no component scores, so there is nothing to plot.",
-      icon = "info", type = "ok")
+    message("GUImorphWeb PCA: the ordination returned no component scores.")
     return()
   }
   scores <- as.matrix(scores)
@@ -535,7 +423,7 @@ plotPCA <- function(e) {
   e$sliderNum   <- if (!is.null(specs[[1]]$surfaces)) nrow(as.matrix(specs[[1]]$surfaces)) else 0L
 
   # gpagen option fields as tclVars, exactly as compute()/.build_geomorph_data()
-  # read them via tclvalue(). Defaults mirror the native ui.geomorph tclVar seeds.
+  # read them via tclvalue(). Defaults mirror the native GPA-tab tclVar seeds.
   optv <- function(key, default) {
     v <- if (!is.null(opts[[key]])) opts[[key]] else default
     tcltk::tclVar(v)
@@ -552,6 +440,13 @@ plotPCA <- function(e) {
   e$approxBE       <- optv("approxBE", 0)
   e$parallel       <- optv("parallel", 0)
   e$statusLabel    <- NULL
+
+  # CSV/RDS export save-name comes from the browser field over the Plan-01
+  # /savepath route; R owns the directory (the session browse dir). save() and
+  # exportGeomorph() read these two slots instead of the retired Tk save picker,
+  # so /save-family writes carry no browser-chosen path (T-6-18).
+  e$save_name <- if (!is.null(s$save_name)) s$save_name else NULL
+  e$save_dir  <- if (!is.null(s$browse_dir)) s$browse_dir else getwd()
 
   # Marks this env as the browser/session read path so .landmarks_for_specimen
   # (and any other native-query fallback) NEVER calls into the Tk canvas, which
@@ -612,9 +507,8 @@ plotMeanShape <- function(e) {
   gm.res <- .gm_results_or_warn(e)
   if (is.null(gm.res)) return()
   if (!requireNamespace("Rvcg", quietly = TRUE)) {
-    tkmessageBox(title = "Mean shape",
-      message = "Needs Rvcg. Run install.packages(\"Rvcg\").",
-      icon = "error", type = "ok"); return()
+    message("GUImorphWeb mean shape: needs Rvcg. Run install.packages(\"Rvcg\").")
+    return()
   }
   M <- as.matrix(gm.res$consensus)
   factor <- suppressWarnings(as.numeric(tclvalue(e$bpFactor)))
@@ -624,9 +518,7 @@ plotMeanShape <- function(e) {
   cat(sprintf("Mean-shape mesh: spacing %.4f, factor %.2f, radius %.4f\n", spacing, factor, r))
   mesh <- try(Rvcg::vcgBallPivoting(M, radius = r, clustering = 0.2, angle = pi / 2), silent = TRUE)
   if (inherits(mesh, "try-error") || is.null(mesh$it) || ncol(mesh$it) == 0) {
-    tkmessageBox(title = "Mean shape",
-      message = sprintf("No faces at radius %.4f. Raise the factor for holes, lower it if faces fuse.", r),
-      icon = "warning", type = "ok")
+    message(sprintf("GUImorphWeb mean shape: no faces at radius %.4f. Raise the factor for holes, lower it if faces fuse.", r))
     return()
   }
   wire <- as.character(tclvalue(e$meshWire)) == "1"
