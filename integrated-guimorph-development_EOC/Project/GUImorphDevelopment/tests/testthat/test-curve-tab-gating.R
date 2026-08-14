@@ -5,7 +5,9 @@ pkg_root <- normalizePath(file.path(testthat::test_path(), "..", ".."))
 skip_if_no_pkg_source()
 source(file.path(pkg_root, "R", "3dDigitize.main.r"), local = FALSE)
 
-.stub_tcl <- function(...) invisible(NULL)
+# Plan 06-04 stripped the Tk notebook widget calls (tcl tab state) from
+# refreshTabGating; the browser shell owns notebook rendering. The function now
+# computes server-side tab-enable state only, so no tcltk stubbing is required.
 
 make_gating_e <- function(nLm, landmarkNum) {
   e <- new.env(parent = emptyenv())
@@ -17,13 +19,6 @@ make_gating_e <- function(nLm, landmarkNum) {
   e
 }
 
-with_stub_tcl <- function(expr) {
-  old_tcl <- getFromNamespace("tcl", "tcltk")
-  on.exit(assignInNamespace("tcl", old_tcl, "tcltk"), add = TRUE)
-  assignInNamespace("tcl", .stub_tcl, "tcltk")
-  force(expr)
-}
-
 test_that("refreshTabGating returns invisibly when nb is NULL", {
   e <- new.env(parent = emptyenv())
   e$nb <- NULL
@@ -32,12 +27,12 @@ test_that("refreshTabGating returns invisibly when nb is NULL", {
 
 test_that("refreshTabGating enables tabs 2-4 when current specimen landmarks complete", {
   e <- make_gating_e(10L, 10L)
-  with_stub_tcl(refreshTabGating(e))
+  refreshTabGating(e)
   expect_equal(unname(e$tabState[2:4]), c(1L, 1L, 1L))
 })
 
 test_that("refreshTabGating keeps tabs 2-4 disabled when landmarks incomplete", {
   e <- make_gating_e(5L, 10L)
-  with_stub_tcl(refreshTabGating(e))
+  refreshTabGating(e)
   expect_equal(unname(e$tabState[2:4]), c(0L, 0L, 0L))
 })

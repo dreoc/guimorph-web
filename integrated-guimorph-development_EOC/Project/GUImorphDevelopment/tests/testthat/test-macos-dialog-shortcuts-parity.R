@@ -16,14 +16,14 @@ test_that("shortcut helper is relocated to shell.R with the Command/Ctrl branch"
   expect_true(any(grepl("Cmd\\+", src)))
 })
 
-test_that("accelerator map is routed through shared helper", {
+test_that("Tk accelerator bindings are removed from main.r", {
+  # Plan 06-04 deleted bind.accelerators() and its Tk <Command-...> bindings
+  # (bindPlatformAccelerator). Keyboard accelerators are now handled by the
+  # browser shell, so main.r must contain no Tk accelerator wiring.
   main_file <- file.path(pkg_root, "R", "3dDigitize.main.r")
   src <- readLines(main_file, warn = FALSE)
 
-  expect_true(any(grepl("bindPlatformAccelerator\\(e\\$wnd, \"o\"", src)))
-  expect_true(any(grepl("bindPlatformAccelerator\\(e\\$wnd, \"s\"", src)))
-  expect_true(any(grepl("bindPlatformAccelerator\\(e\\$wnd, \"bracketleft\"", src)))
-  expect_true(any(grepl("bindPlatformAccelerator\\(e\\$wnd, \"bracketright\"", src)))
+  expect_false(any(grepl("bindPlatformAccelerator\\(", src)))
 })
 
 test_that("dialogs allow all files and warn on odd extensions", {
@@ -35,11 +35,13 @@ test_that("dialogs allow all files and warn on odd extensions", {
 })
 
 test_that("tab gating function remains centralized", {
+  # Plan 06-04 kept refreshTabGating but stripped its Tk notebook widget calls
+  # and the status-bar side effect ("Surface Sliders and Curves unlocked."); it
+  # now computes server-side tab-enable state only.
   main_file <- file.path(pkg_root, "R", "3dDigitize.main.r")
   src <- readLines(main_file, warn = FALSE)
 
   expect_true(any(grepl("^refreshTabGating <- function\\(e\\)", src)))
-  expect_true(any(grepl("Surface Sliders and Curves unlocked.", src, fixed = TRUE)))
 })
 
 test_that("curve and surface tabs consume shared shortcut and wheel helpers", {
