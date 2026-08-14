@@ -34,11 +34,23 @@ test_that("native curve-selection handler is gone from curve.r (UI-02)", {
   expect_true(any(grepl("^write\\.curve <- function", src)))
 })
 
-test_that("surface template/downsample early exits restore operation state", {
+# Plan 06-06 stripped the Tk surface tab builder (ui.surface), the
+# Set-Number-of-Surface-Sliders toplevel, and the now-dead Tk build-template /
+# downsample handlers (disableOper/buildTemplate/downSample) with their
+# tkmessageBox status dialogs and native add/set engine verbs. Surface
+# digitizing is now server-driven over /downsample via .gmw_downsample_session;
+# surface.r retains only the non-Tk headless downsample + template/.dgt
+# serializers. This inverts the former presence assertion (UI-01/UI-02).
+test_that("Tk surface build/downsample handlers are gone from surface.r (UI-01/UI-02)", {
   surface_file <- file.path(pkg_root, "R", "3dDigitize.surface.r")
-  src <- readLines(surface_file, warn = FALSE)
+  src  <- readLines(surface_file, warn = FALSE)
+  code <- sub("#.*$", "", src)
 
-  expect_gte(sum(grepl("disableOper\\(e, F\\)", src)), 4)
-  expect_true(any(grepl("Build template requires landmarks on the specimen.", src, fixed = TRUE)))
-  expect_true(any(grepl("Downsample requires landmarks on the specimen.", src, fixed = TRUE)))
+  expect_false(any(grepl("disableOper", code, fixed = TRUE)))
+  expect_false(any(grepl("tkmessageBox", code, fixed = TRUE)))
+  expect_false(any(grepl("(^|[^._[:alnum:]])(add|set|del|shows)\\(", code)))
+  # The headless downsample seam + .dgt serializers survive the strip.
+  expect_true(any(grepl("^\\.gmw_downsample_session <- function", src)))
+  expect_true(any(grepl("^read\\.surface <- function", src)))
+  expect_true(any(grepl("^write\\.surface <- function", src)))
 })
