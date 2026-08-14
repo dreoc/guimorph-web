@@ -118,18 +118,43 @@ test_that("the session-end finalizer registers exactly once", {
   expect_false("finalizer_registered" %in% ls(.gmw_server))
 })
 
-test_that("lifecycle work never touches the tkogl2 engine state", {
+test_that("the native engine is retired and the shell never revives it", {
   skip_if_no_pkg_source()
 
-  # transport.R must never write the CMP-01 oracle engine env.
+  # Kept from the pre-retirement gate: transport.R must never write the engine
+  # status env. (Once the CMP-01 oracle invariant; now a permanent one.)
   tsrc <- readLines(file.path(pkg_root, "R", "transport.R"), warn = FALSE)
-  expect_false(any(grepl(".gmw_engine$", tsrc, fixed = TRUE)))
-  expect_false(any(grepl(".gmw_engine <-", tsrc, fixed = TRUE)))
+  engine_env <- paste0(".", "gmw_engine")   # pattern-built so this file's prose can't self-trip
+  expect_false(any(grepl(paste0(engine_env, "$"),  tsrc, fixed = TRUE)))
+  expect_false(any(grepl(paste0(engine_env, " <-"), tsrc, fixed = TRUE)))
 
-  # rtkogl.R still carries the native oracle load path (proving it was untouched).
-  rsrc <- readLines(file.path(pkg_root, "R", "rtkogl.R"), warn = FALSE)
-  expect_true(any(grepl(".onLoad", rsrc, fixed = TRUE)))
-  expect_true(any(grepl("Tkogl2", rsrc, fixed = TRUE)))
+  # INVERTED (Plan 06-07): the engine binding file, its shipped binaries, and its
+  # load path are GONE. This block used to assert rtkogl.R still carried the
+  # native oracle .onLoad; it now asserts the retirement is complete, in the same
+  # change as the deletion, so the suite is never left red (Pitfall 6 / T-6-22).
+  expect_false(file.exists(file.path(pkg_root, "R", "rtkogl.R")))
+
+  # No shipped native binary lingers under inst/libs/ (tkogl2* / glut64*).
+  libs <- list.files(file.path(pkg_root, "inst", "libs"),
+                     recursive = TRUE, full.names = FALSE)
+  expect_false(any(grepl(paste0("tk", "ogl2"), libs, fixed = TRUE)))
+  expect_false(any(grepl("glut64",            libs, fixed = TRUE)))
+
+  # No engine load hook / status env / digitizing gate survives anywhere in R/
+  # (comment-stripped so kept prose is not mistaken for live code).
+  onload_tok <- paste0(".", "onLoad")
+  engine_req <- paste0(".", "gmw_require_engine")
+  r_files <- list.files(file.path(pkg_root, "R"), pattern = "[.][Rr]$",
+                        full.names = TRUE)
+  for (rf in r_files) {
+    code <- sub("#.*$", "", readLines(rf, warn = FALSE))
+    expect_false(any(grepl(onload_tok, code, fixed = TRUE)),
+                 info = paste("engine load hook survives in", basename(rf)))
+    expect_false(any(grepl(engine_env, code, fixed = TRUE)),
+                 info = paste("engine status env survives in", basename(rf)))
+    expect_false(any(grepl(engine_req, code, fixed = TRUE)),
+                 info = paste("engine gate survives in", basename(rf)))
+  }
 })
 
 test_that("served PLY bytes are byte-identical to disk (raw, never JSON)", {
