@@ -420,6 +420,122 @@ if (!exists("dbg", mode = "function")) {
       return(ok204)
     }
 
+    # -- Phase-6 browser-shell routes (UI-01) --------------------------------
+    # R owns the filesystem, the browse directory, and every chosen path. The
+    # browser only ever returns a basename R itself enumerated over /files; no
+    # branch below joins a request BODY to the filesystem without first checking
+    # membership in that server-owned enumeration (T-6-01/T-6-02, D-03).
+
+    # GET /files -- list the server-owned browse dir, .dgt/.ply only, one name
+    # per line. list.files() is non-recursive by default (never descends into or
+    # lists parents, T-6-01) and returns bare basenames (no directory component).
+    if (grepl("/files$", path)) {
+      d <- .gmw_session_browse_dir(token)
+      names <- list.files(d, pattern = "\\.(dgt|ply)$", ignore.case = TRUE)
+      return(list(status = 200L,
+                  headers = list("Content-Type" = "text/plain"),
+                  body = paste(names, collapse = "\n")))
+    }
+
+    # POST /open -- open a file the browser selected from the /files listing.
+    # The body is a bare basename. R re-enumerates the SAME server-owned set and
+    # records the chosen path ONLY when the selection is a member of it; `..`,
+    # absolute paths, and unlisted names are rejected without touching the
+    # filesystem (membership check, never file.path(dir, untrusted), T-6-02/D-03).
+    # The reader is tryCatch-wrapped so a malformed .dgt surfaces an error instead
+    # of crashing the listener (T-6-03). The concrete server-side effect this plan
+    # commits to is recording the validated absolute path on the session; the full
+    # specimen load into the session record is wired by the browser-shell plan.
+    if (grepl("/open$", path)) {
+      sel <- strsplit(read_body(), "\n", fixed = TRUE)[[1]][1]
+      if (!is.na(sel) && nzchar(sel)) {
+        d       <- .gmw_session_browse_dir(token)
+        entries <- list.files(d, pattern = "\\.(dgt|ply)$", ignore.case = TRUE)
+        if (sel %in% entries) {
+          tryCatch({
+            s <- .gmw_session_ensure(token)
+            s$opened <- file.path(d, sel)     # join happens AFTER membership only
+            assign(token, s, envir = .gmw_session)
+            dbg(paste0("gmw open: ", token, " <- ", sel))
+          }, error = function(e) NULL)
+        }
+      }
+      return(ok204)
+    }
+
+    # POST /savepath -- store a bare save-NAME on the session (R still owns the
+    # directory, consistent with /save carrying no path, T-6-05). Reject any name
+    # carrying a path separator or `..` so the browser can never steer the write
+    # location; only a bare basename is retained.
+    if (grepl("/savepath$", path)) {
+      nm <- strsplit(read_body(), "\n", fixed = TRUE)[[1]][1]
+      if (!is.na(nm) && nzchar(nm) &&
+          !grepl("[/\\\\]", nm) && !grepl("\\.\\.", nm)) {
+        s <- .gmw_session_ensure(token)
+        s$save_name <- nm
+        assign(token, s, envir = .gmw_session)
+        dbg(paste0("gmw savepath: ", token))
+      }
+      return(ok204)
+    }
+
+    # GET /status -- bare CSV of live specimen index, mode, and per-specimen
+    # landmark/anchor/surface counts (no JSON). mode defaults to "landmark" until
+    # a mode-set route lands in the browser-shell plan.
+    if (grepl("/status$", path)) {
+      s   <- .gmw_session_ensure(token)
+      rec <- s$specimens[[s$current]]
+      nrow0 <- function(m) if (is.matrix(m)) nrow(m) else 0L
+      mode  <- if (!is.null(s$mode)) s$mode else "landmark"
+      body  <- paste(c(s$current, mode,
+                       nrow0(rec$land), nrow0(rec$anchor), nrow0(rec$surfaces)),
+                     collapse = ",")
+      return(list(status = 200L,
+                  headers = list("Content-Type" = "text/plain"),
+                  body = body))
+    }
+
+    # GET /tabstate -- bare CSV of the server-owned tab-gating flags (0/1) for the
+    # digitize / anchor / curve-surface / analysis tabs. Derived live from the
+    # active specimen's placement counts so the browser can grey unavailable tabs
+    # (mirrors the Tk refreshTabGating gating, now server-owned).
+    if (grepl("/tabstate$", path)) {
+      s   <- .gmw_session_ensure(token)
+      rec <- s$specimens[[s$current]]
+      nrow0 <- function(m) if (is.matrix(m)) nrow(m) else 0L
+      has_land   <- nrow0(rec$land)   > 0L
+      has_anchor <- nrow0(rec$anchor) > 0L
+      flags <- c(1L,                                   # digitize: always open
+                 as.integer(has_land),                 # anchor: after a landmark
+                 as.integer(has_land),                 # curve/surface: after a landmark
+                 as.integer(has_land && has_anchor))   # analysis: land + anchor
+      return(list(status = 200L,
+                  headers = list("Content-Type" = "text/plain"),
+                  body = paste(flags, collapse = ",")))
+    }
+
+    # POST /msgack -- acknowledge a browser modal message. No state to mutate; the
+    # ack simply confirms the message was seen (204). Replaces tkmessageBox's
+    # blocking OK with a non-blocking, JSON-free beacon.
+    if (grepl("/msgack$", path)) {
+      dbg(paste0("gmw msgack: ", token))
+      return(ok204)
+    }
+
+    # POST /color -- store a chosen colour on the session. The body MUST match a
+    # strict #rrggbb hex (base-R regex, no eval, no JSON); a non-matching body is
+    # dropped and nothing is stored (T-6-05). Replaces tk_chooseColor.
+    if (grepl("/color$", path)) {
+      hex <- strsplit(read_body(), "\n", fixed = TRUE)[[1]][1]
+      if (!is.na(hex) && grepl("^#[0-9a-fA-F]{6}$", hex)) {
+        s <- .gmw_session_ensure(token)
+        s$color <- hex
+        assign(token, s, envir = .gmw_session)
+        dbg(paste0("gmw color: ", token, " <- ", hex))
+      }
+      return(ok204)
+    }
+
     list(status = 404L, headers = list("Content-Type" = "text/plain"), body = "")
   }
 }
@@ -731,6 +847,22 @@ gmw_picks <- function(token = NULL) {
   s <- .gmw_session_get(token)
   if (is.null(s)) s <- .gmw_session_init(token)
   s
+}
+
+#' The server-owned browse directory for one token's file picker
+#'
+#' Returns the session \code{browse_dir} (seeded by \code{.gmw_serve_mesh(dir=)}),
+#' falling back to \code{getwd()} for a session that predates the slot or was
+#' created lazily by a route before any serve. This is the ONLY directory the
+#' \code{/files} listing and \code{/open} membership check ever read (UI-01/D-03):
+#' R owns it end to end, so a browser-supplied path can never widen it.
+#' @param token the per-viewport token.
+#' @return a length-1 directory path string.
+#' @keywords internal
+#' @noRd
+.gmw_session_browse_dir <- function(token) {
+  s <- .gmw_session_ensure(token)
+  if (!is.null(s$browse_dir)) s$browse_dir else getwd()
 }
 
 #' Map a route kind ("landmark"/"anchor"/"surface") to its record slot name
