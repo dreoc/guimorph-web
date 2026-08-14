@@ -448,6 +448,8 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
     mode = m;
     if (m === "curve") curveSel = [];
     var mi = document.getElementById("m"); if (mi) mi.textContent = mode;
+    // Keep the shell status-bar mode readout (06-02) in sync with the HUD #m.
+    var sm = document.getElementById("st-mode"); if (sm) sm.textContent = mode;
   }
 
   // Mode keys: (a)nchor, (c)urve, (l)andmark, (d)elete; (u)ndo fires at once.
@@ -768,6 +770,230 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
     }
   })();
   document.addEventListener("click", closeAllMenus);
+
+  // ---- Shell wiring (06-02): menus, tabs, specimen nav, dialogs, shortcuts ----
+  // Every action drives the Plan-01 routes through the existing fetch()/post()
+  // plumbing with RELATIVE same-origin route names (no absolute URLs, no JSON),
+  // so the offline / server-owns-path invariants hold (T-6-07). R enumerates the
+  // files; the browser returns only a basename R itself listed (T-6-06) and adds
+  // no path logic of its own -- membership is enforced server-side.
+  function esc(s){
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function setText(id, v){ var el = document.getElementById(id); if (el) el.textContent = v; }
+
+  // File picker: fetch the R-enumerated /files listing and render it as a
+  // single-select list. onChoose receives the chosen basename, which is posted
+  // to /open (R re-validates membership before opening, T-6-06).
+  function openPicker(title, okLabel, onChoose){
+    fetch("files").then(function(r){ return r.text(); }).then(function(txt){
+      var names = (txt || "").split("\\n").filter(function(x){ return x.length > 0; });
+      if (!names.length){
+        openModal(title, "<p>No .dgt or .ply files in the browse directory.</p>", null, "OK");
+        return;
+      }
+      var rows = names.map(function(n){
+        return "<li data-name=\"" + esc(n) + "\">" + esc(n) + "</li>";
+      }).join("");
+      var sel = null;
+      openModal(title, "<ul class=\"picker\">" + rows + "</ul>", function(){
+        if (sel) onChoose(sel);
+      }, okLabel);
+      var lis = document.querySelectorAll("#modal-body li");
+      for (var i = 0; i < lis.length; i++){
+        (function(li){
+          li.addEventListener("click", function(){
+            for (var j = 0; j < lis.length; j++) lis[j].classList.remove("sel");
+            li.classList.add("sel");
+            sel = li.getAttribute("data-name");
+          });
+        })(lis[i]);
+      }
+    }).catch(function(){});
+  }
+
+  // Multi-select picker + save-name field (RESEARCH A5): the shared modal for
+  // Add PLY and Merge. onCommit receives the array of checked basenames and the
+  // (optional) bare save-name, both routed R-side (/open, /savepath) -- the
+  // browser never joins a path.
+  function openMultiPicker(title, okLabel, onCommit){
+    fetch("files").then(function(r){ return r.text(); }).then(function(txt){
+      var names = (txt || "").split("\\n").filter(function(x){ return x.length > 0; });
+      if (!names.length){
+        openModal(title, "<p>No .dgt or .ply files in the browse directory.</p>", null, "OK");
+        return;
+      }
+      var rows = names.map(function(n){
+        return "<li><label><input type=\"checkbox\" value=\"" + esc(n) + "\"> " +
+               esc(n) + "</label></li>";
+      }).join("");
+      var body = "<ul class=\"picker\">" + rows + "</ul>" +
+                 "<input type=\"text\" id=\"pick-save\" placeholder=\"Save as (name, optional)\">";
+      openModal(title, body, function(){
+        var boxes = document.querySelectorAll("#modal-body input[type=checkbox]:checked");
+        var chosen = [];
+        for (var i = 0; i < boxes.length; i++) chosen.push(boxes[i].value);
+        var nameEl = document.getElementById("pick-save");
+        var name = nameEl ? nameEl.value : "";
+        if (chosen.length) onCommit(chosen, name);
+      }, okLabel);
+    }).catch(function(){});
+  }
+
+  // Reusable message box (replaces tkmessageBox): a modal whose OK acks /msgack.
+  function showMessage(title, text){
+    openModal(title, "<p>" + esc(text) + "</p>", function(){ post("msgack"); }, "OK");
+  }
+  window.GMW_MESSAGE = showMessage;
+
+  // File menu -> the Plan-01 routes.
+  on("mi-load-ply", function(){
+    openPicker("Load PLY", "Open", function(name){
+      post("open", name).then(function(){ redraw(); refreshStatus(); });
+    });
+  });
+  on("mi-load-dgt", function(){
+    openPicker("Load DGT", "Open", function(name){
+      post("open", name).then(function(){ redraw(); refreshStatus(); });
+    });
+  });
+  on("mi-add-ply", function(){
+    openMultiPicker("Add PLY", "Add", function(chosen, name){
+      var seq = Promise.resolve();
+      chosen.forEach(function(n){ seq = seq.then(function(){ return post("open", n); }); });
+      if (name) seq = seq.then(function(){ return post("savepath", name); });
+      seq.then(function(){ redraw(); refreshStatus(); });
+    });
+  });
+  on("mi-merge", function(){
+    openMultiPicker("Merge", "Merge and Save", function(chosen, name){
+      var seq = Promise.resolve();
+      chosen.forEach(function(n){ seq = seq.then(function(){ return post("open", n); }); });
+      if (name) seq = seq.then(function(){ return post("savepath", name); });
+      seq.then(function(){ return post("save"); })
+         .then(function(){ redraw(); refreshStatus(); });
+    });
+  });
+  on("mi-save", function(){
+    openModal("Save",
+      "<input type=\"text\" id=\"save-name\" placeholder=\"File name (optional)\">",
+      function(){
+        var el = document.getElementById("save-name");
+        var nm = el ? el.value : "";
+        var go = nm ? post("savepath", nm).then(function(){ return post("save"); })
+                    : post("save");
+        go.then(function(){ refreshStatus(); });
+      }, "Save");
+  });
+  on("mi-export-csv", function(){ post("export", "csv"); });
+  on("mi-export-rds", function(){ post("export", "rds"); });
+  on("mi-help", function(){
+    var msg = "<p>GUImorphWeb browser shell.</p><ul>" +
+      "<li><b>l</b> / <b>a</b> / <b>c</b> / <b>d</b> &mdash; landmark / anchor / curve / delete</li>" +
+      "<li><b>u</b> &mdash; undo &middot; <b>r</b> &mdash; reset view</li>" +
+      "<li><b>[</b> / <b>]</b> &mdash; previous / next specimen</li>" +
+      "<li><b>Ctrl/Cmd+S</b> &mdash; save</li></ul>";
+    openModal("Help", msg, function(){ post("msgack"); }, "OK");
+  });
+
+  // Color picker (replaces tk_chooseColor): the native <input type=color> emits
+  // a #rrggbb value posted verbatim to /color (R re-validates the hex, T-6-08).
+  (function(){
+    var ci = document.getElementById("st-color");
+    if (ci) ci.addEventListener("change", function(){ post("color", ci.value); });
+  })();
+
+  // Tab strip: clicking a tab sets its digitizing mode (where applicable) and
+  // marks it active; /tabstate greys tabs whose prerequisites are unmet.
+  function selectTab(name){
+    var btns = document.querySelectorAll("#tabs button");
+    for (var i = 0; i < btns.length; i++)
+      btns[i].classList.toggle("active", btns[i].getAttribute("data-tab") === name);
+  }
+  (function wireTabs(){
+    var btns = document.querySelectorAll("#tabs button");
+    for (var i = 0; i < btns.length; i++){
+      (function(b){
+        b.addEventListener("click", function(){
+          if (b.disabled) return;
+          var m = b.getAttribute("data-mode");
+          if (m) setMode(m);
+          selectTab(b.getAttribute("data-tab"));
+        });
+      })(btns[i]);
+    }
+    selectTab("digitize");
+  })();
+  function refreshTabState(){
+    fetch("tabstate").then(function(r){ return r.text(); }).then(function(txt){
+      var f = (txt || "").split(",").map(Number);
+      var map = { digitize: f[0], anchor: f[1], surface: f[2], curve: f[2], gpa: f[3] };
+      var btns = document.querySelectorAll("#tabs button");
+      for (var i = 0; i < btns.length; i++){
+        var t = btns[i].getAttribute("data-tab");
+        btns[i].disabled = (map[t] === 0);
+      }
+    }).catch(function(){});
+  }
+
+  // Specimen navigation: prev/next buttons and the <select> all route through
+  // the existing switchSpecimen(n) (RE-SERVE, A4) -- the index is NEVER set
+  // inline without the mesh re-serve + redraw(). curSpecimen tracks the live
+  // server index reported by /status.
+  var curSpecimen = 1;
+  function populateSpecimenSelect(n){
+    var sel = document.getElementById("sp-select");
+    if (!sel) return;
+    var want = Math.max(n, sel.options.length, 1);
+    if (sel.options.length !== want){
+      sel.innerHTML = "";
+      for (var i = 1; i <= want; i++){
+        var o = document.createElement("option");
+        o.value = String(i); o.textContent = String(i);
+        sel.appendChild(o);
+      }
+    }
+    sel.value = String(n);
+  }
+  on("sp-prev", function(){ if (curSpecimen > 1) switchSpecimen(curSpecimen - 1); });
+  on("sp-next", function(){ switchSpecimen(curSpecimen + 1); });
+  (function(){
+    var sel = document.getElementById("sp-select");
+    if (sel) sel.addEventListener("change", function(){
+      switchSpecimen(Number(sel.value));
+    });
+  })();
+
+  // Keyboard parity: [ / ] step specimens (RE-SERVE), Ctrl/Cmd+S saves. Added as
+  // a sibling keydown listener so the existing mode-key handler is untouched.
+  window.addEventListener("keydown", function(e){
+    if (e.key === "[") { e.preventDefault(); if (curSpecimen > 1) switchSpecimen(curSpecimen - 1); }
+    else if (e.key === "]") { e.preventDefault(); switchSpecimen(curSpecimen + 1); }
+    else if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
+      e.preventDefault(); post("save");
+    }
+  });
+
+  // Live status readout: pull the server-owned specimen index + counts from
+  // /status and the tab-gating flags from /tabstate. Called once at boot and on
+  // a light poll so counts stay live after every mutating action (pick, anchor,
+  // delete, undo, specimen switch, compute) without wiring each call site.
+  function refreshStatus(){
+    fetch("status").then(function(r){ return r.text(); }).then(function(txt){
+      var p = (txt || "").split(",");
+      if (p.length >= 5){
+        curSpecimen = Number(p[0]) || 1;
+        setText("st-land", p[2]);
+        setText("st-anchor", p[3]);
+        setText("st-surface", p[4]);
+        populateSpecimenSelect(curSpecimen);
+      }
+    }).catch(function(){});
+    refreshTabState();
+  }
+  refreshStatus();
+  setInterval(refreshStatus, 1000);
 
   // Record-and-replay entry point (PICK-03 browser half). A manual parity
   // harness calls window.GMW_REPLAY(pose) with a recorded native camera:
