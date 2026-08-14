@@ -618,6 +618,157 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
   on("btn-rds", function(){ post("export", "rds"); });
   on("btn-save", function(){ post("save"); });
 
+  // ===== Browser shell: menu bar / tab strip / status bar / modal (06-02) =====
+  // The full Tk-parity chrome is injected from the parameter-free BODY (after
+  // the MESH_URL marker) so the sprintf HEAD stays under the 8192-byte cap. The
+  // DOM clones the #t toolbar idiom; its CSS is added as a <style> element built
+  // here rather than in the HEAD <style> block for the same 8192-byte reason.
+  // Every literal percent is doubled (%%) because the BODY is un-escaped once by
+  // gsub("%%","%") after the split. buildShell only creates structure; the route
+  // wiring lives in the shell-wiring block below.
+  (function buildShell(){
+    var css = [
+      "#menubar{position:fixed;left:0;top:0;right:0;height:28px;display:flex;",
+        "align-items:center;gap:2px;padding:0 6px;background:#f4f4f6;",
+        "border-bottom:1px solid #ccc;font:13px system-ui,sans-serif;z-index:20}",
+      ".menu{position:relative}",
+      ".menu>button{background:none;border:0;padding:4px 10px;cursor:pointer;font:inherit}",
+      ".menu>button:hover{background:#e2e2ea}",
+      ".menu .items{display:none;position:absolute;left:0;top:100%%;min-width:150px;",
+        "background:#fff;border:1px solid #bbb;box-shadow:0 2px 6px rgba(0,0,0,.15);z-index:21}",
+      ".menu.open .items{display:block}",
+      ".menu .items button{display:block;width:100%%;text-align:left;border:0;",
+        "background:none;padding:6px 12px;cursor:pointer;font:inherit}",
+      ".menu .items button:hover{background:#eef}",
+      "#tabs{position:fixed;left:0;top:28px;right:0;height:30px;display:flex;gap:2px;",
+        "padding:2px 6px 0;background:#ececf0;border-bottom:1px solid #ccc;z-index:19}",
+      "#tabs button{border:1px solid #bbb;border-bottom:0;border-radius:5px 5px 0 0;",
+        "background:#dcdce2;padding:4px 12px;cursor:pointer;font:12px system-ui,sans-serif}",
+      "#tabs button.active{background:#fff;font-weight:600}",
+      "#tabs button:disabled{color:#aaa;cursor:not-allowed;background:#e6e6ea}",
+      "#status{position:fixed;left:0;right:0;bottom:0;height:24px;display:flex;",
+        "align-items:center;gap:16px;padding:0 10px;background:#f4f4f6;",
+        "border-top:1px solid #ccc;color:#333;font:12px system-ui,sans-serif;z-index:20}",
+      "#status button{font:11px system-ui,sans-serif;padding:1px 7px;cursor:pointer}",
+      "#modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);",
+        "z-index:50;align-items:center;justify-content:center}",
+      "#modal.open{display:flex}",
+      "#modal .box{background:#fff;border-radius:8px;min-width:300px;max-width:80vw;",
+        "max-height:80vh;overflow:auto;box-shadow:0 8px 30px rgba(0,0,0,.3)}",
+      "#modal h3{margin:0;padding:12px 16px;border-bottom:1px solid #eee;font:600 14px system-ui}",
+      "#modal .mbody{padding:12px 16px}",
+      "#modal .mfoot{padding:10px 16px;border-top:1px solid #eee;text-align:right}",
+      "#modal .mfoot button{padding:5px 14px;margin-left:6px;cursor:pointer}",
+      "#modal ul.picker{list-style:none;margin:0;padding:0;max-height:40vh;overflow:auto}",
+      "#modal ul.picker li{padding:5px 8px;cursor:pointer;border-radius:4px}",
+      "#modal ul.picker li:hover{background:#eef}",
+      "#modal ul.picker li.sel{background:#dde7ff}",
+      "#modal input[type=text]{width:100%%;box-sizing:border-box;padding:5px 7px;margin-top:8px}",
+      "#t{top:64px}"
+    ].join("");
+    var st = document.createElement("style");
+    st.textContent = css;
+    document.head.appendChild(st);
+
+    var bar = document.createElement("div");
+    bar.id = "menubar";
+    bar.innerHTML =
+      "<div class=\"menu\" id=\"menu-file\">" +
+        "<button type=\"button\">File</button>" +
+        "<div class=\"items\">" +
+          "<button type=\"button\" id=\"mi-load-ply\">Load PLY</button>" +
+          "<button type=\"button\" id=\"mi-load-dgt\">Load DGT</button>" +
+          "<button type=\"button\" id=\"mi-add-ply\">Add PLY</button>" +
+          "<button type=\"button\" id=\"mi-save\">Save</button>" +
+          "<button type=\"button\" id=\"mi-export-csv\">Export CSV</button>" +
+          "<button type=\"button\" id=\"mi-export-rds\">Export RDS</button>" +
+          "<button type=\"button\" id=\"mi-merge\">Merge</button>" +
+        "</div>" +
+      "</div>" +
+      "<div class=\"menu\" id=\"menu-help\">" +
+        "<button type=\"button\">Help</button>" +
+        "<div class=\"items\">" +
+          "<button type=\"button\" id=\"mi-help\">About and Shortcuts</button>" +
+        "</div>" +
+      "</div>";
+    document.body.appendChild(bar);
+
+    var tabs = document.createElement("div");
+    tabs.id = "tabs";
+    tabs.innerHTML =
+      "<button type=\"button\" data-tab=\"digitize\" data-mode=\"landmark\">Digitize</button>" +
+      "<button type=\"button\" data-tab=\"anchor\" data-mode=\"anchor\">Anchor</button>" +
+      "<button type=\"button\" data-tab=\"surface\">Surface</button>" +
+      "<button type=\"button\" data-tab=\"curve\" data-mode=\"curve\">Curve</button>" +
+      "<button type=\"button\" data-tab=\"gpa\">GPA</button>";
+    document.body.appendChild(tabs);
+
+    var status = document.createElement("div");
+    status.id = "status";
+    status.innerHTML =
+      "<span>Specimen <select id=\"sp-select\"></select></span>" +
+      "<button type=\"button\" id=\"sp-prev\">&#9664; Prev</button>" +
+      "<button type=\"button\" id=\"sp-next\">Next &#9654;</button>" +
+      "<span>Mode: <b id=\"st-mode\">landmark</b></span>" +
+      "<span>L:<b id=\"st-land\">0</b> A:<b id=\"st-anchor\">0</b> S:<b id=\"st-surface\">0</b></span>" +
+      "<span style=\"margin-left:auto\">Color <input type=\"color\" id=\"st-color\" value=\"#ff2222\"></span>";
+    document.body.appendChild(status);
+
+    var modal = document.createElement("div");
+    modal.id = "modal";
+    modal.innerHTML =
+      "<div class=\"box\">" +
+        "<h3 id=\"modal-title\">Title</h3>" +
+        "<div class=\"mbody\" id=\"modal-body\"></div>" +
+        "<div class=\"mfoot\">" +
+          "<button type=\"button\" id=\"modal-cancel\">Cancel</button>" +
+          "<button type=\"button\" id=\"modal-ok\">OK</button>" +
+        "</div>" +
+      "</div>";
+    document.body.appendChild(modal);
+  })();
+
+  // Reusable modal (replaces every Tk dialog). openModal renders a title, body
+  // HTML, and an OK callback; the file picker, message box, color prompt, and
+  // save-name field all render into this one container. A null onOk makes OK a
+  // plain acknowledge button (message box).
+  var modalOk = null;
+  function openModal(title, bodyHTML, onOk, okLabel){
+    document.getElementById("modal-title").textContent = title;
+    document.getElementById("modal-body").innerHTML = bodyHTML;
+    var okBtn = document.getElementById("modal-ok");
+    okBtn.textContent = okLabel || "OK";
+    modalOk = (typeof onOk === "function") ? onOk : null;
+    document.getElementById("modal").classList.add("open");
+  }
+  function closeModal(){
+    document.getElementById("modal").classList.remove("open");
+    modalOk = null;
+  }
+  on("modal-ok", function(){ var f = modalOk; closeModal(); if (f) f(); });
+  on("modal-cancel", closeModal);
+
+  // Menu dropdowns: clicking a top-level menu button toggles its own list and
+  // closes the others; a click anywhere else closes all of them.
+  function closeAllMenus(){
+    var open = document.querySelectorAll(".menu.open");
+    for (var i = 0; i < open.length; i++) open[i].classList.remove("open");
+  }
+  (function wireMenuToggles(){
+    var tops = document.querySelectorAll(".menu>button");
+    for (var i = 0; i < tops.length; i++){
+      (function(b){
+        b.addEventListener("click", function(e){
+          e.stopPropagation();
+          var m = b.parentNode, wasOpen = m.classList.contains("open");
+          closeAllMenus();
+          if (!wasOpen) m.classList.add("open");
+        });
+      })(tops[i]);
+    }
+  })();
+  document.addEventListener("click", closeAllMenus);
+
   // Record-and-replay entry point (PICK-03 browser half). A manual parity
   // harness calls window.GMW_REPLAY(pose) with a recorded native camera:
   //   pose = { mv:[16], proj:[16], vp:[x,y,w,h], px, py }.
