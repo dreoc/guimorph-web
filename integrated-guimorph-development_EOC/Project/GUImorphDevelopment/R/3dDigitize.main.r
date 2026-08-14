@@ -32,22 +32,6 @@ NULL
 
 NULL
 
-ui <- function(e) {
-  UseMethod("ui", e)
-}
-
-init <- function(e) {
-  UseMethod("init", e)
-}
-
-bind <- function(e) {
-  UseMethod("bind", e)
-}
-
-updateWidgets <- function(e) {
-  UseMethod("updateWidgets", e)
-}
-
 ##gpagen
 ################# main data structure ##############################
 #dgtDataList
