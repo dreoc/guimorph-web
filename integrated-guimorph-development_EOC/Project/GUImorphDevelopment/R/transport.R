@@ -445,17 +445,28 @@ if (!exists("dbg", mode = "function")) {
 #'   the "fixed port allowed through a lab firewall" case -- selection walks
 #'   forward from it through the existing \code{.gmw_pick_port} backup, and if no
 #'   port is free through 49151 it raises a clear error rather than hanging (D-09).
+#' @param dir the server-owned browse directory the shell file picker lists and
+#'   opens from (UI-01/D-03). Seeds the session \code{browse_dir}; defaults to
+#'   \code{getwd()}. Stored verbatim (un-normalized); \code{/files} enumerates it
+#'   and \code{/open} validates a returned basename against that enumeration, so R
+#'   -- never the browser -- owns every path. The rewired \code{GUImorphWeb()}
+#'   entry (Plan 03) passes this through.
 #' @return the served \code{http://127.0.0.1:<port>/<token>/} URL, invisibly.
 #' @keywords internal
 #' @noRd
 .gmw_serve_mesh <- function(ply_path, title = "GUImorphWeb",
-                            background = "#ffffff", open = TRUE, port = NULL) {
+                            background = "#ffffff", open = TRUE, port = NULL,
+                            dir = getwd()) {
   if (!file.exists(ply_path)) {
     stop("GUImorphWeb: cannot serve the mesh -- the PLY file was not found.\n",
          "  Looked for: ", ply_path,
          "\n  Pass the path of an existing .ply file to .gmw_serve_mesh().",
          call. = FALSE)
   }
+
+  # Capture the browse root BEFORE the served-tempdir local `dir` below shadows
+  # the `dir` argument. This is the file picker's server-owned root (UI-01/D-03).
+  browse_dir <- dir
 
   dir <- tempfile(pattern = "guimorphweb-")
   dir.create(dir)
@@ -480,9 +491,14 @@ if (!exists("dbg", mode = "function")) {
   # those subpaths to R rather than routing every missing file there (RESEARCH
   # Alternatives). Phase-5 adds the digitizing edit routes (/anchor, /curve,
   # /delete, /undo, /specimen) and the analytical seams (/downsample, /gpa,
-  # /export, /save) beside the inherited /pick and /close.
+  # /export, /save) beside the inherited /pick and /close. Phase-6 (UI-01) adds
+  # the browser-shell routes: the D-03 file picker (/files list, /open selection),
+  # plus /savepath, /tabstate, /status, /msgack, /color. Each still gets exactly
+  # one excludeStaticPath() entry and is answered by .gmw_digitize_handler.
   dyn_suffixes <- c("close", "pick", "anchor", "curve", "delete", "undo",
-                    "specimen", "overlays", "downsample", "gpa", "export", "save")
+                    "specimen", "overlays", "downsample", "gpa", "export", "save",
+                    "files", "open", "savepath", "tabstate", "status", "msgack",
+                    "color")
   static_map <- c(
     list(httpuv::staticPath(dir)),
     lapply(dyn_suffixes, function(x) httpuv::excludeStaticPath())
@@ -500,6 +516,14 @@ if (!exists("dbg", mode = "function")) {
   )
   # Retain the handle for the session so gc() does not stop the listener.
   assign(token, server, envir = .gmw_server)
+
+  # Seed the server-owned browse directory for this viewport's session (UI-01/
+  # D-03). Ensure creates the empty session lazily; we then set browse_dir to the
+  # captured `dir` argument (stored verbatim, un-normalized) so /files and /open
+  # enumerate/validate against R's own directory, never a browser-supplied path.
+  s <- .gmw_session_ensure(token)
+  s$browse_dir <- browse_dir
+  assign(token, s, envir = .gmw_session)
 
   # Register the session-end teardown finalizer exactly once (lazily, on the
   # first serve). reg.finalizer(onexit = TRUE) is the ONLY hook that fires at
@@ -677,16 +701,22 @@ gmw_picks <- function(token = NULL) {
 #' curves is a 0x3 INTEGER matrix (curves are landmark indices, RESEARCH Pitfall
 #' 5); undo is one-deep and starts \code{NULL}. Session-level curves and undo sit
 #' beside the specimen list because curves are shared across specimens (A7).
+#' \code{browse_dir} is the server-owned directory the shell file picker lists
+#' and opens from (UI-01/D-03); it defaults to \code{getwd()} and is reseeded by
+#' \code{.gmw_serve_mesh(dir = ...)}. It is a SESSION-level slot (not per-specimen)
+#' because one browse root serves every specimen in a viewport. R owns this path;
+#' the browser never sends it -- it only returns a basename R itself enumerated.
 #' @param token the per-viewport token to initialise.
 #' @return the freshly created session list (also stored in \code{.gmw_session}).
 #' @keywords internal
 #' @noRd
 .gmw_session_init <- function(token) {
   s <- list(
-    specimens = list(.gmw_session_empty_record()),
-    current   = 1L,
-    curves    = matrix(integer(0), nrow = 0L, ncol = 3L),
-    undo      = NULL
+    specimens  = list(.gmw_session_empty_record()),
+    current    = 1L,
+    curves     = matrix(integer(0), nrow = 0L, ncol = 3L),
+    undo       = NULL,
+    browse_dir = getwd()
   )
   assign(token, s, envir = .gmw_session)
   s
