@@ -15,6 +15,15 @@ get_curve_date <- function()
 #dgtDataList[imgId][[7]]: zoom
 #dgtDataList[imgId][[8]]: surface file
 
+
+# Phase 6 (UI-01/UI-02): the Tk builder (ui.curve) and every native-engine
+# handler in this file (onSelectCurve, draw.curves, changeDotColor,
+# .redrawAllCurves/.clearAllCurves and the add/set/del/shows bridge) were
+# removed. Curve selection and drawing are server-driven over the existing
+# /curve route (Phase 5); the "Duplicate landmark" and "missed a landmark"
+# guards live browser/route-side now. What remains is the non-Tk curve data
+# model: the state initializer and the .dgt curve serializers R still owns.
+
 #initializes parameters for curve component
 init.curve <- function(e)
 {
@@ -24,58 +33,6 @@ init.curve <- function(e)
 	e$sliders<-c()
 	e$curveBound <- FALSE
 }
-
-#creates user interface layout for curve component
-ui.curve <- function(e, parent)
-{
-  curveCtlFrame <- ttkframe(parent)
-
-  e$curveDescLabel <- ttklabel(
-    curveCtlFrame,
-    text = paste0(
-      "Define curves by selecting 3 landmarks per segment (",
-      shortcutLabel("["), "/", shortcutLabel("]"),
-      " changes specimen)"
-    )
-  )
-  tkconfigure(e$curveDescLabel, foreground = "#505050")
-
-  resetViewBtn <-
-    ttkbutton(
-      curveCtlFrame,
-      text = "Reset view",
-      command = function()
-        onFit(e)
-    )
-
-  tkpack(ttklabel(curveCtlFrame, text = " "), pady = 6)
-  tkpack(e$curveDescLabel, pady = c(0, 4))
-  tkpack(resetViewBtn, pady = 3)
-
-  return (curveCtlFrame)
-}
-
-
-#drag and place landmarks on curve component
-bind.curve <- function(e)
-{
-  if (isTRUE(e$curveBound))
-    return(invisible())
-  e$curveBound <- TRUE
-
-  tkbind(e$canvasFrame, "<ButtonPress-1>", function(x, y) {
-    e$dragX <- as.integer(x)
-    e$dragY <- as.integer(y)
-  })
-
-  tkbind(e$canvasFrame, "<ButtonPress-3>", function(x, y) {
-  })
-  tkbind(e$canvasFrame, "<Double-Button-1>", function(x, y) {
-    onSelectCurve(e, x, y)
-  })
-}
-
-
 
 
 #loads curve data from .dgt file
@@ -133,189 +90,4 @@ write.curve <- function(fileName, curves)
     )
     write("", fileName, append = TRUE)
   }
-}
-
-#display curves to GUI
-draw.curves <- function(curves)
-{
-	dbg("file 3dDigitize.curve ... function draw.curves line 164")
-  dbg(paste ("curves ... nrows",nrow(curves)))
-  dbg(paste ("curves ... ncols",ncol(curves)))
-
-  dbg("This may take a while to compete ! ")
-   ## R code shall be 1 based !
-	for (j in 1:nrow(curves))
-	{
-	  dbg(paste("setting curve number to", j))
-	  add ("SetCurveIndex", j, -1,-1)
-	  add("curve", curves[j,1], curves[j,2], curves[j,3])
-	}
-  dbg("file 3dDigitize.curve ... function draw.curves ... complete")
-}
-
-
-
-#UI layout dynamic update callback
-updateWidgets.curve <- function(e) {
-
-}
-
-#changes rgb values of selected dot to desired color
-changeDotColor<-function(e)
-{
-  dbg("changeDotColor")
-  for(i in 1:3)
-  {
-    x  <- e$curveDots[[(i - 1) * 3 + 1]]
-    y  <- e$curveDots[[(i - 1) * 3 + 2]]
-    id <- e$curveDots[[(i - 1) * 3 + 3]]
-
-    if (set("dot", "selected", x, y))
-    {
-      if (id %in% e$sliders)
-      {
-        set("dot", "color", 0.0, 0.0, 1.0)
-      }
-      else
-      {
-        set("dot", "color", -1.0, -1.0, -1.0)
-      }
-    }
-  }
-}
-
-
-#sets and configures dot on curve
-onSelectCurve <- function(e, x, y)
-{
-  if (e$tab != 3) return(invisible())
-
-  dbg("file 3dDigitize.curve ... function onSelectCurve line 165")
-
-  dbg(paste  ("onSelectCurve argument x", x))
-  dbg(paste  ("onSelectCurve argument y", y))
-
-  if (TRUE == set("dot", "selected", x, y))
-  {
-    id <- -1
-    id <- tclvalue(shows("landmark", "id"))
-    dbg(paste("this is the id returned from shows landmark id ", id))
-
-    if (id %in% e$curveLine)
-    {
-      setStatus(
-        e,
-        "Duplicate landmark in this curve segment \u2014 pick a different landmark.",
-        "warning"
-      )
-      return(invisible())
-    }
-
-
-
-    e$curveLine <- c(e$curveLine, as.numeric(id))
-    e$curveDots <- c(e$curveDots, c(x, y, id))
-
-    dbg("onSelectCurve ... e$curveDots ...")
-    dbg(e$curveDots)
-
-
-    dbg(paste("line 247 ... e$curveDotNum is ",e$curveDotNum ))
-    e$curveDotNum <- e$curveDotNum + 1
-    dbg(paste("line 250 ... e$curveDotNum is ",e$curveDotNum ))
-
-
-
-
-    set("dot","color", as.double(1 / 255),  as.double(164 / 255),   as.double(191 / 255))
-
-    if (e$curveDotNum == 2)
-    {
-      dbg("e$curveDotNum is 2 line 258")
-      e$sliders <- c(e$sliders, id)
-      dbg(e$sliders)
-    }
-    else if (e$curveDotNum == 3)
-    {
-
-      dbg("e$curveDotNum is 3 line 265")
-
-      #why is this done ??
-      set("window", "mode", "digitize")
-      changeDotColor(e)
-
-      set("window", "mode", "curve")
-
-      curves <- e$activeDataList[[1]][[4]]
-      if (is.null(curves)) {
-        curves <- matrix(nrow = 0, ncol = 3)
-      }
-      newCurve <- matrix(e$curveLine, nrow = 1, ncol = 3)
-      curves <- rbind(curves, newCurve)
-      e$activeDataList[[1]][[4]] <- curves
-
-      dbg("existing landmark indices for call to add curve")
-      dbg(paste("e$curveLine[1] ",e$curveLine[1]))
-      dbg(paste("e$curveLine[2] ",e$curveLine[2]))
-      dbg(paste("e$curveLine[3] ",e$curveLine[3]))
-
-
-
-      messageToC(paste("Curve points from R", e$curveLine[1], e$curveLine[2], e$curveLine[3]))
-      dbg("Calling add curve ... ")
-      add("curve", e$curveLine[1], e$curveLine[2], e$curveLine[3])
-      pushUndo(e, list(action = "curve_place", row = as.integer(newCurve[1, ])))
-
-      e$curveDots <- c()
-      e$curveDotNum <- 0
-      e$curveLine <- c()
-    }
-  }
-  else
-  {
-    dbg("file 3dDigitize curve line 296 : else clause ... false return from set dot selected at line 258")
-    if (!is.null(e$statusLabel)) {
-      setStatus(e, "Curve selection missed a landmark; no segment changes were made.", "warning")
-    }
-  }
-
-  dbg("file 3dDigitize.curve ... function onSelectCurve ... end")
-}
-
-
-.redrawAllCurves <- function(e) {
-  curves <- e$activeDataList[[1]][[4]]
-  if (!is.matrix(curves) || nrow(curves) < 1L) {
-    setStatus(e, "No curve segments defined yet.", "warning")
-    return(FALSE)
-  }
-
-  add("initialize", 2, 0, 0)
-  add("InfoCurves", nrow(curves), 3, length(e$activeDataList))
-  add("SetLandmarkIndex", e$currImgId, -1, -2)
-
-  for (j in seq_len(nrow(curves))) {
-    add("SetCurveIndex", j, -1, -1)
-    p1 <- as.integer(curves[j, 1])
-    p2 <- as.integer(curves[j, 2])
-    p3 <- as.integer(curves[j, 3])
-    add("curve", p1, p2, p3)
-  }
-
-  for (j in seq_len(nrow(curves))) {
-    p2 <- as.integer(curves[j, 2])
-    add("curveSetDotSliderColor", p2)
-  }
-
-  add("InfoCurves_complete", 0, 0, 0)
-  showPicture(e)
-  TRUE
-}
-
-.clearAllCurves <- function(e) {
-  add("initialize", 2, 0, 0)
-  add("InfoCurves", 0, 3, length(e$activeDataList))
-  add("InfoCurves_complete", 0, 0, 0)
-  showPicture(e)
-  invisible(TRUE)
 }
