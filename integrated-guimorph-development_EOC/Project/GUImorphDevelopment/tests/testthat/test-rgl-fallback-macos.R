@@ -82,9 +82,11 @@ test_that("a failed native engine load does not abort package load", {
   expect_true(any(grepl("packageStartupMessage", onload_body, fixed = TRUE)))
   expect_true(any(grepl(".gmw_engine$ok", onload_body, fixed = TRUE)))
 
-  # Digitizing, and only digitizing, refuses when the engine is absent.
-  expect_true(any(grepl(".gmw_require_engine()",
-                        .fn_body(src, "GUImorphWeb"), fixed = TRUE)))
+  # NOTE (Plan 06-03, UI-02): GUImorphWeb() was rewired to boot the browser shell
+  # and relocated to R/shell.R; it no longer calls .gmw_require_engine(). The
+  # entry is now engine-independent, so the old "the entry gates on the engine"
+  # assertion is retired. The engine-gate definition (.gmw_require_engine) still
+  # exists below in rtkogl.R until Plan 07 deletes the engine surface.
 })
 
 test_that("plotPCA stays base-graphics (no rgl:: calls)", {
@@ -109,8 +111,10 @@ test_that("plotPCA displays via .plot_show(), not a bare native device (crash-on
 })
 
 test_that(".plot_show() helper defines the macOS PNG+browser path and the Windows dev.new branch", {
-  rtkogl_file <- file.path(pkg_root, "R", "rtkogl.R")
-  src <- readLines(rtkogl_file, warn = FALSE)
+  # .plot_show (and .isMacOS) were relocated from rtkogl.R to R/shell.R in Plan
+  # 06-03 (survivors move before rtkogl.R is deleted in Plan 07).
+  shell_file <- file.path(pkg_root, "R", "shell.R")
+  src <- readLines(shell_file, warn = FALSE)
 
   expect_true(any(grepl("^.plot_show <- function", src)))
 
@@ -127,8 +131,9 @@ test_that(".plot_show() on macOS writes a PNG and opens it without a native wind
   # Exercise the macOS branch on any host: source locally so .plot_show resolves
   # .isMacOS lexically in this frame, then override it to TRUE. Capture the open
   # via the `browser` option (browseURL calls it when it is a function) so no
-  # real browser launches and no quartz window is created.
-  source(file.path(pkg_root, "R", "rtkogl.R"), local = TRUE)
+  # real browser launches and no quartz window is created. (.plot_show/.isMacOS
+  # relocated to R/shell.R in Plan 06-03.)
+  source(file.path(pkg_root, "R", "shell.R"), local = TRUE)
   .isMacOS <- function() TRUE
 
   opened <- NULL

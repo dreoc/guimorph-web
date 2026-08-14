@@ -4,12 +4,16 @@ pkg_root <- normalizePath(file.path(testthat::test_path(), "..", ".."))
 # package is available. See helper-pkg-source.R.
 skip_if_no_pkg_source()
 
-test_that("shortcut helpers include Command equivalents", {
-  rtkogl_file <- file.path(pkg_root, "R", "rtkogl.R")
-  src <- readLines(rtkogl_file, warn = FALSE)
+test_that("shortcut helper is relocated to shell.R with the Command/Ctrl branch", {
+  # shortcutLabel was relocated from rtkogl.R to R/shell.R in Plan 06-03 (survivors
+  # move before rtkogl.R is deleted in Plan 07). The Tk-only bindPlatformAccelerator
+  # helper (which held the <Command-...> tkbind) had no browser analog and was
+  # dropped, so its assertion is retired here.
+  shell_file <- file.path(pkg_root, "R", "shell.R")
+  src <- readLines(shell_file, warn = FALSE)
 
   expect_true(any(grepl("^shortcutLabel <- function\\(key\\)", src)))
-  expect_true(any(grepl("tkbind\\(widget, paste0\\(\"<Command-\", key, \">\"\\), handler\\)", src)))
+  expect_true(any(grepl("Cmd\\+", src)))
 })
 
 test_that("accelerator map is routed through shared helper", {
