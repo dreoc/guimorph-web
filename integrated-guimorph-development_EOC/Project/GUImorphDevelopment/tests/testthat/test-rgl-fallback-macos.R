@@ -68,25 +68,43 @@ test_that(".gmw_view3d() writes a page over the vendored bundle and opens it", {
   expect_true(file.exists(file.path(wd, "LICENSE.three.txt")))
 })
 
-test_that("a failed native engine load does not abort package load", {
-  # Found on macOS 26.5.2: tkogl2.dylib is built against Tcl 9.0 while R 4.6.1's
-  # tcltk links a different major version, so the engine will not load. .onLoad
-  # used to stop() there, which took the browser paths down with it even though
-  # they need no native engine. The failure is now deferred to the one entry
-  # point that does need it.
-  rtkogl_file <- file.path(pkg_root, "R", "rtkogl.R")
-  src <- readLines(rtkogl_file, warn = FALSE)
+test_that("the native engine is retired: no engine file / load path survives (UI-02)", {
+  # Plan 06-07 physically removed the native tkogl2 engine. The old test here
+  # asserted that a FAILED engine load stayed non-fatal (rtkogl.R's .onLoad
+  # recorded status instead of stop()ing). With the engine gone there is no load
+  # path left to be fatal or otherwise -- so the invariant inverts from "the load
+  # is non-fatal" to "the engine, its file, and its load path are absent". Tokens
+  # are built from patterns so this negative gate cannot self-trip on its prose.
+  skip_if_no_pkg_source()
 
-  onload_body <- .fn_body(src, ".onLoad")
-  expect_false(any(grepl("stop(", onload_body, fixed = TRUE)))
-  expect_true(any(grepl("packageStartupMessage", onload_body, fixed = TRUE)))
-  expect_true(any(grepl(".gmw_engine$ok", onload_body, fixed = TRUE)))
+  # (i) The engine binding file is gone.
+  expect_false(file.exists(file.path(pkg_root, "R", "rtkogl.R")))
 
-  # NOTE (Plan 06-03, UI-02): GUImorphWeb() was rewired to boot the browser shell
-  # and relocated to R/shell.R; it no longer calls .gmw_require_engine(). The
-  # entry is now engine-independent, so the old "the entry gates on the engine"
-  # assertion is retired. The engine-gate definition (.gmw_require_engine) still
-  # exists below in rtkogl.R until Plan 07 deletes the engine surface.
+  # (ii) No shipped native binary lingers under inst/libs/.
+  libs <- list.files(file.path(pkg_root, "inst", "libs"),
+                     recursive = TRUE, full.names = FALSE)
+  engine_bin <- paste0("tk", "ogl2")   # the compiled engine basename
+  glut_bin   <- "glut64"
+  expect_false(any(grepl(engine_bin, libs, fixed = TRUE)))
+  expect_false(any(grepl(glut_bin,   libs, fixed = TRUE)))
+
+  # (iii) No engine load path / engine env definition survives anywhere in R/.
+  onload_tok <- paste0(".", "onLoad")             # the retired engine tcl-load hook
+  engine_env <- paste0(".", "gmw_engine")         # the retired status env
+  engine_req <- paste0(".", "gmw_require_engine")  # the retired digitizing gate
+  r_files <- list.files(file.path(pkg_root, "R"), pattern = "[.][Rr]$",
+                        full.names = TRUE)
+  for (rf in r_files) {
+    code <- sub("#.*$", "", readLines(rf, warn = FALSE))  # strip comments
+    expect_false(any(grepl(onload_tok, code, fixed = TRUE)),
+                 info = paste("unexpected engine load hook in", basename(rf)))
+    expect_false(any(grepl(paste0(engine_env, "$"), code, fixed = TRUE)),
+                 info = paste("unexpected engine env read in", basename(rf)))
+    expect_false(any(grepl(paste0(engine_env, " <-"), code, fixed = TRUE)),
+                 info = paste("unexpected engine env def in", basename(rf)))
+    expect_false(any(grepl(engine_req, code, fixed = TRUE)),
+                 info = paste("unexpected engine gate in", basename(rf)))
+  }
 })
 
 test_that("plotPCA stays base-graphics (no rgl:: calls)", {

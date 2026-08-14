@@ -13,7 +13,7 @@ skip_if_no_pkg_source()
 }
 
 test_that("dgt parity helper functions exist", {
-  source(file.path(pkg_root, "R", "rtkogl.R"), local = TRUE)
+  source(file.path(pkg_root, "R", "shell.R"), local = TRUE)  # dbg() lives here since Plan 06-03; rtkogl.R deleted in Plan 06-07
   source(file.path(pkg_root, "R", "3dDigitize.main.r"), local = TRUE)
   source(file.path(pkg_root, "R", "3dDigitize.digitize.r"), local = TRUE)
   source(file.path(pkg_root, "R", "3dDigitize.curve.r"), local = TRUE)
@@ -25,7 +25,7 @@ test_that("dgt parity helper functions exist", {
 })
 
 test_that("dgt writer output matches parity fixture", {
-  source(file.path(pkg_root, "R", "rtkogl.R"), local = TRUE)
+  source(file.path(pkg_root, "R", "shell.R"), local = TRUE)  # dbg() lives here since Plan 06-03; rtkogl.R deleted in Plan 06-07
   source(file.path(pkg_root, "R", "3dDigitize.main.r"), local = TRUE)
   source(file.path(pkg_root, "R", "3dDigitize.digitize.r"), local = TRUE)
   source(file.path(pkg_root, "R", "3dDigitize.curve.r"), local = TRUE)
@@ -82,7 +82,7 @@ test_that("browser save is byte-identical to the canonical writer for identical 
   # NOTE: the live native-GUI-vs-browser dual-path DAT-01 run needs a Windows
   # tkogl2 host and is recorded as manual UAT (05-VALIDATION.md); this R-level
   # write-vs-write byte test is the automated gate.
-  source(file.path(pkg_root, "R", "rtkogl.R"), local = TRUE)
+  source(file.path(pkg_root, "R", "shell.R"), local = TRUE)  # dbg() lives here since Plan 06-03; rtkogl.R deleted in Plan 06-07
   source(file.path(pkg_root, "R", "3dDigitize.main.r"), local = TRUE)
   source(file.path(pkg_root, "R", "3dDigitize.digitize.r"), local = TRUE)
   source(file.path(pkg_root, "R", "3dDigitize.curve.r"), local = TRUE)

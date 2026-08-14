@@ -5,7 +5,7 @@ pkg_root <- normalizePath(file.path(testthat::test_path(), "..", ".."))
 skip_if_no_pkg_source()
 
 test_that("export parity helper functions exist", {
-  source(file.path(pkg_root, "R", "rtkogl.R"), local = TRUE)
+  source(file.path(pkg_root, "R", "shell.R"), local = TRUE)  # dbg() lives here since Plan 06-03; rtkogl.R deleted in Plan 06-07
   source(file.path(pkg_root, "R", "3dDigitize.main.r"), local = TRUE)
 
   expect_true(exists(".csv_normalize_lines", mode = "function"))
@@ -13,7 +13,7 @@ test_that("export parity helper functions exist", {
 })
 
 test_that("csv parity normalization is deterministic", {
-  source(file.path(pkg_root, "R", "rtkogl.R"), local = TRUE)
+  source(file.path(pkg_root, "R", "shell.R"), local = TRUE)  # dbg() lives here since Plan 06-03; rtkogl.R deleted in Plan 06-07
   source(file.path(pkg_root, "R", "3dDigitize.main.r"), local = TRUE)
 
   fixture <- file.path(pkg_root, "tests", "fixtures", "parity", "reference-export.csv")
@@ -27,7 +27,7 @@ test_that("csv parity normalization is deterministic", {
 })
 
 test_that("rds payload signature is stable", {
-  source(file.path(pkg_root, "R", "rtkogl.R"), local = TRUE)
+  source(file.path(pkg_root, "R", "shell.R"), local = TRUE)  # dbg() lives here since Plan 06-03; rtkogl.R deleted in Plan 06-07
   source(file.path(pkg_root, "R", "3dDigitize.main.r"), local = TRUE)
 
   land <- array(c(

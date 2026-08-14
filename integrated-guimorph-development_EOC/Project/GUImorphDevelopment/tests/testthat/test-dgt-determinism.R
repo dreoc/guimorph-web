@@ -15,7 +15,7 @@ skip_if_no_pkg_source()
 }
 
 test_that("identical arrays write identical bytes", {
-  source(file.path(pkg_root, "R", "rtkogl.R"), local = TRUE)
+  source(file.path(pkg_root, "R", "shell.R"), local = TRUE)  # dbg() lives here since Plan 06-03; rtkogl.R deleted in Plan 06-07
   source(file.path(pkg_root, "R", "3dDigitize.main.r"), local = TRUE)
 
   mat <- matrix(c(
@@ -37,7 +37,7 @@ test_that("identical arrays write identical bytes", {
 })
 
 test_that("output is CRLF-terminated", {
-  source(file.path(pkg_root, "R", "rtkogl.R"), local = TRUE)
+  source(file.path(pkg_root, "R", "shell.R"), local = TRUE)  # dbg() lives here since Plan 06-03; rtkogl.R deleted in Plan 06-07
   source(file.path(pkg_root, "R", "3dDigitize.main.r"), local = TRUE)
 
   mat <- matrix(c(
@@ -63,7 +63,7 @@ test_that("output is CRLF-terminated", {
 })
 
 test_that("rounding is R-decided", {
-  source(file.path(pkg_root, "R", "rtkogl.R"), local = TRUE)
+  source(file.path(pkg_root, "R", "shell.R"), local = TRUE)  # dbg() lives here since Plan 06-03; rtkogl.R deleted in Plan 06-07
   source(file.path(pkg_root, "R", "3dDigitize.main.r"), local = TRUE)
 
   # Straightforward six-decimal truncation of a repeating decimal.
