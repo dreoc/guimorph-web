@@ -35,6 +35,29 @@ itob <- function(int) {
   }
 }
 
+# Phase 6 (D-01, UI-03): tcltk is severed from the package. The GPA compute path
+# (compute()/.build_geomorph_data) still reads its gpagen option flags through
+# tclvalue(), exactly as the retired Tk GPA tab did, and the browser bridge
+# (.gmw_session_to_geomorph_env) wraps plain values with tclVar(). These two
+# tiny internal shims reproduce that read/write contract WITHOUT tcltk, so the
+# parity-critical forwarding in compute() stays textually unchanged (pinned by
+# test-gpa-parity.R) while tcltk leaves Imports and NAMESPACE. A tclVar() holds
+# its value as a character scalar; tclvalue() returns it (and coerces a bare
+# value), matching the "0"/"1" string semantics itob()/as.numeric() expect.
+tclVar <- function(init = "") {
+  v <- new.env(parent = emptyenv())
+  v$value <- as.character(init)
+  class(v) <- "gmwTclVar"
+  v
+}
+
+tclvalue <- function(x) {
+  if (inherits(x, "gmwTclVar")) {
+    return(x$value)
+  }
+  as.character(x)
+}
+
 .safe_gpagen_maxiter <- function(raw) {
   parsed <- suppressWarnings(as.numeric(raw))
   if (is.na(parsed) || parsed < 1) {
@@ -426,7 +449,7 @@ plotPCA <- function(e) {
   # read them via tclvalue(). Defaults mirror the native GPA-tab tclVar seeds.
   optv <- function(key, default) {
     v <- if (!is.null(opts[[key]])) opts[[key]] else default
-    tcltk::tclVar(v)
+    tclVar(v)
   }
   e$maxiter        <- optv("maxiter", 2)
   e$curves         <- optv("curves", 0)

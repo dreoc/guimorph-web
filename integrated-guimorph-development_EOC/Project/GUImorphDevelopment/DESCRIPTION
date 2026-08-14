@@ -1,25 +1,23 @@
 Package: GUImorphWeb
 Type: Package
 Title: Graphical User Interface for Morphometrics
-Version: 0.10.0
-Date: 2026-07-20
+Version: 1.0.0
+Date: 2026-08-14
 Author: Erik Otarola-Castillo  
 Maintainer: Erik Otarola-Castillo <eoc@purdue.edu>
 Description: GUI to R programs to digitize in 3D, conduct geometric morphometric
-    analyses and plot results, based on OpenGL and Tk widgets. Runs on Windows
-    and macOS; landmark, curve and surface semilandmark data are written in a
-    format directly compatible with geomorph.
+    analyses and plot results, rendered in the browser with three.js over a
+    local httpuv loopback server (no native OpenGL or Tk). Runs on Windows and
+    macOS; landmark, curve and surface semilandmark data are written in a format
+    directly compatible with geomorph.
 Imports:
     geomorph (>= 4.1.1),
     Rvcg,
-    tcltk,
-    tcltk2,
     httpuv
 Encoding: UTF-8
 License: GPL (>= 2)
 LazyData: true
 Suggests:
-    rgl,
     htmlwidgets,
     testthat
 Config/roxygen2/version: 8.0.0

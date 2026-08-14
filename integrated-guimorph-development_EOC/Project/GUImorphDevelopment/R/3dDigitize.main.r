@@ -7,27 +7,19 @@ get_main_date <- function()
 
 
 #' @name GUImorphWeb-package
-#' @docType package
 #' @aliases GUImorphWeb-package
 #' @title Graphical User Interface for Morphometrics
 #' @author Erik Otarola-Castillo
 #'
-#' @description GUI to R programs to digitize in 3D, conduct geometric morphometric analyses and plotting results based on OpenGL and Tk widget
-
-NULL
+#' @description GUI to R programs to digitize in 3D, conduct geometric
+#'   morphometric analyses and plot results, rendered in the browser with
+#'   three.js over a local httpuv loopback server (no native OpenGL or Tk).
+"_PACKAGE"
 
 #' @import geomorph
 NULL
 
 #' @import Rvcg
-NULL
-
-NULL
-
-#' @import tcltk
-NULL
-
-#' @import tcltk2
 NULL
 
 NULL
@@ -292,14 +284,17 @@ refreshTabGating <- function(e) {
     stop("no digitizing session for this token", call. = FALSE)
   }
 
-  # /save carries no path (T-5-16): the destination is chosen R-side, never from
-  # the request body. An explicit `file` (e.g. the byte-parity test) skips the
-  # dialog.
+  # /save carries no path (T-5-16, D-03): the destination is chosen R-side from
+  # the session save-name field (browser /savepath) joined to the server-owned
+  # browse dir -- never from the request body and never via a native Tk picker
+  # (tcltk severed in Phase 6). An explicit `file` (e.g. the byte-parity test)
+  # skips this derivation; an empty save-name is a no-op (former Cancel path).
   if (is.null(file) || !nzchar(file)) {
-    file <- tclvalue(tkgetSaveFile(filetypes = "{{DGT file} {.dgt}} {{All files} *}"))
-    if (!nzchar(file)) {
+    if (is.null(s$save_name) || !nzchar(s$save_name)) {
       return(invisible(FALSE))
     }
+    file <- file.path(if (!is.null(s$browse_dir)) s$browse_dir else getwd(),
+                      basename(s$save_name))
     if (!nzchar(.normalizePathExt(file))) {
       file <- paste(file, ".dgt", sep = "")
     } else {
