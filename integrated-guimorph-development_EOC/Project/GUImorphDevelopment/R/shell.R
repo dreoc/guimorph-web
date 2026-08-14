@@ -37,7 +37,8 @@ GUImorphWeb <- function(dir = getwd(), open = TRUE, debug = FALSE) {
   # in-page file picker over the server-owned `dir`. .gmw_serve_mesh() requires a
   # real PLY to mount, so seed the viewport with a tiny in-process placeholder
   # mesh. This keeps every path R-owned, needs no bundled sample data, and needs
-  # no native engine (UI-02). NO .gmw_require_engine(), ui(e), or init(e).
+  # no native engine (UI-02) -- the entry no longer requires the engine or builds
+  # a Tk window.
   boot_ply <- .gmw_boot_specimen()
   .gmw_serve_mesh(ply_path = boot_ply, dir = dir, open = open)
 }
