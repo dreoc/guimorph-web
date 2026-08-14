@@ -103,12 +103,9 @@ test_that("R/shell.R holds the relocated survivors and the entry is engine/Tk-fr
   expect_false(any(grepl("init(e)", entry, fixed = TRUE)))
   expect_true(any(grepl(".gmw_serve_mesh", entry, fixed = TRUE)))
 
-  # ...and rtkogl.R no longer defines any of them (exactly one definition each).
-  rsrc <- readLines(file.path(pkg_root, "R", "rtkogl.R"), warn = FALSE)
-  expect_false(any(grepl("^GUImorphWeb <- function", rsrc)))
-  expect_false(any(grepl("^dbg <- function",         rsrc)))
-  expect_false(any(grepl("^.plot_show <- function",  rsrc)))
-  expect_false(any(grepl("^.onAttach <- function",   rsrc)))
+  # ...and rtkogl.R is gone entirely (Plan 06-07), so it cannot redefine any of
+  # the survivors: the single definition of each now lives only in shell.R.
+  expect_false(file.exists(file.path(pkg_root, "R", "rtkogl.R")))
 })
 
 test_that("digitize->gpa->save workflow is reachable through the shell handler, engine absent", {
