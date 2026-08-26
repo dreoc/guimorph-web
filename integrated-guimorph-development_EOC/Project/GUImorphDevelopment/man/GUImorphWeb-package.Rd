@@ -5,7 +5,9 @@
 \alias{GUImorphWeb-package}
 \title{Graphical User Interface for Morphometrics}
 \description{
-GUI to R programs to digitize in 3D, conduct geometric morphometric analyses and plotting results based on OpenGL and Tk widget
+GUI to R programs to digitize in 3D, conduct geometric
+  morphometric analyses and plot results, rendered in the browser with
+  three.js over a local httpuv loopback server (no native OpenGL or Tk).
 }
 \author{
 Erik Otarola-Castillo
