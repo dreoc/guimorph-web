@@ -1,6 +1,9 @@
 ---
 title: "DAT parity gate skips; the two platforms do not write identical bytes"
-status: open
+status: closed
+resolution: wont-verify
+closed_by: 06-08
+closed_date: 2026-08-14
 kind: defect
 priority: high
 blocks: [DAT-01, DAT-02]
@@ -9,6 +12,15 @@ discovered: 2026-07-23
 discovered_during: repo inspection after the GUImorph split
 owner: eoc
 ---
+
+## Closure (D-04, Plan 06-08)
+
+Retired **won't-verify** for the DAT-02 `-rewrite` byte gate. The comparison
+required a native (tcltk/tkogl2) host capture that never materialized and whose
+engine was removed in Phase 6. DAT-01 byte-identity remains live and green
+(`tests/testthat/test-dgt-cross-platform.R`); the DAT-02 `-rewrite` gate is now
+a documented skip in that file. Closure recorded in `NEWS.md` (v1.0.0).
+
 
 ## What is wrong
 

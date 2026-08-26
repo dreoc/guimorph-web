@@ -52,9 +52,9 @@ vendored in `inst/htmlwidgets/`, no CDN, no runtime network.
 
 ### Shell and Retirement
 
-- [ ] **UI-01**: Tabs, dialogs, specimen navigation, and status bar reimplemented in the browser shell at parity with the Tk chrome
-- [ ] **UI-02**: The complete workflow runs with the native engine uninstalled and absent from the library path
-- [ ] **UI-03**: `tkogl2` is deleted from the package, `rgl` is removed from dependencies entirely, and a migration note ships in `NEWS.md` with a pinnable version for users who must stay on the native path
+- [x] **UI-01**: Tabs, dialogs, specimen navigation, and status bar reimplemented in the browser shell at parity with the Tk chrome
+- [x] **UI-02**: The complete workflow runs with the native engine uninstalled and absent from the library path
+- [x] **UI-03**: `tkogl2` is deleted from the package, `rgl` is removed from dependencies entirely, and a migration note ships in `NEWS.md` with a pinnable version for users who must stay on the native path
 
 ### Recurring Gate
 

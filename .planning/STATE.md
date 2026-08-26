@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Browser Rendering
-status: Phase 5 UAT — items 1-4 approved (macOS); items 5-6 held for Windows reviewer
-stopped_at: "Phase 5 UAT on a macOS display host: items 1-4 APPROVED by the user. Five browser-workflow bugs found and fixed inline during UAT (commits 292bd3f JS newline escape, 1b06558 HUD mode discoverability, 486f36c overlay /overlays re-serve for delete/undo + browser toolbar, 21c65e4 pick->session-land mirror, 89e2b3f GPA getLandmark segfault). Item 2 (live surface COMPUTE) accepted as a known deferred stub (session specimen/template slots unwired — no crash, silent no-op). Items 5 (DAT-02 -rewrite) and 6 (CMP-01 runtime load) BLOCKED on a Windows tkogl2 reviewer. Next: either wire the item-2 downsample slots as a follow-up, or proceed to Phase 6 once the Windows review clears 5-6."
-last_updated: "2026-08-10T20:12:00.000Z"
+status: Phase 6 executed, awaiting human UAT — 06-01..06-08 all executed and committed. Full suite green (675 pass, 0 fail, 6 documented skips). Automated phase-goal verification PASSED 4/4 must-haves (06-VERIFICATION.md); status human_needed — ONE live-browser feature-parity walkthrough owed (06-UAT.md) before the phase is finalized via /gsd-verify-work 6. 06-08 severed tcltk/tcltk2 from Imports + rgl from Suggests, bumped 1.0.0, regenerated NAMESPACE (dropped import(tcltk)/import(tcltk2)/export(loadDgt)), shipped NEWS.md migration note (GUImorph primary + pin 0.10.0 fallback + PICK-03/DAT-02 won't-verify closure), added an internal tclVar/tclvalue shim so GPA compute() stays parity-pinned. UI-01/UI-02/UI-03 delivered; native tkogl2/tcltk/tcltk2/rgl fully retired.
+stopped_at: Phase 6 executed (8/8 plans); automated verification 4/4 passed; 1 live-browser UAT item owed via /gsd-verify-work 6
+last_updated: "2026-08-14T16:03:45.815Z"
 progress:
   total_phases: 6
-  completed_phases: 3
-  total_plans: 16
-  completed_plans: 16
-  percent: 50
-current_phase: 5
-current_phase_name: Full Digitizing and Data Parity
+  completed_phases: 5
+  total_plans: 23
+  completed_plans: 24
+  percent: 83
+current_phase: 6
+current_phase_name: Shell and Native Retirement
 ---
 
 # Project State
@@ -136,8 +136,21 @@ Phase 4 picking parity remains the gate for the whole milestone.
 
 ## Session
 
-**Last session:** 2026-08-07T16:34:49.257Z
-**Stopped at:** Completed 05-05-PLAN.md — Wave-2 analytical seam: GPA and
+**Last session:** 2026-08-14T16:03:45.793Z
+**Stopped at:** Phase 6 plan 06-08 complete — Phase 6 COMPLETE. 06-08 severed
+tcltk/tcltk2 from Imports + rgl from Suggests, bumped Version to 1.0.0, and
+regenerated NAMESPACE (dropped import(tcltk)/import(tcltk2)/export(loadDgt);
+@docType package -> "_PACKAGE"). An internal tclVar()/tclvalue() compat shim in
+geomorph.r keeps the parity-pinned GPA compute()/.build_geomorph_data() forwarding
+textually unchanged while tcltk leaves the namespace; .gmw_save_session_dgt was
+rewired off the last tkgetSaveFile to the session save-name/browse_dir path (D-03).
+NEWS.md ships the 1.0.0 migration note (GUImorph primary + pin 0.10.0 fallback +
+PICK-03/DAT-02 won't-verify closure, D-04). Parity/tcltk-stub/deleted-symbol tests
+reconciled and the previously-6-red suite is green (675 pass, 0 fail, 6 documented
+skips). deps-clean + NEWS source-scan gates lock in UI-03. Milestone v1.0 ready for
+verify/ship (tag 1.0.0). Phase 6 had
+8 plans (06-01..06-08) across 5 waves; research +
+pattern-map + Nyquist validation done; plan-checker VERIFICATION PASSED (0 blockers)
 `.csv`/`.rds` export driven from the browser. `.gmw_session_to_geomorph_env`
 reads the server-owned session into the existing `activeDataList[[i]][[10]]`/
 `[[1]][[4]]`/`[[i]][[8]]` slots (+ gpagen option tclVars) so `.build_geomorph_data`/
@@ -151,7 +164,26 @@ Windows `tkogl2` host — tracked in
 `.planning/todos/pending/pick03-windows-parity-capture-owed.md`. PICK-03 harness is
 drop-in-ready (zero code change to close). Phase 4 marked complete with those two
 items open; next is Phase 5.
-**Resume file:** None
+**Resume file:** .planning/phases/06-shell-and-native-retirement/06-08-PLAN.md
+
+**Stopped at (06-07):** native tkogl2 engine physically deleted — R/rtkogl.R, the
+inst/libs binaries, and the sibling Project/tkogl2/ build tree are gone (355 files).
+Package parses + browser shell boots and runs digitize->gpa->save engine-absent
+(UI-02). test-transport.R :121-133 inverted to assert absence; test-engine-absent.R
+added (R/-wide engine-verb/env scan + engine-absent workflow). 5 collateral tests
+reconciled off rtkogl.R. Next: 06-08 (DESCRIPTION/NAMESPACE severance of
+tcltk/tcltk2/rgl, 1.0.0 bump, NEWS.md migration note, CMP-01/parity/tcltk-stub
+reconciliation, UI-03/D-04). Deferred: test-macos-dialog-shortcuts-parity.R:58 stale
+surface wheel/zoom assertion (deferred-items.md).
+
+**Stopped at (06-06):** surface.r + geomorph.r stripped of every Tk builder/dialog
+and add/set engine verb; headless .gmw_downsample_session + serializers (surface)
+and GPA/PCA/export compute (geomorph) intact. Browser GPA option flags now travel
+over the existing /gpa route as a strict fixed-order boolean CSV
+(.gmw_parse_gpaopts -> .gmw_gpa_session(token, opts) -> gpagen option tclVars),
+compute/.build_geomorph_data forwarding byte-unchanged; export save-name over
+/savepath (R owns dir). Next: 06-07 (rtkogl.R deletion — now unblocked for these
+two files, which carry no engine verbs).
 
 ## Performance Metrics
 
@@ -172,6 +204,14 @@ items open; next is Phase 5.
 | Phase 5 P4 | 3min | 2 tasks | 2 files |
 | Phase 05 P05 | 6min | 2 tasks | 3 files (session→geomorph env builder, GPA/export seams, parity tests) |
 | Phase 05 P06 | 3min | 2 tasks | 2 files |
+| Phase 6 P01 | 20 min | 3 tasks | 2 files |
+| Phase 6 P02 | ~18 min | 3 tasks | 2 files (browser shell chrome + wiring, view3d tests) |
+| Phase 6 P03 | ~35 min | 3 tasks | 6 files (R/shell.R relocation, engine-free entry, shell-entry gate, 3 macOS tests repointed) |
+| Phase Phase 6 PP04 | ~45 min | 3 tasks tasks | 4 files (Tk chrome + engine verbs + S3 generics stripped; source-scan guard added) files |
+| Phase 6 P05 | 20min | 3 tasks | 7 files |
+| Phase 6 P06 | 15min | 3 tasks | 5 files (surface.r/geomorph.r Tk strip, /gpa options CSV, save-name via /savepath, source-scan test) |
+| Phase 6 P07 | 7min | 3 tasks | 7 files + 355 deletions (rtkogl.R + inst/libs binaries + tkogl2/ tree deleted; transport engine block inverted to absence; test-engine-absent.R added; 5 collateral tests reconciled) |
+| Phase 6 P08 | 15min | 4 tasks | 14 files |
 
 ## Decisions
 
@@ -196,3 +236,15 @@ items open; next is Phase 5.
 - [Phase ?]: 05-03: browser digitizing view layer in view3d.R BODY — anchor pick (green non-raycast anchors group) -> /anchor; curve-by-index cyan(1/255,164/255,191/255)/blue(0,0,1) -> /curve; surface THREE.Points cloud (display-only, R .gmw_flat); delete/undo/specimen with loadSpecimen computeBoundsTree BVH rebuild (RE-SERVE A4); all in the parameter-free BODY (HEAD 776B < 8192); landmark-mode guard keeps Phase-4 pick unregressed
 - [Phase 5]: 05-05: browser GPA/export reuse native compute/save/exportGeomorph verbatim; .gmw_session_to_geomorph_env populates activeDataList[[i]][[10]] (landmarks) / [[1]][[4]] (curves) / [[i]][[8]] (surfaces) + gpagen option tclVars from the session so .build_geomorph_data/compute forwarding is untouched (source-scan still green); /export allow-list c("csv","rds"), export path chosen R-side by save()/exportGeomorph() (T-5-13); DGT-03 complete
 - [Phase 05]: 05-06: browser Save routes through ONE shared .dgt serializer (.dgt_emit_session_blocks) reused by saveToDgt so DAT-01 byte-identity is structural (T-5-15); /save carries no path, target chosen R-side (T-5-16); save path never touches .gmw_engine (CMP-01/T-5-17)
+- [Phase ?]: 06-01: seven browser-shell routes added to .gmw_digitize_handler (/files,/open,/savepath,/status,/tabstate,/msgack,/color); R owns browse_dir session slot seeded by .gmw_serve_mesh(dir=); /open opens ONLY a basename that is a member of R's list.files enumeration (T-6-02), the sole file.path join gated behind sel %in% entries
+- [Phase ?]: 06-01: /open records validated absolute path as committed effect (full load deferred to shell plan); /status mode defaults landmark; /tabstate flags derived live from counts; /color strict hrrggbb; /savepath rejects path separators (T-6-05)
+- [Phase 6]: 06-02: browser shell chrome (menu bar/tab strip/status bar/reusable #modal) injected from the parameter-free view3d.R BODY after the MESH_URL marker, CSS via a JS-built <style> so head_fmt stays 1870B < 8192; one openModal/closeModal hosts every former Tk dialog
+- [Phase 6]: 06-02: Add PLY + Merge share ONE multi-select checkbox picker + save-name field (RESEARCH A5) → /open then /savepath (+/save for Merge); specimen prev/next + <select> + [ / ] reuse switchSpecimen RE-SERVE (A4, never inline index); tkmessageBox→#modal+/msgack, tk_chooseColor→<input type=color>+/color; #status counts kept live by 1s /status+/tabstate poll
+- [Phase 6]: 06-03: non-engine survivors (GUImorphWeb, dbg, .plot_show, .onAttach, .isMacOS, .pkg_version, .module_banner, normalizeWheelDelta, shortcutLabel, wheel-notch constants) relocated from rtkogl.R into new R/shell.R BEFORE Plan 07 deletes rtkogl.R (RESEARCH Landmine 1 decapitation-safe); rtkogl.R left as pure tkogl2 engine surface
+- [Phase 6]: 06-03: GUImorphWeb() rewired to (dir=getwd(), open=TRUE, debug=FALSE) booting .gmw_serve_mesh() with NO .gmw_require_engine()/ui(e)/init(e) (UI-02 engine-independent); .gmw_boot_specimen() writes a minimal ASCII PLY tetrahedron to a tempfile so the listener mounts an empty viewport (browser file picker loads real specimens); Tk-only bindPlatformAccelerator/bindDeleteGesture deleted (no browser analog)
+- [Phase 6]: 06-03: test-shell-entry.R drives the full digitize→gpa→save workflow through .gmw_digitize_handler via synthetic httpuv requests (not real HTTP — same-thread curl vs httpuv call deadlocks); sources package files into a file-local env (local=<file_env>, not globalenv) so .gmw_server/.gmw_session registries don't clobber sibling suites (test-transport.R)
+- [Phase 06]: 06-04: 3dDigitize.main.r stripped to data/model + serializers only — 0 Tk chrome, 0 add/set/del/shows engine verbs, 0 ui/init/bind/updateWidgets S3 generics; refreshTabGating reduced to server-owned e$tabState (no tcl/route wiring, sibling files untouched); .warnUnexpectedExtension returns warning text for the browser modal; test-main-chrome-stripped.R guards the invariants (T-6-12/T-6-13)
+- [Phase ?]: 06-05: digitize.r (1458->213) + curve.r (322->93) stripped to data/model + .dgt serializers — deleted ui.digitize/ui.anchor/ui.curve, landmark/anchor toplevels, tkgetOpenFile, both tk_chooseColor sites, all add/set/del/shows handlers; kept read/write.digitize+anchors+curve; colour now browser <input type=color> -> /color session slot. 4 source-scan tests inverted (Rule 1) to assert absence
+- [Phase 6]: 06-07: PHYSICALLY deleted the native tkogl2 engine — R/rtkogl.R (add/set/del/shows/.gmw_engine/.gmw_require_engine/.onLoad/loadDgt/get_rtkogl_date), inst/libs binaries (tkogl2.dylib/x64/tkogl2.dll/x64/glut64.dll), and the entire integrated-guimorph-development_EOC/Project/tkogl2/ CMake/MSVC/C-ObjC build tree (355 files via git rm). Decapitation-safe: survivors already relocated to shell.R (06-03), every add/set/del/shows call site removed (06-04..06). test-transport.R :121-133 inverted from engine-PRESENCE to engine-ABSENCE in the SAME change (Pitfall 6/T-6-22); new test-engine-absent.R adds an R/-wide comment-stripped add/set/del/shows + .gmw_engine/.gmw_require_engine/.onLoad scan plus an engine-absent digitize->gpa->save route drive (UI-02). Package parses + shell boots engine-absent. 5 collateral tests reconciled (3× source(rtkogl.R)->source(shell.R) in export-parity/dgt-determinism/dgt-cross-platform; rgl-fallback-macos + shell-entry readLines(rtkogl.R) inverted to file-absence). NAMESPACE export(loadDgt)+tcltk/tcltk2 imports left for 06-08 roxygen regen. Pre-existing out-of-scope red: test-macos-dialog-shortcuts-parity.R:58 (stale surface.r wheel/zoom assertion from 06-06 strip) logged in deferred-items.md.
+- [Phase 6]: 06-06: surface.r/geomorph.r stripped of ui.surface/ui.geomorph + all tk2*/tkmessageBox/tkgetSaveFile/toplevel + add/set engine verbs; kept headless .gmw_downsample_session (as.vector(t(.)) flatten) + template/.dgt serializers (surface) and GPA/PCA/export compute (geomorph). GPA option flags travel over the EXISTING /gpa route (not /gpaopts, RESEARCH Open Q2) as a strict fixed-order 11-field boolean CSV via .gmw_parse_gpaopts() -> .gmw_gpa_session(token, opts) -> gpagen option tclVars in .gmw_session_to_geomorph_env; .build_geomorph_data/compute forwarding byte-unchanged (gpa-parity/export-parity green). Export save-name via /savepath: save()/exportGeomorph() read e$save_name+e$save_dir (R owns dir, basename-only, T-6-18); empty save-name = former Cancel no-op. tkmessageBox -> message() keeping every return() path. test-digitizing-parity-macos surface block inverted (Rule 1)
+- [Phase ?]: 06-08: severed tcltk/tcltk2 (Imports) + rgl (Suggests), Version 1.0.0, NAMESPACE regenerated via roxygen2 namespace roclet (dropped import(tcltk)/import(tcltk2)/export(loadDgt); @docType package -> _PACKAGE). Added internal tclVar()/tclvalue() shim in geomorph.r so parity-pinned GPA compute() forwarding stays textually unchanged while tcltk leaves the namespace; rewired .gmw_save_session_dgt off the last tkgetSaveFile to the session save-name/browse_dir path (D-03). NEWS.md 1.0.0 note: GUImorph primary + pin 0.10.0 fallback + PICK-03/DAT-02 wont-verify (D-04). Retired picking-parity/retina + DAT-02 -rewrite to documented skips; greened curve-io (dbg via shell.R), deleted curve-spinbox, dropped library(tcltk) from gpa-parity, inverted stale macos-dialog assertions (incl deferred 06-06 red). Suite 675 pass/0 fail/6 skip. UI-03 done; Phase 6 complete.

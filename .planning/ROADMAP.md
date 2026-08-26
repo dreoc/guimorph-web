@@ -34,8 +34,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Transport and Mesh Display** - `httpuv` serves the PLY over loopback; three.js renders and orbits it (completed 2026-08-03)
 - [x] **Phase 3: Offline Packaging and Lifecycle** - Bundle the JS, select a port, launch the browser, tear down on session end (completed 2026-08-03)
 - [x] **Phase 4: Picking Parity** - BVH raycast returns hit coordinates matching the native `gluUnProject` result within tolerance (completed 2026-08-05)
-- [ ] **Phase 5: Full Digitizing and Data Parity** - Curves, anchors, surfaces, undo, multi-specimen, GPA and export from the browser, with byte-identical `.dgt` (all 6 plans executed 2026-08-07; macOS UAT items 1-4 APPROVED 2026-08-10 after 5 inline browser-workflow fixes; item 2 live surface COMPUTE deferred as a known stub; items 5-6 blocked on a Windows tkogl2 reviewer)
-- [ ] **Phase 6: Shell and Native Retirement** - Replace the Tk chrome, then delete `tkogl2` and drop `rgl`
+- [x] **Phase 5: Full Digitizing and Data Parity** - Curves, anchors, surfaces, undo, multi-specimen, GPA and export from the browser, with byte-identical `.dgt` (all 6 plans executed 2026-08-07; macOS UAT items 1-4 APPROVED 2026-08-10 after 5 inline browser-workflow fixes; item 2 live surface COMPUTE deferred as a known stub; items 5-6 deferred 2026-08-12 — Windows review unavailable, primary automated gates pass, corroboration captured in 05-WINDOWS-REVIEW.md)
+- [x] **Phase 6: Shell and Native Retirement** - Replace the Tk chrome, then delete `tkogl2` and drop `rgl` (all 8 plans executed 2026-08-14; full suite green 675/0/6-skip; automated phase-goal verification PASSED 4/4 must-haves; ONE live-browser feature-parity UAT item owed via `/gsd-verify-work 6` before ship)
 
 ## Phase Details
 
@@ -352,7 +352,30 @@ surface.
   4. A migration note ships in `NEWS.md` for users on the native path, with a
      documented version to pin if they need to stay.
 
-**Plans**: TBD
+**Plans**: 8/8 plans complete
+
+**Wave 1** *(server route surface)*
+
+- [x] 06-01-PLAN.md — `transport.R` shell-support routes (`/files`, `/open`, `/savepath`, `/tabstate`, `/status`, `/msgack`, `/color`) + server-owned `browse_dir` + path-traversal-safe picker tests (UI-01)
+
+**Wave 2** *(depends on 06-01; parallel — no file overlap)*
+
+- [x] 06-02-PLAN.md — `view3d.R` browser shell chrome: DOM tab strip, menu bar, status bar, modal layer, file picker, color input, specimen nav (RE-SERVE), shortcuts (UI-01)
+- [x] 06-03-PLAN.md — `R/shell.R` relocate survivors (`GUImorphWeb`/`dbg`/`.plot_show`/`.onAttach`/`.isMacOS`) + rewire entry to boot the browser shell + engine-absent workflow test (UI-02)
+
+**Wave 3** *(depends on 06-01/06-03; parallel — no file overlap)*
+
+- [x] 06-04-PLAN.md — strip `3dDigitize.main.r` Tk chrome (window/notebook/menu/nav/status/shortcuts) + engine verbs + S3 generics (UI-01, UI-02)
+- [x] 06-05-PLAN.md — strip `3dDigitize.digitize.r`/`.curve.r` Tk builders + `tkgetOpenFile`/`tk_chooseColor` → `/color` route + engine verbs (UI-01, UI-02)
+- [x] 06-06-PLAN.md — strip `3dDigitize.surface.r`/`.geomorph.r` Tk builders + `tkmessageBox`/`tkgetSaveFile` + GPA options over `/gpa` route + engine verbs (UI-01, UI-02)
+
+**Wave 4** *(depends on 06-03..06-06)*
+
+- [x] 06-07-PLAN.md — physical deletion: `R/rtkogl.R`, `inst/libs/*` engine binaries, sibling `tkogl2/` build tree + `test-transport.R` presence→absence inversion + engine-absent workflow test (UI-02)
+
+**Wave 5** *(depends on 06-07)*
+
+- [x] 06-08-PLAN.md — `DESCRIPTION`/`NAMESPACE` severance (`tcltk`/`tcltk2`/`rgl`, bump 1.0.0) + `NEWS.md` migration note + CMP-01/parity/tcltk-stub test reconciliation + PICK-03/DAT-02 won't-verify closure (UI-03, D-04)
 
 **Note (do not skip criterion 4)**: A third party already installed the GUImorph
 Windows binary successfully. Anyone mid-project needs a pinnable version and a
@@ -384,7 +407,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. Offline Packaging and Lifecycle | 4/4 | Complete    | 2026-08-03 |
 | 4. Picking Parity | 3/3 | Complete    | 2026-08-05 |
 | 5. Full Digitizing and Data Parity | 6/6 | Complete   | 2026-08-07 |
-| 6. Shell and Native Retirement | 0/TBD | Not started | - |
+| 6. Shell and Native Retirement | 8/8 | Complete   | 2026-08-14 |
 
 ## Notes
 

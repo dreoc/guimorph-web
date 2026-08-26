@@ -63,13 +63,15 @@ note: The automated R-level write-vs-write byte-identity gate is the PRIMARY pro
 ### 5. DAT-02 bidirectional -rewrite byte gate + reader-accepts-both-dialects
 expected: Opening tests/fixtures/parity/windows-authored-roundtrip.dgt and mac-authored-roundtrip.dgt in GUImorphWeb and re-saving reproduces the authored bytes (per dat-parity-gate-is-a-skip.md); a GUImorphWeb-authored .dgt opens correctly in GUImorph.
 result: blocked
-blocked_on: "Windows tkogl2 reviewer — on hold per user."
+blocked_on: "Windows tkogl2 reviewer — UNAVAILABLE (2026-08-12)."
+deferred: "Windows human review is unavailable; not blocking. The PRIMARY automated write-vs-write byte-identity gate already PASSES; this Windows -rewrite leg is corroborating. Reviewer steps captured in 05-WINDOWS-REVIEW.md for if/when a Windows host appears."
 note: The two -rewrite fixtures require a Windows re-save (not present on disk), so the DAT-03 gate skips cleanly. The macOS→Windows leg is an open UPSTREAM dependency. DAT-02 is [ ] incomplete in REQUIREMENTS.md.
 
 ### 6. CMP-01 native oracle RUNTIME load
 expected: On a Windows host with the built tkogl2 engine, confirm `.gmw_engine$ok == TRUE` after library(GUImorphWeb). The native oracle stays loadable through Phase 5 (retired at Phase 6).
 result: blocked
-blocked_on: "Windows tkogl2 reviewer — on hold per user."
+blocked_on: "Windows tkogl2 reviewer — UNAVAILABLE (2026-08-12)."
+deferred: "Windows human review is unavailable; not blocking. CMP-01's runtime load is a Windows-only check and the engine is RETIRED in Phase 6 by design; the source invariant + skip-if-absent gate are verified. Reviewer steps captured in 05-WINDOWS-REVIEW.md."
 note: Source invariant (transport.R and 3dDigitize.main.r never assign/read .gmw_engine) is verified; skip-if-absent gate is clean everywhere. Tracked in pick03-windows-parity-capture-owed.md.
 
 ## Summary

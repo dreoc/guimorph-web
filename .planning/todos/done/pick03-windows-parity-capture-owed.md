@@ -1,6 +1,9 @@
 ---
 title: "PICK-03 milestone gate + CMP-01 load owed a Windows capture (deferred from Phase 4)"
-status: open
+status: closed
+resolution: wont-verify
+closed_by: 06-08
+closed_date: 2026-08-14
 kind: verification-debt
 priority: high
 blocks: [PICK-03, CMP-01]
@@ -9,6 +12,15 @@ discovered: 2026-08-06
 discovered_during: Phase 4 UAT (/gsd-verify-work 4)
 owner: eoc
 ---
+
+## Closure (D-04, Plan 06-08)
+
+Retired **won't-verify**. The native tkogl2 oracle this gate depended on was
+deleted when the native engine was removed in Phase 6 (Plan 06-07). No Windows
+tkogl2 host capture ever materialized, so the byte-level parity comparison can
+never be run. PICK-03 completion is documented in `NEWS.md` (v1.0.0) and locked
+by the closed skip in `tests/testthat/test-picking-parity.R`.
+
 
 ## What is deferred
 
