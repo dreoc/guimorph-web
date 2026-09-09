@@ -675,22 +675,22 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
     var bar = document.createElement("div");
     bar.id = "menubar";
     bar.innerHTML =
-      "<div class=\"menu\" id=\"menu-file\">" +
-        "<button type=\"button\">File</button>" +
-        "<div class=\"items\">" +
-          "<button type=\"button\" id=\"mi-load-ply\">Load PLY</button>" +
-          "<button type=\"button\" id=\"mi-load-dgt\">Load DGT</button>" +
-          "<button type=\"button\" id=\"mi-add-ply\">Add PLY</button>" +
-          "<button type=\"button\" id=\"mi-save\">Save</button>" +
-          "<button type=\"button\" id=\"mi-export-csv\">Export CSV</button>" +
-          "<button type=\"button\" id=\"mi-export-rds\">Export RDS</button>" +
-          "<button type=\"button\" id=\"mi-merge\">Merge</button>" +
+      "<div class=\\"menu\\" id=\\"menu-file\\">" +
+        "<button type=\\"button\\">File</button>" +
+        "<div class=\\"items\\">" +
+          "<button type=\\"button\\" id=\\"mi-load-ply\\">Load PLY</button>" +
+          "<button type=\\"button\\" id=\\"mi-load-dgt\\">Load DGT</button>" +
+          "<button type=\\"button\\" id=\\"mi-add-ply\\">Add PLY</button>" +
+          "<button type=\\"button\\" id=\\"mi-save\\">Save</button>" +
+          "<button type=\\"button\\" id=\\"mi-export-csv\\">Export CSV</button>" +
+          "<button type=\\"button\\" id=\\"mi-export-rds\\">Export RDS</button>" +
+          "<button type=\\"button\\" id=\\"mi-merge\\">Merge</button>" +
         "</div>" +
       "</div>" +
-      "<div class=\"menu\" id=\"menu-help\">" +
-        "<button type=\"button\">Help</button>" +
-        "<div class=\"items\">" +
-          "<button type=\"button\" id=\"mi-help\">About and Shortcuts</button>" +
+      "<div class=\\"menu\\" id=\\"menu-help\\">" +
+        "<button type=\\"button\\">Help</button>" +
+        "<div class=\\"items\\">" +
+          "<button type=\\"button\\" id=\\"mi-help\\">About and Shortcuts</button>" +
         "</div>" +
       "</div>";
     document.body.appendChild(bar);
@@ -698,33 +698,33 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
     var tabs = document.createElement("div");
     tabs.id = "tabs";
     tabs.innerHTML =
-      "<button type=\"button\" data-tab=\"digitize\" data-mode=\"landmark\">Digitize</button>" +
-      "<button type=\"button\" data-tab=\"anchor\" data-mode=\"anchor\">Anchor</button>" +
-      "<button type=\"button\" data-tab=\"surface\">Surface</button>" +
-      "<button type=\"button\" data-tab=\"curve\" data-mode=\"curve\">Curve</button>" +
-      "<button type=\"button\" data-tab=\"gpa\">GPA</button>";
+      "<button type=\\"button\\" data-tab=\\"digitize\\" data-mode=\\"landmark\\">Digitize</button>" +
+      "<button type=\\"button\\" data-tab=\\"anchor\\" data-mode=\\"anchor\\">Anchor</button>" +
+      "<button type=\\"button\\" data-tab=\\"surface\\">Surface</button>" +
+      "<button type=\\"button\\" data-tab=\\"curve\\" data-mode=\\"curve\\">Curve</button>" +
+      "<button type=\\"button\\" data-tab=\\"gpa\\">GPA</button>";
     document.body.appendChild(tabs);
 
     var status = document.createElement("div");
     status.id = "status";
     status.innerHTML =
-      "<span>Specimen <select id=\"sp-select\"></select></span>" +
-      "<button type=\"button\" id=\"sp-prev\">&#9664; Prev</button>" +
-      "<button type=\"button\" id=\"sp-next\">Next &#9654;</button>" +
-      "<span>Mode: <b id=\"st-mode\">landmark</b></span>" +
-      "<span>L:<b id=\"st-land\">0</b> A:<b id=\"st-anchor\">0</b> S:<b id=\"st-surface\">0</b></span>" +
-      "<span style=\"margin-left:auto\">Color <input type=\"color\" id=\"st-color\" value=\"#ff2222\"></span>";
+      "<span>Specimen <select id=\\"sp-select\\"></select></span>" +
+      "<button type=\\"button\\" id=\\"sp-prev\\">&#9664; Prev</button>" +
+      "<button type=\\"button\\" id=\\"sp-next\\">Next &#9654;</button>" +
+      "<span>Mode: <b id=\\"st-mode\\">landmark</b></span>" +
+      "<span>L:<b id=\\"st-land\\">0</b> A:<b id=\\"st-anchor\\">0</b> S:<b id=\\"st-surface\\">0</b></span>" +
+      "<span style=\\"margin-left:auto\\">Color <input type=\\"color\\" id=\\"st-color\\" value=\\"#ff2222\\"></span>";
     document.body.appendChild(status);
 
     var modal = document.createElement("div");
     modal.id = "modal";
     modal.innerHTML =
-      "<div class=\"box\">" +
-        "<h3 id=\"modal-title\">Title</h3>" +
-        "<div class=\"mbody\" id=\"modal-body\"></div>" +
-        "<div class=\"mfoot\">" +
-          "<button type=\"button\" id=\"modal-cancel\">Cancel</button>" +
-          "<button type=\"button\" id=\"modal-ok\">OK</button>" +
+      "<div class=\\"box\\">" +
+        "<h3 id=\\"modal-title\\">Title</h3>" +
+        "<div class=\\"mbody\\" id=\\"modal-body\\"></div>" +
+        "<div class=\\"mfoot\\">" +
+          "<button type=\\"button\\" id=\\"modal-cancel\\">Cancel</button>" +
+          "<button type=\\"button\\" id=\\"modal-ok\\">OK</button>" +
         "</div>" +
       "</div>";
     document.body.appendChild(modal);
@@ -794,10 +794,10 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
         return;
       }
       var rows = names.map(function(n){
-        return "<li data-name=\"" + esc(n) + "\">" + esc(n) + "</li>";
+        return "<li data-name=\\"" + esc(n) + "\\">" + esc(n) + "</li>";
       }).join("");
       var sel = null;
-      openModal(title, "<ul class=\"picker\">" + rows + "</ul>", function(){
+      openModal(title, "<ul class=\\"picker\\">" + rows + "</ul>", function(){
         if (sel) onChoose(sel);
       }, okLabel);
       var lis = document.querySelectorAll("#modal-body li");
@@ -825,11 +825,11 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
         return;
       }
       var rows = names.map(function(n){
-        return "<li><label><input type=\"checkbox\" value=\"" + esc(n) + "\"> " +
+        return "<li><label><input type=\\"checkbox\\" value=\\"" + esc(n) + "\\"> " +
                esc(n) + "</label></li>";
       }).join("");
-      var body = "<ul class=\"picker\">" + rows + "</ul>" +
-                 "<input type=\"text\" id=\"pick-save\" placeholder=\"Save as (name, optional)\">";
+      var body = "<ul class=\\"picker\\">" + rows + "</ul>" +
+                 "<input type=\\"text\\" id=\\"pick-save\\" placeholder=\\"Save as (name, optional)\\">";
       openModal(title, body, function(){
         var boxes = document.querySelectorAll("#modal-body input[type=checkbox]:checked");
         var chosen = [];
@@ -877,7 +877,7 @@ GMW_VIEW3D_TEMPLATE <- '<!DOCTYPE html>
   });
   on("mi-save", function(){
     openModal("Save",
-      "<input type=\"text\" id=\"save-name\" placeholder=\"File name (optional)\">",
+      "<input type=\\"text\\" id=\\"save-name\\" placeholder=\\"File name (optional)\\">",
       function(){
         var el = document.getElementById("save-name");
         var nm = el ? el.value : "";
